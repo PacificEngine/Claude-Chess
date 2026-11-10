@@ -1,0 +1,29 @@
+{
+  "name": "claude-chess",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:test": "vite build --mode test",
+    "preview": "vite preview --port 4173",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "ts": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65",
+    "@types/node": "^22",
+    "typescript": "^7",
+    "vite": "^8",
+    "vitest": "^5"
+  },
+  "dependencies": {
+    "chessgroundx": "10.7.5",
+    "coi-serviceworker": "0.1.7",
+    "fairy-stockfish-nnue.wasm": "1.1.12",
+    "ffish-es6": "0.7.10"
+  }
+}

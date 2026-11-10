@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Engine harness (tests only)</title>
+    <!-- Registers the COOP/COEP service worker and reloads once so SharedArrayBuffer is available. -->
+    <script src="/coi-serviceworker.min.js"></script>
+  </head>
+  <body>
+    <p>Test-only page: exposes window.__engineHarness to Playwright.</p>
+    <script type="module" src="./engine-harness.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Engine spike</title>
+    <!-- Registers the COOP/COEP service worker and reloads once so SharedArrayBuffer is available. -->
+    <script src="../coi-serviceworker.min.js"></script>
+  </head>
+  <body>
+    <pre id="out">Call window.runSpike() from the console.</pre>
+    <script type="module" src="./engine-spike.ts"></script>
+  </body>
+</html>

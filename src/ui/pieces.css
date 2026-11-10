@@ -1,0 +1,29 @@
+/* Piece art is set inline by board-view (pieces.ts picks the file); a piece without art gets `.token`. */
+.board-host piece {
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+/* Lettered token: an opaque disc, so the letter reads on light and dark squares alike. */
+.token::after {
+  content: attr(data-letter);
+  position: absolute;
+  inset: 12%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid #222;
+  font-weight: 700;
+  font-size: calc(var(--board-w) / var(--files) * 0.42);
+  line-height: 1;
+}
+.token.white::after {
+  background: #fafafa;
+  color: #222;
+}
+.token.black::after {
+  background: #222;
+  color: #fafafa;
+  border-color: #ddd;
+}
