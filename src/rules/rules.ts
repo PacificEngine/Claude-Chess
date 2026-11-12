@@ -27,6 +27,7 @@ export function createRules(ffish: FairyStockfish): Rules {
       const board = fen === undefined ? new ffish.Board(variant) : new ffish.Board(variant, fen);
       return createGame(board);
     },
+    knows: isKnown,
     loadConfig(ini) {
       ffish.loadVariantConfig(ini);
     },
@@ -54,6 +55,7 @@ function createGame(board: Board): RulesGame {
     pop: () => board.pop(),
     result: () => resultOf(board),
     hasInsufficientMaterial: (color) => board.hasInsufficientMaterial(color === 'white'),
+    inCheck: () => board.isCheck(),
     dispose: () => board.delete(),
   };
 }

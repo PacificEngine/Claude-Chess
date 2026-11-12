@@ -26,6 +26,11 @@ export interface Engine {
   ready: Promise<void>;
   status(): EngineStatus;
   setVariant(name: string, ini?: string): Promise<void>;
+  /**
+   * Asks the engine to validate variants.ini text without loading it. Resolves with the problems it printed,
+   * one per line; an empty array means the text is valid. Rejects only if the engine itself fails.
+   */
+  check(ini: string): Promise<string[]>;
   search(req: SearchRequest): Promise<string>;
   stop(): void;
   onLine(cb: (l: string) => void): void;
@@ -44,6 +49,14 @@ export interface EngineTestHooks {
   searchFenOnce(fen: string): void;
 }
 
+/**
+ * `check` prints `Parsing variant: <name>` for every section it reads, valid or not, then one line per problem
+ * (`Invalid option: <name>`, `pieceToCharTable - Missing piece type: <letter>`). Progress and `info string`
+ * lines are not problems; every other non-empty line is.
+ */
+const isProblemLine = (line: string): boolean =>
+  line !== '' && !line.startsWith('Parsing variant:') && !line.startsWith('info string');
+
 export function createEngine(): Engine {
   let status: EngineStatus = 'loading';
   let failure: Error | null = null;
@@ -53,6 +66,11 @@ export function createEngine(): Engine {
   const waiters = new Set<{ match(line: string): void; fail(e: Error): void }>();
   let worker: Worker | null = null;
   let iniCount = 0;
+  const writeIni = (ini: string) => {
+    const path = `/variants-${iniCount++}.ini`;
+    send({ type: 'writeFile', path, text: ini });
+    return path;
+  };
   let fenOverride: string | null = null;
   let rejectReady: (e: Error) => void = () => {};
   let startupTimer: ReturnType<typeof setTimeout> | undefined;
@@ -177,12 +195,29 @@ export function createEngine(): Engine {
       if (searching) cmd('stop');
       return enqueue(async () => {
         if (ini !== undefined) {
-          const path = `/variants-${iniCount++}.ini`;
-          send({ type: 'writeFile', path, text: ini });
-          cmd(`setoption name VariantPath value ${path}`);
+          cmd(`setoption name VariantPath value ${writeIni(ini)}`);
         }
         cmd(`setoption name UCI_Variant value ${name}`);
         await sync();
+      });
+    },
+    check(ini) {
+      return enqueue(async () => {
+        const lines: string[] = [];
+        // `check` prints its problems and no terminator, so `readyok` after `isready` marks the end.
+        const readyok = waitFor((l) => (l === 'readyok' ? true : (lines.push(l), false)));
+        const deadline = setTimeout(
+          () => fail(new Error(`engine did not answer readyok within ${ENGINE_STARTUP_TIMEOUT_MS} ms`)),
+          ENGINE_STARTUP_TIMEOUT_MS,
+        );
+        cmd(`check ${writeIni(ini)}`);
+        cmd('isready');
+        try {
+          await readyok;
+        } finally {
+          clearTimeout(deadline);
+        }
+        return lines.map((l) => l.trim()).filter(isProblemLine);
       });
     },
     search(req) {

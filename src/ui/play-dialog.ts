@@ -1,27 +1,47 @@
-// The Play dialog: variant, opponent (an AI level or hot-seat), the player's color, and the clock.
-// It only collects choices; app.ts turns them into a GameSession.
+// The Play dialog: variant (curated, or a saved editor setup), opponent (an AI level or hot-seat), the player's
+// color, and the clock. It only collects choices; app.ts checks setups and turns choices into a GameSession.
 import type { EngineStatus } from '../engine/engine';
 import { AI_LEVELS, type AiLevelId } from '../engine/levels';
 import { CLOCK_PRESETS, type ClockConfig } from '../session/clock';
 import { CURATED_VARIANTS, type VariantId } from '../variants/catalog';
 
+export type VariantChoice = { kind: 'curated'; id: VariantId } | { kind: 'setup'; id: string };
+
+/** A setup the variant list offers: a saved one, or the one open in the editor. Names are the player's text. */
+export interface SetupOption {
+  id: string;
+  name: string;
+  blurb: string;
+}
+
 export interface PlayChoice {
-  variant: VariantId;
+  variant: VariantChoice;
   opponent: { kind: 'hotseat' } | { kind: 'ai'; level: AiLevelId };
   /** The human's color against the AI. Ignored for hot-seat. */
   color: 'white' | 'black' | 'random';
   clockConfig: ClockConfig;
 }
 
+/** The id under which the setup open in the editor is offered; saved setups use UUIDs. */
+export const EDITOR_SETUP_ID = 'editor';
+
 export interface PlayDialog {
   open(defaults: PlayChoice): void;
   setEngineStatus(status: EngineStatus, reason?: string): void;
   onStart(cb: (choice: PlayChoice) => void): void;
+  /** The setups listed under "Saved setups". */
+  setSetups(setups: SetupOption[]): void;
+  /** Checks a chosen setup: resolves with the reasons it can't be played, empty when it can. Start waits for it. */
+  onCheckSetup(cb: (id: string) => Promise<string[]>): void;
+  /** Called with a setup's id when the player deletes it; omit to offer no Delete. */
+  onDeleteSetup(cb: (id: string) => void): void;
   /** Called whenever the dialog closes, started or not. */
   onClose(cb: () => void): void;
 }
 
 const CUSTOM = 'Custom';
+const SETUP_PREFIX = 'setup:';
+const CHECKING = 'Checking setup…';
 const MAX_CUSTOM_MINUTES = 180;
 const MAX_CUSTOM_INCREMENT_S = 60;
 
@@ -42,8 +62,26 @@ export function createPlayDialog(host: HTMLElement): PlayDialog {
   const form = el('form', { method: 'dialog' });
 
   const variant = el('select', { id: 'play-variant' });
-  for (const v of CURATED_VARIANTS) variant.append(el('option', { value: v.id, textContent: v.label }));
+  const curatedGroup = el('optgroup', { label: 'Variants' });
+  for (const v of CURATED_VARIANTS) curatedGroup.append(el('option', { value: v.id, textContent: v.label }));
+  const setupGroup = el('optgroup', { label: 'Saved setups' });
+  variant.append(curatedGroup, setupGroup);
   const blurb = el('p', { className: 'blurb' });
+  const setupStatus = el('p', { className: 'setup-status' });
+  setupStatus.dataset.testid = 'setup-status';
+  setupStatus.setAttribute('aria-live', 'polite');
+  const deleteSetup = el('button', { type: 'button', className: 'secondary small', textContent: 'Delete setup' });
+  deleteSetup.dataset.testid = 'delete-setup';
+  // Deleting asks first, inline: the question names the setup (the player's text, via textContent).
+  const deleteConfirm = el('div', { className: 'delete-confirm' });
+  deleteConfirm.dataset.testid = 'delete-confirm';
+  const deleteQuestion = el('span');
+  const deleteYes = el('button', { type: 'button', className: 'small', textContent: 'Yes, delete' });
+  deleteYes.dataset.testid = 'delete-setup-yes';
+  const deleteNo = el('button', { type: 'button', className: 'secondary small', textContent: 'No' });
+  deleteNo.dataset.testid = 'delete-setup-no';
+  deleteConfirm.append(deleteQuestion, deleteYes, deleteNo);
+  deleteConfirm.hidden = true;
 
   const opponent = el('select', { id: 'play-opponent' });
   opponent.append(el('option', { value: 'hotseat', textContent: 'Hot-seat (two players)' }));
@@ -78,6 +116,9 @@ export function createPlayDialog(host: HTMLElement): PlayDialog {
     el('h2', { textContent: 'New game' }),
     field('Variant', variant),
     blurb,
+    setupStatus,
+    deleteSetup,
+    deleteConfirm,
     field('Opponent', opponent),
     engineStatus,
     colorField,
@@ -90,14 +131,87 @@ export function createPlayDialog(host: HTMLElement): PlayDialog {
 
   let startListener: (c: PlayChoice) => void = () => {};
   let closeListener: () => void = () => {};
+  let checkListener: (id: string) => Promise<string[]> = async () => [];
+  let deleteListener: ((id: string) => void) | null = null;
   let aiUsable = true;
+  let setups: SetupOption[] = [];
+  /** Bumped by every new setup choice, so a slower earlier check can't overwrite a later one. */
+  let checkToken = 0;
+  let setupBlocked = false;
+
+  const chosenSetup = (): SetupOption | undefined =>
+    variant.value.startsWith(SETUP_PREFIX) ? setups.find((x) => SETUP_PREFIX + x.id === variant.value) : undefined;
 
   const refresh = () => {
-    blurb.textContent = CURATED_VARIANTS.find((v) => v.id === variant.value)?.blurb ?? '';
+    const setup = chosenSetup();
+    blurb.textContent = setup ? setup.blurb : (CURATED_VARIANTS.find((v) => v.id === variant.value)?.blurb ?? '');
+    const deletable = !!setup && !!deleteListener && setup.id !== EDITOR_SETUP_ID;
+    if (!deletable) deleteConfirm.hidden = true;
+    deleteSetup.hidden = !deletable || !deleteConfirm.hidden;
     colorField.hidden = opponent.value === 'hotseat';
     custom.hidden = clock.value !== CUSTOM;
+    start.disabled = setupBlocked;
   };
-  variant.addEventListener('change', refresh);
+
+  /** A chosen setup is registered (the engine may need to check it) before Start is allowed. */
+  const checkChosen = () => {
+    const token = ++checkToken;
+    const setup = chosenSetup();
+    setupStatus.classList.remove('error');
+    if (!setup) {
+      setupBlocked = false;
+      setupStatus.textContent = '';
+      return refresh();
+    }
+    setupBlocked = true;
+    setupStatus.textContent = CHECKING;
+    refresh();
+    void checkListener(setup.id).then(
+      (problems) => {
+        if (token !== checkToken) return;
+        setupBlocked = problems.length > 0;
+        setupStatus.textContent = problems.join(' ');
+        setupStatus.classList.toggle('error', setupBlocked);
+        refresh();
+      },
+      (e: unknown) => {
+        if (token !== checkToken) return;
+        setupStatus.textContent = `This setup couldn't be checked: ${e instanceof Error ? e.message : String(e)}`;
+        setupStatus.classList.add('error');
+        refresh();
+      },
+    );
+  };
+
+  const fillSetups = () => {
+    const chosen = variant.value;
+    setupGroup.replaceChildren(...setups.map((x) => el('option', { value: SETUP_PREFIX + x.id, textContent: x.name })));
+    setupGroup.hidden = setups.length === 0;
+    variant.value = chosen;
+    if (variant.value !== chosen) variant.value = CURATED_VARIANTS[0]!.id;
+  };
+
+  deleteSetup.addEventListener('click', () => {
+    const setup = chosenSetup();
+    if (!setup) return;
+    deleteQuestion.textContent = `Delete “${setup.name}”?`;
+    deleteConfirm.hidden = false;
+    refresh();
+  });
+  deleteNo.addEventListener('click', () => {
+    deleteConfirm.hidden = true;
+    refresh();
+  });
+  deleteYes.addEventListener('click', () => {
+    const setup = chosenSetup();
+    deleteConfirm.hidden = true;
+    if (setup && deleteListener) deleteListener(setup.id);
+    refresh();
+  });
+  variant.addEventListener('change', () => {
+    deleteConfirm.hidden = true;
+    checkChosen();
+  });
   opponent.addEventListener('change', refresh);
   clock.addEventListener('change', refresh);
   cancel.addEventListener('click', () => dialog.close());
@@ -110,10 +224,15 @@ export function createPlayDialog(host: HTMLElement): PlayDialog {
     return { baseMs: m * 60000, incrementMs: s * 1000 };
   };
 
-  form.addEventListener('submit', () => {
+  form.addEventListener('submit', (e) => {
+    if (setupBlocked) {
+      e.preventDefault();
+      return;
+    }
     const level = opponent.value;
+    const setup = chosenSetup();
     startListener({
-      variant: variant.value as VariantId,
+      variant: setup ? { kind: 'setup', id: setup.id } : { kind: 'curated', id: variant.value as VariantId },
       opponent: level === 'hotseat' ? { kind: 'hotseat' } : { kind: 'ai', level: level as AiLevelId },
       color: color.value as PlayChoice['color'],
       clockConfig: clockChoice(),
@@ -122,7 +241,9 @@ export function createPlayDialog(host: HTMLElement): PlayDialog {
 
   return {
     open(d) {
-      variant.value = d.variant;
+      deleteConfirm.hidden = true;
+      variant.value = d.variant.kind === 'setup' ? SETUP_PREFIX + d.variant.id : d.variant.id;
+      if (!variant.value) variant.value = CURATED_VARIANTS[0]!.id; // a setup that has since been deleted
       opponent.value = d.opponent.kind === 'ai' && aiUsable ? d.opponent.level : 'hotseat';
       color.value = d.color;
       const preset = CLOCK_PRESETS.find(
@@ -133,8 +254,22 @@ export function createPlayDialog(host: HTMLElement): PlayDialog {
         minutes.value = String(Math.round(d.clockConfig.baseMs / 60000));
         increment.value = String(Math.round(d.clockConfig.incrementMs / 1000));
       }
-      refresh();
+      checkChosen();
       dialog.showModal();
+    },
+    setSetups(next) {
+      setups = next;
+      const before = variant.value;
+      fillSetups();
+      if (dialog.open && variant.value !== before) checkChosen();
+      else refresh();
+    },
+    onCheckSetup(cb) {
+      checkListener = cb;
+    },
+    onDeleteSetup(cb) {
+      deleteListener = cb;
+      refresh();
     },
     setEngineStatus(status, reason) {
       aiUsable = status !== 'unavailable';

@@ -24,11 +24,15 @@ export interface RulesGame {
   pop(): void;
   result(): GameResult | null;
   hasInsufficientMaterial(color: Color): boolean;
+  /** Whether the side to move is in check. */
+  inCheck(): boolean;
   dispose(): void;
 }
 
 export interface Rules {
   newGame(variant: string, fen?: string): RulesGame;
   loadConfig(ini: string): void;
+  /** Whether ffish has a variant of this name (built in, or loaded with `loadConfig`). */
+  knows(name: string): boolean;
   validateFen(variant: string, fen: string): boolean;
 }

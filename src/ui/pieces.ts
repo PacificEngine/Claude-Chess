@@ -1,7 +1,12 @@
 // Which pieces have art and which fall back to lettered tokens. Pure data: no DOM, so tests can run it in Node.
 // chessgroundx names a piece by its FEN letter (`n-piece white`), and the same letter means different pieces in
 // different variants (`c` is the chancellor in Capablanca, the cannon in Shako), so art is looked up per variant.
+// A custom variant's letters are looked up by the built-in type they move as first, then in its base variant.
+import type * as cg from 'chessgroundx/types';
 import type { Color } from '../rules/types';
+import type { ActiveVariant } from '../variants/active';
+import type { VariantId } from '../variants/catalog';
+import { INHERITED } from '../variants/piece-types';
 
 type Colors = Color | 'both';
 interface ArtRule {
@@ -34,6 +39,21 @@ const ART: Record<string, Record<string, ArtRule>> = {
   // No suitable art for the Amazon (queen + knight): it is a lettered token.
 };
 
+// Art by built-in piece type, for a custom variant's letters. Each entry is
+// the art a curated variant gives a letter of that type (pieces.test.ts checks this against the rules).
+const TYPE_ART: Record<string, { rule: ArtRule; file: string }> = {
+  pawn: { rule: MERIDA, file: 'P' },
+  knight: { rule: MERIDA, file: 'N' },
+  bishop: { rule: MERIDA, file: 'B' },
+  rook: { rule: MERIDA, file: 'R' },
+  queen: { rule: MERIDA, file: 'Q' },
+  king: { rule: MERIDA, file: 'K' },
+  archbishop: { rule: MERIDA, file: 'A' }, // Capablanca's
+  chancellor: { rule: MERIDA, file: 'C' }, // Capablanca's
+  cannon: { rule: { dir: 'merida/shako', colors: 'both' }, file: 'C' }, // Shako's
+  fersAlfil: { rule: { dir: 'merida/shako', colors: 'both' }, file: 'E' }, // Shako's elephant
+};
+
 function rule(letter: string, variant: string): ArtRule | null {
   if (STANDARD.includes(letter)) {
     return variant === 'spartan' && letter === 'k' ? { dir: 'spartan', colors: 'black', files: { k: 'K' } } : MERIDA;
@@ -49,13 +69,22 @@ export function hasArt(letter: string, variant: string): boolean {
 /**
  * Path under public/ of the piece's SVG, or null when this piece is a lettered token.
  * Spartan's king has art for both sides, so White's king falls back to the standard one.
+ *
+ * `type` is the built-in type a custom variant's letter moves as, when that differs from the base's piece
+ * for the letter (`artTypeOf`). A type with art wins, so the piece looks like what it moves like; a type
+ * without art is a token, never the base's art for a piece it no longer is. Without a type (or with
+ * 'inherited') the base variant's art for the letter is used, then a token.
  */
-export function artUrl(letter: string, color: Color, variant: string): string | null {
-  let r = rule(letter, variant);
+export function artUrl(letter: string, color: Color, artBase: VariantId, type?: string): string | null {
+  const side = color === 'white' ? 'w' : 'b';
+  const byType = type === undefined ? undefined : TYPE_ART[type];
+  if (byType) return `pieces/${byType.rule.dir}/${side}${byType.file}.svg`;
+  if (type !== undefined && type !== INHERITED) return null;
+  let r = rule(letter, artBase);
   if (r && r.colors !== 'both' && r.colors !== color) r = letter === 'k' ? MERIDA : null;
   if (!r) return null;
   const file = r.files?.[letter] ?? letter.toUpperCase();
-  return `pieces/${r.dir}/${color === 'white' ? 'w' : 'b'}${file}.svg`;
+  return `pieces/${r.dir}/${side}${file}.svg`;
 }
 
 /** The class chessgroundx puts on a piece element, e.g. `n-piece white`. */
@@ -81,4 +110,21 @@ export function pieceLettersOf(fen: string): string[] {
   const letters = new Set<string>();
   for (const ch of placement) if (/[a-z]/i.test(ch)) letters.add(ch.toLowerCase());
   return [...letters];
+}
+
+// Pieces held in hand, shown as pockets beside the board, for curated variants with pockets.
+const POCKET_ROLES: Partial<Record<string, cg.Role[]>> = {
+  seirawan: ['h-piece', 'e-piece'],
+};
+
+/**
+ * The pocket roles of a variant with pockets: a custom variant's are the letters its setup puts in hand.
+ * Undefined when there is nothing to show, so an empty hand draws no empty pocket rows.
+ */
+export function pocketRoles(v: ActiveVariant): cg.Role[] | undefined {
+  if (!v.pockets) return undefined;
+  if (!v.setup) return POCKET_ROLES[v.artBase];
+  const pocket = /\[([^\]]*)\]/.exec(v.setup.fen.split(' ')[0] ?? '')?.[1] ?? '';
+  const roles = [...new Set([...pocket].map((c) => `${c.toLowerCase()}-piece` as cg.Role))];
+  return roles.length ? roles : undefined;
 }

@@ -11,6 +11,8 @@ export interface Store {
   available: boolean;
   load<T>(key: StoreKey, version: number, migrations: Migrations, validate: (d: unknown) => d is T): LoadResult<T>;
   save(key: StoreKey, version: number, data: unknown): boolean;
+  /** Moves the stored value to `<key>.corrupt`, for data `load` accepted that a later, slower check refused. */
+  quarantine(key: StoreKey): void;
 }
 
 export interface Settings {
@@ -65,7 +67,7 @@ export function createStore(storage: Storage | null): Store {
   const backing = storage !== null && isUsable(storage) ? storage : null;
 
   // Keep the raw value for inspection and drop the live key so the next load starts clean.
-  function quarantine(key: StoreKey, raw: string): void {
+  function moveToCorrupt(key: StoreKey, raw: string): void {
     if (backing === null) return;
     try {
       backing.setItem(`${key}.corrupt`, raw);
@@ -107,8 +109,19 @@ export function createStore(storage: Storage | null): Store {
       } catch {
         // Unparseable JSON or a failed migration: fall through to corrupt.
       }
-      quarantine(key, raw);
+      moveToCorrupt(key, raw);
       return { data: null, problem: 'corrupt' };
+    },
+
+    quarantine(key) {
+      if (backing === null) return;
+      let raw: string | null = null;
+      try {
+        raw = backing.getItem(key);
+      } catch {
+        // Unreadable now: nothing to keep.
+      }
+      if (raw !== null) moveToCorrupt(key, raw);
     },
 
     save(key, version, data) {

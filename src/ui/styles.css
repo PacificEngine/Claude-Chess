@@ -347,3 +347,135 @@ dialog h2 {
 .site-footer a {
   color: var(--muted);
 }
+
+/* ---- Editor ---- */
+/* Board, palette and controls side by side on a desktop: the board leaves room for both columns. */
+.editor .editor-board {
+  --board-w: min(
+    calc(100vw - 2.5rem),
+    max(18rem, calc(100vw - 37rem)),
+    calc((100vh - 7rem) * var(--files) / var(--ranks)),
+    720px
+  );
+}
+.editor-side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+.editor-controls {
+  width: 16rem;
+}
+.editor-controls h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.2rem;
+}
+.editor-size,
+.editor-board-buttons {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.editor-rights,
+.editor-pockets,
+.editor-clocks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 0.75rem;
+  border: 1px solid var(--surface-2);
+  border-radius: 4px;
+  margin: 0 0 0.75rem;
+}
+.editor-pockets input {
+  width: 4rem;
+}
+.editor-clocks input {
+  width: 6rem;
+}
+.editor-status {
+  margin: 0.25rem 0;
+  color: var(--muted);
+}
+.editor-problems {
+  margin: 0.25rem 0;
+  padding-left: 1.2rem;
+  color: var(--error);
+}
+.editor-notice {
+  min-height: 1.2em;
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.editor-board.armed cg-board {
+  cursor: crosshair;
+}
+
+.palette {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 15rem;
+}
+.palette-group {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.palette-piece {
+  padding: 2px;
+  aspect-ratio: 1;
+  background: var(--surface);
+  border-radius: 4px;
+}
+.palette-piece.black {
+  background: var(--surface-2);
+}
+.palette-piece[aria-pressed='true'],
+.palette-eraser[aria-pressed='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.palette-icon {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+}
+.palette-eraser {
+  align-self: flex-start;
+}
+
+/* ---- Play dialog: saved setups ---- */
+.setup-status {
+  margin: -0.4rem 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.setup-status.error {
+  color: var(--error);
+}
+.setup-status:empty {
+  display: none;
+}
+button.small {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+.palette-icon.token::after {
+  font-size: 0.85rem;
+  border-width: 1px;
+}
+.delete-confirm {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+}
+.delete-confirm button.small {
+  margin-bottom: 0;
+}

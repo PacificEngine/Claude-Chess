@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadTestRules } from '../rules/test-rules';
 import type { Color, Rules } from '../rules/types';
+import { generateVariant } from '../variants/generator';
+import type { SetupSpec } from '../variants/setup';
 import type { ClockConfig } from './clock';
 import { GameSession, isSessionState } from './session';
 
@@ -11,9 +13,23 @@ const FEN_K_VS_KR_BLACK_TO_MOVE = '7r/8/8/8/8/2k5/8/K7 b - - 0 1';
 const FEN_KR_VS_K_BLACK_TO_MOVE = '8/8/8/8/8/2k5/8/K6R b - - 0 1';
 const FEN_FOOLS_MATE_BEFORE_QH4 = 'rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 2';
 
+/** A custom setup, and the variant name the generator gives it. */
+const setup: SetupSpec = {
+  base: 'chess',
+  files: 8,
+  ranks: 8,
+  pieces: { k: 'king', q: 'queen', r: 'rook' },
+  fen: 'r2qk3/8/8/8/8/8/8/R2QK3 w - - 0 1',
+  castling: false,
+  promotion: { rank: 'last', pieceTypes: ['q', 'r'] },
+};
+const { name, ini } = generateVariant(setup);
+
 let rules: Rules;
 beforeAll(async () => {
   rules = await loadTestRules();
+  // The caller registers a custom variant before creating or restoring its game (the app via registerSetup).
+  rules.loadConfig(ini);
 });
 
 const hotseat = (clockConfig: ClockConfig = null, fen?: string) =>
@@ -152,4 +168,37 @@ describe('isSessionState', () => {
     ['a bad clock', () => ({ ...(saved() as object), clock: { whiteMs: '1', blackMs: 1, running: null, since: null } })],
     ['a bad result', () => ({ ...(saved() as object), result: { winner: 'green', reason: 'checkmate' } })],
   ])('rejects %s', (_, make) => expect(isSessionState(make())).toBe(false));
+});
+
+describe('custom games', () => {
+  const hotseat = { kind: 'hotseat' } as const;
+  const cfg: ClockConfig = { baseMs: 60000, incrementMs: 0 };
+
+  it('stores a custom game by its setup, never by ini text', () => {
+    const s = GameSession.create(rules, { variant: name, setup, opponent: hotseat, clockConfig: null }, 0);
+    expect(s.state()).toMatchObject({ setup }); expect('ini' in s.state()).toBe(false);
+  });
+  it('can start from carried-over paused clock times so editing costs no time', () => {
+    const s = GameSession.create(rules, { variant: 'chess', opponent: hotseat, clockConfig: cfg, clock: { whiteMs: 1000, blackMs: 2000, running: null, since: null } }, 0);
+    expect(s.state().clock).toMatchObject({ whiteMs: 1000, blackMs: 2000, running: null });
+  });
+  it('restores a custom game the caller registered, keeping its setup', () => {
+    const s = GameSession.create(rules, { variant: name, setup, opponent: hotseat, clockConfig: null }, 0);
+    s.play('d1d7', 0);
+    const back = GameSession.restore(rules, JSON.parse(JSON.stringify(s.state())));
+    expect(back.state()).toEqual(s.state());
+  });
+  it('never loads a variant itself, so an unregistered custom game cannot be restored', () => {
+    const saved = GameSession.create(rules, { variant: 'chess', opponent: hotseat, clockConfig: null }, 0).state();
+    expect(() => GameSession.restore(rules, { ...saved, variant: 'cx_00000000' })).toThrow();
+  });
+  it('accepts a saved custom game and rejects a stored ini or a malformed setup', () => {
+    const saved = JSON.parse(JSON.stringify(
+      GameSession.create(rules, { variant: name, setup, opponent: hotseat, clockConfig: null }, 0).state(),
+    )) as Record<string, unknown>;
+    expect(isSessionState(saved)).toBe(true);
+    expect(isSessionState({ ...saved, ini })).toBe(false);
+    expect(isSessionState({ ...saved, setup: { ...setup, castling: 'yes' } })).toBe(false);
+    expect(isSessionState({ ...saved, setup: null })).toBe(false);
+  });
 });

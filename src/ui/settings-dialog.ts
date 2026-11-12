@@ -1,4 +1,5 @@
-// The Settings dialog. It edits a copy of Settings and hands the result back; app.ts saves it.
+// The Settings dialog. It edits a copy of Settings and hands the result back; app.ts saves it. It also holds
+// "Edit current game", which closes the dialog (unsaved changes dropped) and opens the editor on the game.
 import type { Settings } from '../persistence/store';
 
 export const BOARD_THEMES = ['brown', 'blue', 'green'] as const;
@@ -7,6 +8,9 @@ export interface SettingsDialog {
   open(current: Settings): void;
   onSave(cb: (s: Settings) => void): void;
   onClose(cb: () => void): void;
+  onEditGame(cb: () => void): void;
+  /** Whether "Edit current game" can be used now: the same rule as the panel's Edit button. */
+  setCanEditGame(can: boolean): void;
 }
 
 function checkbox(id: string, text: string): { label: HTMLLabelElement; input: HTMLInputElement } {
@@ -47,6 +51,12 @@ export function createSettingsDialog(host: HTMLElement): SettingsDialog {
   }
   themeLabel.append(themeText, theme);
 
+  const editGame = document.createElement('button');
+  editGame.type = 'button';
+  editGame.className = 'secondary';
+  editGame.dataset.testid = 'settings-edit-game';
+  editGame.textContent = 'Edit current game';
+
   const actions = document.createElement('div');
   actions.className = 'actions';
   const cancel = document.createElement('button');
@@ -58,13 +68,19 @@ export function createSettingsDialog(host: HTMLElement): SettingsDialog {
   save.textContent = 'Save';
   actions.append(cancel, save);
 
-  form.append(heading, highlight.label, themeLabel, sound.label, actions);
+  form.append(heading, highlight.label, themeLabel, sound.label, editGame, actions);
   dialog.append(form);
   host.append(dialog);
 
   let base: Settings | null = null;
   let saveListener: (s: Settings) => void = () => {};
   let closeListener: () => void = () => {};
+  let editGameListener: () => void = () => {};
+  editGame.addEventListener('click', () => {
+    // The editor opens first, so the dialog's close doesn't restart the clock it keeps paused.
+    editGameListener();
+    dialog.close();
+  });
   cancel.addEventListener('click', () => dialog.close());
   dialog.addEventListener('close', () => closeListener());
   form.addEventListener('submit', () => {
@@ -85,6 +101,12 @@ export function createSettingsDialog(host: HTMLElement): SettingsDialog {
     },
     onClose(cb) {
       closeListener = cb;
+    },
+    onEditGame(cb) {
+      editGameListener = cb;
+    },
+    setCanEditGame(can) {
+      editGame.disabled = !can;
     },
   };
 }
