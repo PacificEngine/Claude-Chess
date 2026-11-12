@@ -4,7 +4,10 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { loadTestRules } from '../rules/test-rules';
 import type { Rules } from '../rules/types';
 import { CURATED_VARIANTS } from '../variants/catalog';
-import { artUrl, hasArt, pieceClass, pieceLettersOf, tokenClass } from './pieces';
+import { artTypeOf, curatedActive, customActive } from '../variants/active';
+import { BUILTIN_PIECES, typesOfVariant } from '../variants/piece-types';
+import type { SetupSpec } from '../variants/setup';
+import { artUrl, hasArt, pieceClass, pieceLettersOf, pocketRoles, tokenClass } from './pieces';
 
 let rules: Rules;
 beforeAll(async () => {
@@ -82,5 +85,83 @@ describe('piece art and lettered tokens', () => {
   it('gives each piece its own class by letter and colour', () => {
     expect(pieceClass('n', 'white')).not.toBe(pieceClass('n', 'black'));
     expect(pieceClass('n', 'white')).not.toBe(pieceClass('b', 'white'));
+  });
+
+  it("draws a custom variant's own letter with the art of the piece type it moves as", () => {
+    expect(artUrl('a', 'white', 'chess', 'archbishop')).toBe('pieces/merida/wA.svg');
+    expect(artUrl('z', 'black', 'chess', 'cannon')).toBe('pieces/merida/shako/bC.svg');
+    expect(artUrl('z', 'white', 'chess', 'amazon')).toBeNull(); // no art for the type: a token
+    expect(artUrl('z', 'white', 'chess')).toBeNull();
+  });
+
+  it('draws a letter by the type it moves as before the base variant\'s art for that letter', () => {
+    expect(artUrl('q', 'white', 'chess', 'archbishop')).toBe('pieces/merida/wA.svg');
+    expect(artUrl('c', 'white', 'shako', 'cannon')).toBe(artUrl('c', 'white', 'shako'));
+    expect(artUrl('q', 'white', 'chess', 'queen')).toBe('pieces/merida/wQ.svg');
+  });
+
+  it("falls back to the base variant's art when the type has none", () =>
+    expect(artUrl('h', 'black', 'spartan', 'inherited')).toBe('pieces/spartan/bP.svg'));
+
+  it('gives a type the art a curated variant gives a letter of that type, from a real file', () => {
+    const curated = CURATED_VARIANTS.flatMap((v) =>
+      [...typesOfVariant(rules, v.engineName)].map(([letter, type]) => ({ type, url: artUrl(letter, 'white', v.id) })),
+    );
+    for (const p of BUILTIN_PIECES) {
+      for (const color of ['white', 'black'] as const) {
+        const url = artUrl('z', color, 'chess', p.type);
+        if (url === null) continue;
+        expect(existsSync(resolve('public', url)), `${p.type}: ${url}`).toBe(true);
+        if (color === 'white') expect(curated.some((c) => c.type === p.type && c.url === url), p.type).toBe(true);
+      }
+    }
+  });
+
+  describe('in a custom variant', () => {
+    const custom = (spec: Omit<SetupSpec, 'files' | 'ranks' | 'castling' | 'promotion'>) => {
+      const setup: SetupSpec = { files: 8, ranks: 8, castling: false, promotion: { rank: 'last', pieceTypes: [] }, ...spec };
+      return customActive(setup, 'cx_test', curatedActive(setup.base, rules).types);
+    };
+    const drawn = (v: ReturnType<typeof custom>, letter: string, color: 'white' | 'black' = 'white') =>
+      artUrl(letter, color, v.artBase, artTypeOf(v, letter));
+
+    it("keeps the base's own art for base letters that keep the base's type", () => {
+      const v = custom({ base: 'seirawan', pieces: { k: 'king', h: 'archbishop', e: 'chancellor' }, fen: '4k3/8/8/8/8/8/8/4K3[HEhe] w - - 0 1' });
+      expect(drawn(v, 'h')).toBe('pieces/merida/wH.svg'); // the hawk, not the archbishop art
+      expect(drawn(v, 'e')).toBe('pieces/merida/wE.svg');
+      const spartan = custom({ base: 'spartan', pieces: { k: 'commoner', w: 'archbishop', h: 'inherited' }, fen: 'w3k3/hhhh4/8/8/8/8/8/4K3 w - - 0 1' });
+      expect(drawn(spartan, 'w', 'black')).toBe('pieces/spartan/bWarlord.svg');
+      expect(drawn(spartan, 'h', 'black')).toBe('pieces/spartan/bP.svg');
+    });
+
+    it('draws a re-typed letter whose new type has no art as a lettered token, not as the base piece', () => {
+      const v = custom({ base: 'chess', pieces: { k: 'king', q: 'amazon' }, fen: '4k3/8/8/8/8/8/8/Q3K3 w - - 0 1' });
+      expect(drawn(v, 'q')).toBeNull(); // an amazon, not the queen art
+      expect(drawn(v, 'k')).toBe('pieces/merida/wK.svg');
+    });
+
+    it('draws a letter the base does not define, or gives another type, as the type it moves as', () => {
+      const v = custom({ base: 'chess', pieces: { k: 'king', q: 'archbishop', z: 'cannon' }, fen: '4k3/8/8/8/8/8/8/Q3K2Z w - - 0 1' });
+      expect(drawn(v, 'q')).toBe('pieces/merida/wA.svg');
+      expect(drawn(v, 'z')).toBe('pieces/merida/shako/wC.svg');
+      expect(drawn(v, 'k')).toBe('pieces/merida/wK.svg');
+    });
+  });
+});
+
+describe('pocketRoles', () => {
+  it('gives a curated drop variant its pocket pieces', () =>
+    expect(pocketRoles(curatedActive('seirawan', rules))).toEqual(['h-piece', 'e-piece']));
+
+  it('has no pockets for a variant without pieces in hand', () => expect(pocketRoles(curatedActive('chess', rules))).toBeUndefined());
+
+  it("gives a custom setup the letters it puts in hand, and no pocket rows when the hand is empty", () => {
+    const setup = (fen: string): SetupSpec => ({
+      base: 'seirawan', files: 8, ranks: 8, pieces: { k: 'king', h: 'archbishop' }, fen, castling: false,
+      promotion: { rank: 'last', pieceTypes: ['h'] },
+    });
+    const types = curatedActive('seirawan', rules).types;
+    expect(pocketRoles(customActive(setup('4k3/8/8/8/8/8/8/4K3[Hh] w - - 0 1'), 'cx_a', types))).toEqual(['h-piece']);
+    expect(pocketRoles(customActive(setup('4k3/8/8/8/8/8/8/4K3[] w - - 0 1'), 'cx_b', types))).toBeUndefined();
   });
 });

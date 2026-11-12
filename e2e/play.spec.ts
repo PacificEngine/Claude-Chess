@@ -1,5 +1,7 @@
 import { expect, type Page, test } from '@playwright/test';
 import type { ChessTestHooks } from '../src/ui/app';
+import { generateVariant } from '../src/variants/generator';
+import type { SetupSpec } from '../src/variants/setup';
 
 declare global {
   interface Window {
@@ -256,18 +258,26 @@ test('a reload restores the game with clocks paused at their saved times', async
   expect(await clockSeconds(page, 'black')).toBeLessThan(blackBefore);
 });
 
-test('the AI side cannot be moved by the player while the AI is thinking', async ({ page }) => {
+test('the AI side cannot be moved by the player while the AI is thinking', async ({ page, context }) => {
+  // Hold the engine back, so the AI is still on its turn however long the checks below take.
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await context.route(/stockfish/, async (route) => {
+    await held;
+    await route.continue();
+  });
   await openApp(page);
-  await newGame(page, { variant: 'chess', opponent: 'max', color: 'white' });
+  await newGame(page, { variant: 'chess', opponent: 'beginner', color: 'white' });
   await move(page, 'e2', 'e4');
   await expect(plies(page)).toHaveCount(1);
+  await expect(page.getByTestId('status')).toHaveText('AI is thinking… (engine loading)');
   const fen = await fenOf(page);
   await move(page, 'e7', 'e5');
-  // chessgroundx reports a move a tick later; wait well past that (but well inside Max's 3 s search) before checking.
+  // chessgroundx reports a move a tick later; wait well past that before checking nothing moved.
   await page.waitForTimeout(500);
   await expect(plies(page)).toHaveCount(1);
   expect(await fenOf(page)).toBe(fen);
-  await expect(page.getByTestId('status')).toHaveText(/thinking/i);
+  release();
   await expect(plies(page)).toHaveCount(2, { timeout: 20000 });
 });
 
@@ -345,14 +355,27 @@ test('the Play dialog says the engine is loading until it is ready', async ({ pa
   await expect(status).toHaveText(/Engine ready/, { timeout: 20000 });
 });
 
-test('the Edit button is present but disabled, and the panel names variant and opponent', async ({ page }) => {
+test('the Edit button is present and enabled, and the panel names variant and opponent', async ({ page }) => {
   await openApp(page);
-  await expect(page.getByTestId('edit')).toBeDisabled();
+  await expect(page.getByTestId('edit')).toBeEnabled();
   await newGame(page, { variant: 'grand', opponent: 'expert', color: 'black' });
   await expect(page.getByTestId('game-line')).toHaveText('Grand Chess · AI: Expert');
   await expect(page.getByTestId('board')).toHaveAttribute('data-orientation', 'black');
   // The AI plays White, so it moves first.
   await expect(plies(page)).toHaveCount(1, { timeout: 20000 });
+});
+
+test('the first, not yet isolated, page load never starts the app: the service worker reloads it first', async ({ page }) => {
+  // Each document records whether the app started in it while not isolated; sessionStorage outlives the reload.
+  await page.addInitScript(() => {
+    if (self.crossOriginIsolated) return;
+    new MutationObserver(() => {
+      if (document.querySelector('#app.app')) sessionStorage.setItem('startedNotIsolated', '1');
+    }).observe(document, { subtree: true, childList: true, attributes: true });
+  });
+  await openApp(page);
+  // Started there, it would load the engine twice and could save a fresh game over the one a later load restores.
+  expect(await page.evaluate(() => sessionStorage.getItem('startedNotIsolated'))).toBeNull();
 });
 
 test('a corrupt saved game shows a storage banner and starts fresh', async ({ page }) => {
@@ -405,10 +428,163 @@ for (const fen of ['garbage', '8/8/8/8/8/8/8/K6k w - - 0 1']) {
   });
 }
 
-test('a saved game carrying a variant ini is treated as corrupt, so stored text never reaches the engine', async ({ page }) => {
+test('a saved game carrying an ini field is treated as corrupt, so stored ini text never reaches the engine', async ({ page }) => {
   await openWithSavedGame(page, { ...savedGameAfterE4(), ini: '[chess]' });
   await expect(page.getByTestId('storage-banner')).toContainText(/couldn't be read/);
   await expect(plies(page)).toHaveCount(0);
+});
+
+/** A custom setup with a king, queen and rook per side on an 8x8 chess base. */
+const CUSTOM_SETUP: SetupSpec = {
+  base: 'chess',
+  files: 8,
+  ranks: 8,
+  pieces: { k: 'king', q: 'queen', r: 'rook' },
+  fen: 'r2qk3/8/8/8/8/8/8/R2QK3 w - - 0 1',
+  castling: false,
+  promotion: { rank: 'last', pieceTypes: ['q', 'r'] },
+};
+
+/** A saved custom game at its start position, stored by its setup and generated name. */
+function savedCustomGame(opponent: Record<string, unknown> = { kind: 'hotseat' }): Record<string, unknown> {
+  const NO_CLOCK = Number.MAX_SAFE_INTEGER;
+  return {
+    variant: generateVariant(CUSTOM_SETUP).name,
+    setup: CUSTOM_SETUP,
+    startFen: CUSTOM_SETUP.fen,
+    moves: [],
+    snapshots: [],
+    opponent,
+    clockConfig: null,
+    clock: { whiteMs: NO_CLOCK, blackMs: NO_CLOCK, running: null, since: null },
+    result: null,
+    engineRequestId: 1,
+  };
+}
+
+test('a saved custom game is restored from its setup, and the AI plays in the regenerated variant', async ({ page }) => {
+  await openWithSavedGame(page, savedCustomGame({ kind: 'ai', level: 'beginner', aiColor: 'white' }));
+  await expect(page.getByTestId('game-line')).toHaveText('Custom (based on Chess) · AI: Beginner');
+  await expect(page.getByTestId('storage-banner')).toBeHidden();
+  await expect(plies(page)).toHaveCount(1, { timeout: 20000 });
+});
+
+test('a saved custom game restores in the background: the board is up, saying so, before the engine is ready', async ({ page, context }) => {
+  // Hold the engine back so the restore is still waiting for it when the board appears.
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await context.route(/stockfish/, async (route) => {
+    await held;
+    await route.continue();
+  });
+  await openWithSavedGame(page, savedCustomGame());
+  await expect(page.getByTestId('status')).toHaveText('Restoring your saved custom game…');
+  await expect(page.getByTestId('game-line')).toHaveText('Chess · Hot-seat');
+  release();
+  await expect(page.getByTestId('game-line')).toHaveText('Custom (based on Chess) · Hot-seat', { timeout: 20000 });
+  await expect(page.getByTestId('board')).toHaveAttribute('data-fen', CUSTOM_SETUP.fen);
+  await expect(page.getByTestId('status')).toHaveText('White to move');
+});
+
+for (const cover of ['editor', 'settings'] as const) {
+  test(`a saved custom game restored while the ${cover} is open stays paused until the next move once it closes`, async ({ page, context }) => {
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await context.route(/stockfish/, async (route) => {
+      await held;
+      await route.continue();
+    });
+    await openWithSavedGame(page, {
+      ...savedCustomGame(),
+      clockConfig: { baseMs: 300000, incrementMs: 0 },
+      clock: { whiteMs: 200000, blackMs: 200000, running: null, since: null },
+    });
+    await expect(page.getByTestId('status')).toHaveText('Restoring your saved custom game…');
+    // The fresh game shown meanwhile has a running (untimed) clock, which the cover pauses.
+    if (cover === 'editor') await page.getByTestId('top-editor').click();
+    else await page.getByTestId('settings').click();
+    release();
+    await expect(page.getByTestId('game-line')).toHaveText('Custom (based on Chess) · Hot-seat', { timeout: 20000 });
+    if (cover === 'editor') await page.getByTestId('editor-close').click();
+    else await page.getByTestId('settings-dialog').getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByTestId('game')).toBeVisible();
+    await expect(page.getByTestId('status')).toHaveText('White to move · clocks paused until the next move');
+    expect(await clockSeconds(page, 'white')).toBe(200);
+    await page.waitForTimeout(1500);
+    expect(await clockSeconds(page, 'white')).toBe(200);
+  });
+}
+
+test('Settings → "Edit current game" is disabled, like the Edit button, until a saved custom game is restored', async ({ page, context }) => {
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await context.route(/stockfish/, async (route) => {
+    await held;
+    await route.continue();
+  });
+  await openWithSavedGame(page, savedCustomGame());
+  await expect(page.getByTestId('status')).toHaveText('Restoring your saved custom game…');
+  await expect(page.getByTestId('edit')).toBeDisabled();
+  await page.getByTestId('settings').click();
+  await expect(page.getByTestId('settings-edit-game')).toBeDisabled();
+  release();
+  await expect(page.getByTestId('settings-edit-game')).toBeEnabled({ timeout: 20000 });
+  await page.getByTestId('settings-edit-game').click();
+  await expect(page.getByTestId('editor')).toBeVisible();
+  await expect(page.getByTestId('editor-board')).toHaveAttribute('data-fen', CUSTOM_SETUP.fen);
+});
+
+test("a page restored from the back/forward cache with the editor open keeps the AI's clock paused until the editor closes", async ({ page, context }) => {
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await context.route(/stockfish/, async (route) => {
+    await held;
+    await route.continue();
+  });
+  await openWithSavedGame(page, {
+    ...savedGameAfterE4(),
+    opponent: { kind: 'ai', level: 'beginner', aiColor: 'black' },
+    clockConfig: { baseMs: 300000, incrementMs: 0 },
+    clock: { whiteMs: 200000, blackMs: 200000, running: null, since: null },
+  });
+  await expect(page.getByTestId('status')).toHaveText('AI is thinking… (engine loading)');
+  await page.getByTestId('top-editor').click();
+  await expect(page.getByTestId('editor')).toBeVisible();
+  await page.evaluate(() => {
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+  });
+  const running = () => page.evaluate(() => JSON.parse(localStorage.getItem('chess.game') ?? 'null')?.data?.clock?.running ?? null);
+  expect(await running()).toBeNull();
+  await page.getByTestId('editor-close').click();
+  await expect(page.getByTestId('status')).toHaveText('AI is thinking… (engine loading)');
+  expect(await running()).toBe('black');
+  release();
+});
+
+test('a saved custom game whose setup no longer validates is treated as corrupt', async ({ page }) => {
+  await openWithSavedGame(page, { ...savedCustomGame(), setup: { ...CUSTOM_SETUP, files: 13 } });
+  await expect(page.getByTestId('storage-banner')).toContainText(/couldn't be read/);
+  await expect(page.getByTestId('game-line')).toHaveText('Chess · Hot-seat');
+  await expect(plies(page)).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('chess.game.corrupt'))).toContain('"files":13');
+});
+
+test('a saved custom game whose name does not match its setup is treated as corrupt', async ({ page }) => {
+  await openWithSavedGame(page, { ...savedCustomGame(), variant: 'cx_00000000' });
+  await expect(page.getByTestId('storage-banner')).toContainText(/couldn't be read/);
+  await expect(page.getByTestId('game-line')).toHaveText('Chess · Hot-seat');
+});
+
+test('a saved custom game is kept, not called corrupt, while the engine that must check it is unavailable', async ({ page, context }) => {
+  await context.route(/stockfish/, (route) => route.fulfill({ status: 404, body: 'not found' }));
+  const saved = savedCustomGame();
+  await openWithSavedGame(page, saved);
+  await expect(page.getByTestId('storage-banner')).toContainText('This saved custom game needs the AI engine to load', { timeout: 25000 });
+  await expect(page.getByTestId('storage-banner')).not.toContainText(/couldn't be read/);
+  await expect(page.getByTestId('game-line')).toHaveText('Chess · Hot-seat');
+  expect(await page.evaluate(() => localStorage.getItem('chess.game.corrupt'))).toBeNull();
+  expect(JSON.parse((await page.evaluate(() => localStorage.getItem('chess.game')))!).data).toEqual(saved);
 });
 
 test('a refused save shows the "progress won\'t be saved" banner', async ({ page }) => {

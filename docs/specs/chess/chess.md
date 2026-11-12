@@ -19,11 +19,16 @@ A static, browser-only chess site hosted on GitHub Pages. It covers standard che
   - Against the AI: takes back the AI's reply and the player's move. If the AI is still searching, its search is stopped and its result thrown away.
   - Undo reaches back to the start of the game or to the most recent edit, whichever is later.
   - Clock times are restored from the snapshot saved at the target ply.
-- **Edit current game:** available at any time from Settings. Clocks pause and the editor opens on the current position.
+- **Edit current game:** available at any time from the panel's Edit button and from Settings, a finished game included (checkmate, stalemate, a draw or a flag), except while a saved custom game is still being restored (it is not on the board yet).
+  - *Reason (owner decision, 2026-11-12):* a finished game is a position like any other; editing it is how a player tries a line again or plays on after a flag. Clocks pause, any AI search in flight is stopped (its late move is dropped), and the editor opens on the current position.
   - The variant's rules are kept, and its extra state stays editable (Seirawan's pieces in hand and gating rights, castling rights).
+  - The editor starts from the game's own castling and gating rights, never rebuilt from where the pieces stand: a right already lost (a king or rook that moved and came back) starts unticked. Each right has its own box (see the editor spec), so the player can take one away or tick a lost one back while its king and rook are on their start squares. The en-passant square is kept while the position is unchanged.
+    - *Reason (owner decision, 2026-11-12):* resetting rights silently changes the game; explicit boxes leave the choice to the player.
   - An edit outside what the variant allows (a different board size, or a piece the variant doesn't have) turns the game into "Custom (based on X)". Its rules are inherited from X, overriding only the board size and the piece set.
   - "Resume" is blocked while the position is illegal for the rules in force.
-  - Resuming starts a new move history.
+  - A timed game's clock times are editable: one m:ss (or h:mm:ss) box per side, filled with the paused times. Each must be 0:01 to 9:59:59; an empty or unreadable time, or a side at 0:00 ("White has no time left — set its clock above 0:00."), blocks Resume with the reason. A side that lost on time is never given time automatically: the player sets it.
+    - *Reason (owner decision, 2026-11-12):* a side left at 0:00 would lose again the moment the game resumed, and only the player knows what time it should have.
+  - Resuming starts a new game: a new move history and no result, with the same opponent and clock settings, and the clock times entered (exactly as paused when left unchanged). The clock runs again only if it was running when the editor opened, or when it is then the AI's turn (the AI moves, on its own time); a game paused until the next move, such as a restored one or a finished one, stays paused. Cancel returns to the game unchanged.
 - **Clocks:**
   - Presets: None, 1+0, 3+2, 5+0, 10+5, 15+10, and Custom (base minutes plus increment seconds).
   - Running out of time loses, except that it's a draw when the opponent's material can't deliver mate.

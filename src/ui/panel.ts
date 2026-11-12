@@ -1,14 +1,19 @@
 // The right panel (layout A): Black clock, move list, White clock, Undo / Edit / Settings, the status line
 // and the variant-and-opponent line. It renders what app.ts tells it; it holds no game state.
 import type { Color } from '../rules/types';
+import type { ActiveVariant } from '../variants/active';
 
 export interface PanelState {
-  /** e.g. "Grand Chess · AI: Expert". */
-  gameLine: string;
+  /** The game's variant; its label starts the game line, e.g. "Grand Chess · AI: Expert". */
+  variant: ActiveVariant;
+  /** The rest of the game line, e.g. "AI: Expert" or "Hot-seat". */
+  opponent: string;
   /** SAN of every ply, in order. */
   sans: string[];
   clocksVisible: boolean;
   canUndo: boolean;
+  /** Edit is off only while a saved custom game is still being restored: the board isn't that game yet. */
+  canEdit: boolean;
   /** "White to move", "AI is thinking…", or the result. */
   status: string;
   /** Show the Retry button: the AI's last attempt failed but the engine still runs. */
@@ -18,6 +23,7 @@ export interface PanelState {
 
 export interface PanelHandlers {
   undo(): void;
+  edit(): void;
   settings(): void;
   retry(): void;
 }
@@ -82,9 +88,7 @@ export function createPanel(host: HTMLElement, handlers: PanelHandlers): Panel {
     return b;
   };
   const undo = button('undo', 'Undo', handlers.undo);
-  const edit = button('edit', 'Edit');
-  edit.disabled = true;
-  edit.title = 'Editing the current game is coming soon';
+  const edit = button('edit', 'Edit', handlers.edit);
   button('settings', 'Settings', handlers.settings);
 
   const gameLine = document.createElement('div');
@@ -99,11 +103,12 @@ export function createPanel(host: HTMLElement, handlers: PanelHandlers): Panel {
 
   return {
     render(s) {
-      gameLine.textContent = s.gameLine;
+      gameLine.textContent = `${s.variant.label} · ${s.opponent}`;
       status.textContent = s.status;
       retry.hidden = !s.retry;
       status.classList.toggle('over', s.over);
       undo.disabled = !s.canUndo;
+      edit.disabled = !s.canEdit;
       blackClock.hidden = !s.clocksVisible;
       whiteClock.hidden = !s.clocksVisible;
       // Rebuild the list only when it changed, so scrolling isn't reset every render.

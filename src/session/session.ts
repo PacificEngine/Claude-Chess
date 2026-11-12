@@ -1,6 +1,7 @@
 // One game: moves, per-ply snapshots, undo, clock, result and engine request ids. Pure: no DOM or UI imports.
 import { AI_LEVELS, type AiLevelId } from '../engine/levels';
 import type { Color, GameResult, Rules, RulesGame } from '../rules/types';
+import { isSetupSpec, type SetupSpec } from '../variants/setup';
 import { type ClockConfig, type ClockState, flagged, pause, press, resume, startClock } from './clock';
 
 export type Opponent = { kind: 'hotseat' } | { kind: 'ai'; level: AiLevelId; aiColor: Color };
@@ -11,10 +12,14 @@ export interface Snapshot {
   clock: ClockState;
 }
 
-/** Plain, JSON-safe description of a session. snapshots[i] is the state before moves[i]. */
+/**
+ * Plain, JSON-safe description of a session. snapshots[i] is the state before moves[i].
+ * A custom game keeps the editor setup its variant was generated from, never the variants.ini text: stored
+ * text must not reach the engine, so the app regenerates the definition from the setup and checks it.
+ */
 export interface SessionState {
   variant: string;
-  ini?: string;
+  setup?: SetupSpec;
   startFen: string;
   moves: string[];
   snapshots: Snapshot[];
@@ -59,7 +64,9 @@ export function isSessionState(d: unknown): d is SessionState {
     (isRecord(result) && (result.winner === null || isColor(result.winner)) && RESULT_REASONS.includes(result.reason as string));
   return (
     typeof d.variant === 'string' &&
-    (d.ini === undefined || typeof d.ini === 'string') &&
+    // Plan 1 games could carry an ini; a stored one is refused rather than trusted.
+    !('ini' in d) &&
+    (d.setup === undefined || isSetupSpec(d.setup)) &&
     typeof d.startFen === 'string' &&
     Array.isArray(moves) &&
     moves.every((m) => typeof m === 'string') &&
@@ -78,39 +85,39 @@ const other = (c: Color): Color => (c === 'white' ? 'black' : 'white');
 // Every ffish FEN carries the side to move as its second field.
 const turnOfFen = (fen: string): Color => (fen.split(' ')[1] === 'b' ? 'black' : 'white');
 
-// ffish cannot redefine a variant name, so a custom ini is only loaded when its variant is not known yet.
-function ensureVariant(rules: Rules, variant: string, ini: string | undefined): void {
-  if (ini === undefined) return;
-  try {
-    rules.newGame(variant).dispose();
-  } catch {
-    rules.loadConfig(ini);
-  }
-}
-
 export class GameSession {
   private constructor(
     private game: RulesGame,
     private s: SessionState,
   ) {}
 
+  /**
+   * A custom variant must already be registered (registerSetup): the session never loads one itself.
+   * `clock`, when given, carries over times from an edited game: it starts from them, paused until the next move.
+   */
   static create(
     rules: Rules,
-    init: { variant: string; ini?: string; fen?: string; opponent: Opponent; clockConfig: ClockConfig },
+    init: {
+      variant: string;
+      setup?: SetupSpec;
+      fen?: string;
+      opponent: Opponent;
+      clockConfig: ClockConfig;
+      clock?: ClockState;
+    },
     now: number,
   ): GameSession {
-    ensureVariant(rules, init.variant, init.ini);
     const game = rules.newGame(init.variant, init.fen);
     const state: SessionState = {
       variant: init.variant,
-      ...(init.ini !== undefined && { ini: init.ini }),
+      ...(init.setup !== undefined && { setup: structuredClone(init.setup) }),
       startFen: game.fen(),
       moves: [],
       snapshots: [],
       opponent: structuredClone(init.opponent),
       clockConfig: init.clockConfig && { ...init.clockConfig },
       // Standard clocks: the side to move's time runs from the moment the game is created.
-      clock: startClock(init.clockConfig, game.turn(), now),
+      clock: init.clock ? pause(init.clock, now) : startClock(init.clockConfig, game.turn(), now),
       result: game.result(),
       engineRequestId: 1,
     };
@@ -122,10 +129,10 @@ export class GameSession {
   /**
    * Rebuilds the game by replaying the saved moves from the saved start position. Throws if a move is
    * illegal or a snapshot's FEN is not the position before its move: the move list derives SAN from them.
+   * As with create, a custom variant must already be registered.
    */
   static restore(rules: Rules, saved: SessionState): GameSession {
     const s = structuredClone(saved);
-    ensureVariant(rules, s.variant, s.ini);
     const game = rules.newGame(s.variant, s.startFen);
     try {
       s.moves.forEach((uci, i) => {

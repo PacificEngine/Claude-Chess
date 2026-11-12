@@ -5,11 +5,11 @@ import type { Api } from 'chessgroundx/api';
 import type { Config } from 'chessgroundx/config';
 import type * as cg from 'chessgroundx/types';
 import type { Color } from '../rules/types';
-import type { VariantInfo } from '../variants/catalog';
-import { artUrl, parsePieceClass, tokenClass } from './pieces';
+import { type ActiveVariant, artTypeOf } from '../variants/active';
+import { artUrl, parsePieceClass, pocketRoles, tokenClass } from './pieces';
 
 export interface BoardPosition {
-  variant: VariantInfo;
+  variant: ActiveVariant;
   fen: string;
   turn: Color;
   orientation: Color;
@@ -43,21 +43,18 @@ export function parseUci(uci: string): { from: string; to: string; suffix: strin
   return m ? { from: `${m[1]}${m[2]}`, to: `${m[3]}${m[4]}`, suffix: m[5] } : null;
 }
 
-// Pieces held in hand, shown as pockets beside the board.
-const POCKET_ROLES: Partial<Record<string, cg.Role[]>> = {
-  seirawan: ['h-piece', 'e-piece'],
-};
-
 /**
  * Gives every piece element its art (an inline background image) or, when the variant has none for it, the
  * lettered-token markup. chessgroundx owns the elements and rewrites their class when a piece changes (a
  * promotion), so this reruns on class changes; the pockets are in the host too.
  */
-function observePieces(host: HTMLElement): void {
+export function observePieces(host: HTMLElement, variant: () => ActiveVariant | null): void {
   const style = (piece: HTMLElement): void => {
     const parsed = parsePieceClass(piece.className);
     if (!parsed) return;
-    const url = artUrl(parsed.letter, parsed.color, host.dataset.variant ?? '');
+    const v = variant();
+    if (!v) return;
+    const url = artUrl(parsed.letter, parsed.color, v.artBase, artTypeOf(v, parsed.letter));
     piece.style.backgroundImage = url ? `url("${import.meta.env.BASE_URL}${url}")` : '';
     const token = tokenClass(parsed.letter).split(' ');
     // Touch the class only when it must change: a class write is itself a mutation this observer would see.
@@ -79,7 +76,8 @@ function observePieces(host: HTMLElement): void {
 export function createBoardView(host: HTMLElement): BoardView {
   host.dataset.testid = 'board';
   host.classList.add('board-host');
-  observePieces(host);
+  let current: ActiveVariant | null = null;
+  observePieces(host, () => current);
   let api: Api | null = null;
   let builtFor: string | null = null;
   let moveListener: (from: string, to: string) => void = () => {};
@@ -87,7 +85,7 @@ export function createBoardView(host: HTMLElement): BoardView {
   function build(pos: BoardPosition): void {
     api?.destroy();
     host.replaceChildren();
-    const roles = POCKET_ROLES[pos.variant.id];
+    const roles = pocketRoles(pos.variant);
     const pocketTop = roles ? document.createElement('div') : undefined;
     const pocketBottom = roles ? document.createElement('div') : undefined;
     const wrap = document.createElement('div');
@@ -106,19 +104,20 @@ export function createBoardView(host: HTMLElement): BoardView {
       ...(roles && { pocketRoles: { white: roles, black: roles } }),
     };
     api = Chessground(wrap, config, pocketTop, pocketBottom);
-    builtFor = `${pos.variant.id}:${pos.orientation}`;
+    builtFor = `${pos.variant.engineName}:${pos.orientation}`;
   }
 
   return {
     show(pos) {
       host.style.setProperty('--files', String(pos.variant.files));
       host.style.setProperty('--ranks', String(pos.variant.ranks));
-      host.style.setProperty('--pocket-rows', POCKET_ROLES[pos.variant.id] ? '2' : '0');
-      host.dataset.variant = pos.variant.id;
+      host.style.setProperty('--pocket-rows', pocketRoles(pos.variant) ? '2' : '0');
+      current = pos.variant;
+      host.dataset.variant = pos.variant.engineName;
       host.dataset.files = String(pos.variant.files);
       host.dataset.ranks = String(pos.variant.ranks);
       host.dataset.orientation = pos.orientation;
-      if (builtFor !== `${pos.variant.id}:${pos.orientation}`) build(pos);
+      if (builtFor !== `${pos.variant.engineName}:${pos.orientation}`) build(pos);
       const board = api!;
       board.set({
         fen: pos.fen,

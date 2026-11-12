@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chess</title>
     <!-- Relative, so the site also works under a GitHub Pages repo subpath. -->
+    <!-- Read by coi-serviceworker: main.ts must know when the page is being reloaded, so it never starts the app in it. -->
+    <script>
+      window.coi = { doReload: () => { window.coiReloading = true; window.location.reload(); } };
+    </script>
     <script src="./coi-serviceworker.min.js"></script>
   </head>
   <body>

@@ -130,3 +130,11 @@ describe('a game', () => {
     expect(g.fen()).toBe(start);
   });
 });
+
+describe('knows', () => {
+  it('is true for built-in variants and false for names never defined', () => {
+    expect(rules.knows('chess')).toBe(true);
+    expect(rules.knows('spartan')).toBe(true);
+    expect(rules.knows('nosuchvariant')).toBe(false);
+  });
+});

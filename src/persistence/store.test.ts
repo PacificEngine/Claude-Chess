@@ -121,3 +121,13 @@ describe('settings', () => {
     expect(isSettings({})).toBe(false);
   });
 });
+
+describe('quarantine', () => {
+  it('quarantines a value found corrupt after loading, so the next load starts clean', () => {
+    mem.setItem('chess.game', '{"version":1,"data":{"moves":[]}}');
+    expect(store.load('chess.game', 1, {}, isState).problem).toBeNull();
+    store.quarantine('chess.game');
+    expect(mem.getItem('chess.game')).toBeNull();
+    expect(mem.getItem('chess.game.corrupt')).toBe('{"version":1,"data":{"moves":[]}}');
+  });
+});

@@ -1,6 +1,7 @@
-// The top bar: Play, Tutorial, Editor and Settings. Tutorial and Editor arrive in later plans, so they are disabled.
+// The top bar: Play, Tutorial, Editor and Settings. The tutorial arrives in a later plan, so it is disabled.
 export interface TopBarHandlers {
   play(): void;
+  editor(): void;
   settings(): void;
 }
 
@@ -25,7 +26,7 @@ export function createTopBar(host: HTMLElement, handlers: TopBarHandlers): void 
   };
   button('play', 'Play', handlers.play);
   button('tutorial', 'Tutorial');
-  button('editor', 'Editor');
+  button('editor', 'Editor', handlers.editor);
   button('settings', 'Settings', handlers.settings);
   bar.append(title, nav);
   host.append(bar);
