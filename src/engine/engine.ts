@@ -1,6 +1,9 @@
 // Engine adapter: talks UCI to Fairy-Stockfish running in a dedicated worker. No DOM or UI imports.
 import type { ClockConfig, ClockState } from '../session/clock';
-import type { FromEngine, ToEngine } from './engine-worker';
+import sfJsUrl from 'fairy-stockfish-nnue.wasm/stockfish.js?url';
+import sfWasmUrl from 'fairy-stockfish-nnue.wasm/stockfish.wasm?url';
+import sfPthreadUrl from 'fairy-stockfish-nnue.wasm/stockfish.worker.js?url';
+import type { FromEngine, ToEngine } from './engine-protocol';
 import { levelOptions, type AiLevelId } from './levels';
 import { goCommand, parseBestMove, searchTimeLimitMs } from './uci';
 
@@ -124,6 +127,9 @@ export function createEngine(): Engine {
     );
     try {
       worker = new Worker(new URL('./engine-worker.ts', import.meta.url));
+      // Absolute, because the worker would otherwise resolve them against its own location.
+      const abs = (url: string) => new URL(url, self.location.href).href;
+      send({ type: 'init', urls: { js: abs(sfJsUrl), wasm: abs(sfWasmUrl), pthread: abs(sfPthreadUrl) } });
     } catch (err) {
       fail(err);
       return;
