@@ -16,6 +16,7 @@ yarn ts          # type-check
 yarn test        # unit tests (Vitest)
 yarn playwright install chromium   # once
 yarn test:e2e    # builds with --mode test and runs Playwright against vite preview
+yarn test:e2e:dev  # checks the AI engine loads under `yarn dev` (unbundled workers)
 ```
 
 CI runs `yarn ts`, `yarn test` and `yarn build` only. e2e is not run in CI because the Playwright browsers are heavy.
