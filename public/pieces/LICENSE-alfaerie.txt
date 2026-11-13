@@ -1,0 +1,12 @@
+Alfaerie piece graphics
+
+Original set: David Howe (chessvariants.com), based on Eric Bentzen's Chess Alpha font.
+SVG version: H. G. Muller and Greg Strong.
+Copied from pychess-variants, static/images/pieces/alfaerie/.
+
+There is no named licence. The original Alfaerie pages state:
+
+  "You may download and use the Alfaerie graphics if you wish."
+
+https://www.chessvariants.com/graphics.dir/alfaerie/
+https://www.chessvariants.com/graphics.dir/alfaerieSVG/

@@ -40,7 +40,9 @@ A static, browser-only chess site hosted on GitHub Pages. It covers standard che
   - The board on the left.
   - A right panel with the Black clock, the move list, the White clock, the Undo, Edit and Settings buttons, and a line showing the variant and opponent.
   - A top bar with Play, Tutorial, Editor and Settings.
-- **Piece art:** one consistent piece set. Any piece without art is drawn as a lettered token.
+- **Piece art:** Merida for the standard pieces and the Capablanca, Grand, Seirawan and Shako pieces; Spartan's own set for its black pieces; Alfaerie for every other built-in piece type, matched to the piece by its name; the shogi pieces as their Alfaerie piece on a shogi tile, Black's tile pointing down; Black's Alfaerie pieces recolored from pychess-variants' blue to Merida's near-black body with light inner lines, so every Black piece matches (owner decisions, 2026-11-13). Only a letter with no known type (designed pieces, until Plan 3 decides) is drawn as a lettered token.
+  - *Trap:* Alfaerie has no formal licence, only David Howe's "you may download and use" permission; see ATTRIBUTION.md. The owner chose to rely on it.
+  - *Trap:* chessgroundx draws pieces as CSS background images, and an SVG used as an image can't load other files, so each shogi tile embeds its piece (`yarn art:pieces` rebuilds them).
 
 ### Must Not Do
 - No backend, accounts, networking, or analytics.
@@ -115,7 +117,6 @@ User text is always rendered as text, never as HTML. Stored data is validated be
 
 ## Open Questions
 - **Elo calibration for fairy variants.** `UCI_Elo` is calibrated for standard chess, so fairy levels are only "relative." Not blocking.
-- **Piece set.** Which open-source fairy piece set to use, depending on its license. Not blocking (lettered tokens are the fallback).
 
 ## Feature Breakdown
 - Game session, undo, clocks, persistence: covered in this spec.

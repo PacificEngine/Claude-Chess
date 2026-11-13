@@ -28,18 +28,14 @@ test('standard pieces show art and no token', async ({ page }) => {
   expect(await letter(page, 'piece.p-piece.white')).toBe('none');
 });
 
-test('a fairy piece with art shows it, and a piece without art shows its letter on a token', async ({ page }) => {
+test('fairy pieces show their art, the Amazon included, with no lettered token', async ({ page }) => {
   await openApp(page);
   await load(page, 'capablanca', 'rnabqkbcnr/pppppppppp/10/10/10/10/PPPPPPPPPP/RNABQKBCNR w KQkq - 0 1');
   expect(await bg(page, 'piece.a-piece.white')).toContain('pieces/merida/wA.svg');
   await load(page, 'amazon', 'rnbakbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBAKBNR w KQkq - 0 1');
-  expect(await bg(page, 'piece.a-piece.white')).toBe('none');
-  expect(await letter(page, 'piece.a-piece.white')).toBe('"A"');
-  expect(await letter(page, 'piece.a-piece.black')).toBe('"A"');
-  const colors = await page.locator('piece.a-piece').evaluateAll(els =>
-    els.map(el => [getComputedStyle(el, '::after').color, getComputedStyle(el, '::after').backgroundColor]),
-  );
-  for (const [fg, back] of colors) expect(fg).not.toBe(back);
+  expect(await bg(page, 'piece.a-piece.white')).toContain('pieces/alfaerie/wamazon.svg');
+  expect(await bg(page, 'piece.a-piece.black')).toContain('pieces/alfaerie/bamazon.svg');
+  expect(await letter(page, 'piece.a-piece.white')).toBe('none');
 });
 
 test('the same letter is a different piece per variant, and Spartan has its own art', async ({ page }) => {

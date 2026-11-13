@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:dev": "playwright test -c playwright.dev.config.ts",
+    "art:pieces": "node scripts/recolor-alfaerie-black.mjs && node scripts/make-shogi-tiles.mjs",
     "ts": "tsc --noEmit"
   },
   "devDependencies": {

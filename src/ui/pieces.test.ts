@@ -33,7 +33,7 @@ describe('pieceLettersOf', () => {
 
 describe('piece art and lettered tokens', () => {
   // Pieces drawn as lettered tokens, by variant. Every other piece of every curated variant must have art.
-  const EXPECTED_TOKENS: Record<string, string[]> = { amazon: ['a'] };
+  const EXPECTED_TOKENS: Record<string, string[]> = {};
 
   /** Each piece in the start position (board and pockets) with its side: uppercase is White. */
   const piecesOf = (id: string): { letter: string; color: 'white' | 'black' }[] => {
@@ -60,7 +60,7 @@ describe('piece art and lettered tokens', () => {
 
   it('draws the same letter as different pieces in different variants', () => {
     expect(hasArt('a', 'capablanca')).toBe(true);
-    expect(hasArt('a', 'amazon')).toBe(false); // no suitable art for the Amazon: lettered token
+    expect(artUrl('a', 'white', 'amazon')).toBe('pieces/alfaerie/wamazon.svg');
     expect(artUrl('c', 'white', 'shako')).not.toBe(artUrl('c', 'white', 'capablanca'));
   });
 
@@ -90,7 +90,7 @@ describe('piece art and lettered tokens', () => {
   it("draws a custom variant's own letter with the art of the piece type it moves as", () => {
     expect(artUrl('a', 'white', 'chess', 'archbishop')).toBe('pieces/merida/wA.svg');
     expect(artUrl('z', 'black', 'chess', 'cannon')).toBe('pieces/merida/shako/bC.svg');
-    expect(artUrl('z', 'white', 'chess', 'amazon')).toBeNull(); // no art for the type: a token
+    expect(artUrl('z', 'white', 'chess', 'amazon')).toBe('pieces/alfaerie/wamazon.svg');
     expect(artUrl('z', 'white', 'chess')).toBeNull();
   });
 
@@ -103,16 +103,54 @@ describe('piece art and lettered tokens', () => {
   it("falls back to the base variant's art when the type has none", () =>
     expect(artUrl('h', 'black', 'spartan', 'inherited')).toBe('pieces/spartan/bP.svg'));
 
-  it('gives a type the art a curated variant gives a letter of that type, from a real file', () => {
+  it('gives every built-in piece type art for both sides, from a real file, so the palette has no lettered tokens', () => {
+    for (const p of BUILTIN_PIECES) {
+      const white = artUrl('z', 'white', 'chess', p.type);
+      const black = artUrl('z', 'black', 'chess', p.type);
+      expect(white, p.type).not.toBeNull();
+      expect(black, p.type).not.toBeNull();
+      expect(white, p.type).not.toBe(black);
+      for (const url of [white!, black!]) expect(existsSync(resolve('public', url)), `${p.type}: ${url}`).toBe(true);
+    }
+  });
+
+  it('gives a type the art a curated variant gives a letter of that type, so a palette piece matches the game', () => {
     const curated = CURATED_VARIANTS.flatMap((v) =>
       [...typesOfVariant(rules, v.engineName)].map(([letter, type]) => ({ type, url: artUrl(letter, 'white', v.id) })),
     );
+    // Antichess's and Spartan's king moves as a commoner but keeps the king's art there; in the palette the
+    // commoner is its own piece beside the king, so it needs its own look.
+    const OWN_LOOK = ['commoner'];
+    for (const p of BUILTIN_PIECES.filter((p) => !OWN_LOOK.includes(p.type))) {
+      // Spartan's own pieces have art for Black only, so White's side of them has nothing to match.
+      const uses = curated.filter((c) => c.type === p.type && c.url !== null);
+      if (uses.length === 0) continue;
+      expect(uses.map((c) => c.url), p.type).toContain(artUrl('z', 'white', 'chess', p.type));
+    }
+  });
+
+  it("draws Black's Alfaerie and shogi pieces in Merida's dark colour, not pychess-variants' blue", () => {
     for (const p of BUILTIN_PIECES) {
+      const url = artUrl('z', 'black', 'chess', p.type)!;
+      if (!/alfaerie|shogi-tile/.test(url)) continue;
+      const svg = readFileSync(resolve('public', url), 'utf8');
+      expect(svg, url).not.toMatch(/#5984bd/i);
+      expect(svg, url).toContain('#1f1a17');
+    }
+  });
+
+  it('gives the three elephants different art, so they can be told apart in the palette', () => {
+    const urls = ['alfil', 'elephant', 'janggiElephant'].map((t) => artUrl('z', 'white', 'chess', t));
+    expect(new Set(urls).size).toBe(3);
+  });
+
+  it('draws the shogi pieces on a shogi tile, each a self-contained SVG with nothing loaded from elsewhere', () => {
+    for (const type of ['shogiPawn', 'shogiKnight', 'lance', 'silver', 'gold', 'dragonHorse']) {
       for (const color of ['white', 'black'] as const) {
-        const url = artUrl('z', color, 'chess', p.type);
-        if (url === null) continue;
-        expect(existsSync(resolve('public', url)), `${p.type}: ${url}`).toBe(true);
-        if (color === 'white') expect(curated.some((c) => c.type === p.type && c.url === url), p.type).toBe(true);
+        const url = artUrl('z', color, 'chess', type)!;
+        expect(url, type).toMatch(/^pieces\/shogi-tile\//);
+        const svg = readFileSync(resolve('public', url), 'utf8');
+        expect(svg, url).not.toMatch(/<image|<script|href="(?!#)|xlink:href="(?!#)| on[a-z]+=/i);
       }
     }
   });
@@ -134,9 +172,9 @@ describe('piece art and lettered tokens', () => {
       expect(drawn(spartan, 'h', 'black')).toBe('pieces/spartan/bP.svg');
     });
 
-    it('draws a re-typed letter whose new type has no art as a lettered token, not as the base piece', () => {
+    it('draws a re-typed letter as its new type, not as the base piece', () => {
       const v = custom({ base: 'chess', pieces: { k: 'king', q: 'amazon' }, fen: '4k3/8/8/8/8/8/8/Q3K3 w - - 0 1' });
-      expect(drawn(v, 'q')).toBeNull(); // an amazon, not the queen art
+      expect(drawn(v, 'q')).toBe('pieces/alfaerie/wamazon.svg'); // an amazon, not the queen art
       expect(drawn(v, 'k')).toBe('pieces/merida/wK.svg');
     });
 

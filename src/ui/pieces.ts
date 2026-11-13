@@ -19,6 +19,8 @@ interface ArtRule {
 }
 
 const MERIDA: ArtRule = { dir: 'merida', colors: 'both' };
+const ALFAERIE: ArtRule = { dir: 'alfaerie', colors: 'both' };
+const SHOGI_TILE: ArtRule = { dir: 'shogi-tile', colors: 'both' };
 const STANDARD = 'pnbrqk';
 
 // Art per variant and piece letter. A letter that is missing is drawn as a lettered token.
@@ -36,7 +38,7 @@ const ART: Record<string, Record<string, ArtRule>> = {
     c: { dir: 'spartan', colors: 'black', files: { c: 'Captain' } },
     h: { dir: 'spartan', colors: 'black', files: { h: 'P' } }, // the hoplite
   },
-  // No suitable art for the Amazon (queen + knight): it is a lettered token.
+  amazon: { a: { ...ALFAERIE, files: { a: 'amazon' } } },
 };
 
 // Art by built-in piece type, for a custom variant's letters. Each entry is
@@ -52,6 +54,34 @@ const TYPE_ART: Record<string, { rule: ArtRule; file: string }> = {
   chancellor: { rule: MERIDA, file: 'C' }, // Capablanca's
   cannon: { rule: { dir: 'merida/shako', colors: 'both' }, file: 'C' }, // Shako's
   fersAlfil: { rule: { dir: 'merida/shako', colors: 'both' }, file: 'E' }, // Shako's elephant
+  // Alfaerie art (see ATTRIBUTION.md), matched to each piece by its name.
+  fers: { rule: ALFAERIE, file: 'ferz' },
+  wazir: { rule: ALFAERIE, file: 'wazir' },
+  alfil: { rule: ALFAERIE, file: 'elephant' },
+  elephant: { rule: ALFAERIE, file: 'elephantwazir' }, // xiangqi's; the three elephants differ on purpose
+  janggiElephant: { rule: ALFAERIE, file: 'elephantrider' },
+  soldier: { rule: ALFAERIE, file: 'chinesepawn' },
+  horse: { rule: ALFAERIE, file: 'horse' },
+  janggiCannon: { rule: ALFAERIE, file: 'cannon' },
+  amazon: { rule: ALFAERIE, file: 'amazon' },
+  banner: { rule: ALFAERIE, file: 'banner' },
+  commoner: { rule: ALFAERIE, file: 'man' },
+  centaur: { rule: ALFAERIE, file: 'equesrex' },
+  aiwok: { rule: ALFAERIE, file: 'chancellorferz' },
+  bers: { rule: ALFAERIE, file: 'kingrook' },
+  knibis: { rule: ALFAERIE, file: 'cardinal1' },
+  biskni: { rule: ALFAERIE, file: 'cardinal2' },
+  kniroo: { rule: ALFAERIE, file: 'chancellor1' },
+  rookni: { rule: ALFAERIE, file: 'chancellor2' },
+  clobber: { rule: ALFAERIE, file: 'ox' },
+  breakthrough: { rule: ALFAERIE, file: 'berolinapawn' },
+  // Shogi pieces: the Alfaerie piece on a shogi tile, built by scripts/make-shogi-tiles.mjs.
+  shogiPawn: { rule: SHOGI_TILE, file: 'shogiPawn' },
+  shogiKnight: { rule: SHOGI_TILE, file: 'shogiKnight' },
+  lance: { rule: SHOGI_TILE, file: 'lance' },
+  silver: { rule: SHOGI_TILE, file: 'silver' },
+  gold: { rule: SHOGI_TILE, file: 'gold' },
+  dragonHorse: { rule: SHOGI_TILE, file: 'dragonHorse' },
 };
 
 function rule(letter: string, variant: string): ArtRule | null {
