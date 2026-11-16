@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { loadTestRules } from '../rules/test-rules';
 import type { Rules } from '../rules/types';
 import { CURATED_VARIANTS } from '../variants/catalog';
-import { artTypeOf, curatedActive, customActive } from '../variants/active';
+import { artTypeOf, curatedActive, customActive, designedArt } from '../variants/active';
 import { BUILTIN_PIECES, typesOfVariant } from '../variants/piece-types';
 import type { SetupSpec } from '../variants/setup';
 import { artUrl, hasArt, pieceClass, pieceLettersOf, pocketRoles, tokenClass } from './pieces';
@@ -85,6 +85,32 @@ describe('piece art and lettered tokens', () => {
   it('gives each piece its own class by letter and colour', () => {
     expect(pieceClass('n', 'white')).not.toBe(pieceClass('n', 'black'));
     expect(pieceClass('n', 'white')).not.toBe(pieceClass('b', 'white'));
+  });
+
+  it('draws a designed piece with the art the player chose, for each side', () =>
+    expect(artUrl('z', 'black', 'chess', undefined, 'alfaerie/amazon')).toBe('pieces/alfaerie/bamazon.svg'));
+
+  it('draws a designed piece with no art, or with art that no longer exists, as a lettered token', () => {
+    expect(artUrl('z', 'white', 'chess', undefined, null)).toBeNull();
+    expect(artUrl('z', 'white', 'chess', undefined, 'gone/x')).toBeNull();
+  });
+
+  it('never gives a designed letter the base or type art', () => {
+    expect(artUrl('q', 'white', 'chess', 'queen', null)).toBeNull();
+    expect(artUrl('q', 'white', 'chess', undefined, 'gone/x')).toBeNull();
+  });
+
+  it("reports a custom variant's designed art by letter, undefined for any other letter", () => {
+    const setup: SetupSpec = {
+      base: 'chess', files: 8, ranks: 8, pieces: { k: 'king' },
+      designed: { z: { id: 'p', betza: 'N', art: 'alfaerie/ox' }, y: { id: 'q', betza: 'N', art: null } },
+      fen: '7k/8/8/8/8/8/8/Z6K w - - 0 1', castling: false, promotion: { rank: 'last', pieceTypes: [] },
+    };
+    const v = customActive(setup, 'cx_t', new Map());
+    expect(designedArt(v, 'z')).toBe('alfaerie/ox');
+    expect(designedArt(v, 'y')).toBeNull();
+    expect(designedArt(v, 'k')).toBeUndefined();
+    expect(designedArt(curatedActive('chess', rules), 'z')).toBeUndefined();
   });
 
   it("draws a custom variant's own letter with the art of the piece type it moves as", () => {

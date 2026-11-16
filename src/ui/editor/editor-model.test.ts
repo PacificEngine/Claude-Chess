@@ -275,3 +275,76 @@ describe('EditorModel', () => {
     expect(m.toSpec()).toEqual(s);
   });
 });
+
+describe('EditorModel with designed pieces', () => {
+  const piece = (id: string, letter: string, betza = 'NN', art: string | null = 'alfaerie/ox') => ({ id, letter, betza, art });
+
+  it("copies a designed piece into the setup's designed pieces under its preferred letter", () => {
+    const m = EditorModel.fromBase('chess', bases);
+    const z = m.letterForDesigned(piece('nightrider', 'z'));
+    expect(z).toBe('z');
+    m.place('d4', z!, 'white');
+    const spec = m.toSpec();
+    expect(spec.designed).toEqual({ z: { id: 'nightrider', betza: 'NN', art: 'alfaerie/ox' } });
+    expect(spec.pieces.z).toBeUndefined();
+    // Designed pieces are never royal, so pawns may promote to them.
+    expect(spec.promotion.pieceTypes).toContain('z');
+    const { name, ini } = generateVariant(spec, bases('chess').types);
+    rules.loadConfig(ini);
+    expect(rules.validateFen(name, spec.fen)).toBe(true);
+  });
+
+  it('reuses the letter of a piece already in the setup, and gives another the first free letter', () => {
+    const m = EditorModel.fromBase('chess', bases);
+    m.place('d4', m.letterForDesigned(piece('one', 'z'))!, 'white');
+    expect(m.letterForDesigned(piece('one', 'z'))).toBe('z');
+    // 'z' is taken and 'n' is the base's knight: never re-mapped.
+    m.place('d5', m.letterForDesigned(piece('two', 'z'))!, 'white');
+    expect(m.toSpec().designed!.a!.id).toBe('two');
+    expect(m.letterForDesigned(piece('three', 'n'))).toBe('c');
+    // The same library piece changed since it was placed is another piece: the setup's copy stays as it was.
+    expect(m.letterForDesigned(piece('one', 'z', 'WW'))).toBe('c');
+    expect(m.toSpec().designed!.z!.betza).toBe('NN');
+  });
+
+  it('keeps designed letters away from built-in types it adds later, and frees them once unused', () => {
+    const m = EditorModel.fromBase('chess', bases);
+    m.place('d4', m.letterForDesigned(piece('arch', 'a'))!, 'white');
+    expect(m.letterFor('archbishop')).toBe('c');
+    m.remove('d4');
+    expect(m.toSpec().designed).toBeUndefined();
+    expect(m.letterFor('amazon')).toBe('a');
+  });
+
+  it('runs out of letters with the same rule as built-in types', () => {
+    const m = EditorModel.fromBase('chess', bases);
+    const squares = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].flatMap((f) => [3, 4, 5].map((r) => `${f}${r}`));
+    for (let i = 0; i < 20; i++) m.place(squares[i]!, m.letterForDesigned(piece(`p${i}`, 'z'))!, 'black');
+    expect(m.letterForDesigned(piece('p20', 'z'))).toBeNull();
+    expect(Object.keys(m.toSpec().designed!)).toHaveLength(20);
+  });
+
+  it("rewrites its copies of a piece updated everywhere, keeping their letters", () => {
+    const m = EditorModel.fromBase('chess', bases);
+    m.place('d4', m.letterForDesigned(piece('one', 'z'))!, 'white');
+    m.place('d5', m.letterForDesigned(piece('two', 'y', 'W', null))!, 'black');
+    expect(m.usesPiece('one')).toBe(true);
+    expect(m.usesPiece('three')).toBe(false);
+    expect(m.rewritePiece({ id: 'three', betza: 'F', art: null })).toBe(false);
+    expect(m.rewritePiece({ id: 'one', betza: 'NNF', art: 'merida/N' })).toBe(true);
+    expect(m.toSpec().designed).toEqual({ z: { id: 'one', betza: 'NNF', art: 'merida/N' }, y: { id: 'two', betza: 'W', art: null } });
+    // The updated library piece is the same piece as its copy now, so it is placed with the same letter.
+    expect(m.letterForDesigned(piece('one', 'q', 'NNF', 'merida/N'))).toBe('z');
+  });
+
+  it('edits a custom game with its designed pieces', () => {
+    const start = EditorModel.fromBase('chess', bases);
+    start.place('d4', start.letterForDesigned(piece('one', 'x'))!, 'white');
+    const s = start.toSpec();
+    const active = customActive(s, generateVariant(s).name, bases('chess').types);
+    const m = EditorModel.fromGame(active, s.fen, bases);
+    expect(m.toSpec()).toEqual(s);
+    m.setBase('chess');
+    expect(m.toSpec().designed).toBeUndefined();
+  });
+});

@@ -5,7 +5,7 @@ import type { Api } from 'chessgroundx/api';
 import type { Config } from 'chessgroundx/config';
 import type * as cg from 'chessgroundx/types';
 import type { Color } from '../rules/types';
-import { type ActiveVariant, artTypeOf } from '../variants/active';
+import { type ActiveVariant, artTypeOf, designedArt } from '../variants/active';
 import { artUrl, parsePieceClass, pocketRoles, tokenClass } from './pieces';
 
 export interface BoardPosition {
@@ -54,7 +54,7 @@ export function observePieces(host: HTMLElement, variant: () => ActiveVariant | 
     if (!parsed) return;
     const v = variant();
     if (!v) return;
-    const url = artUrl(parsed.letter, parsed.color, v.artBase, artTypeOf(v, parsed.letter));
+    const url = artUrl(parsed.letter, parsed.color, v.artBase, artTypeOf(v, parsed.letter), designedArt(v, parsed.letter));
     piece.style.backgroundImage = url ? `url("${import.meta.env.BASE_URL}${url}")` : '';
     const token = tokenClass(parsed.letter).split(' ');
     // Touch the class only when it must change: a class write is itself a mutation this observer would see.

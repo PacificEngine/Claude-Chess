@@ -1,9 +1,10 @@
 // Turns an editor setup into one Fairy-Stockfish variants.ini section. Pure: no ffish, DOM or UI imports.
 // Option names follow src/parser.cpp at upstream commit 84e305ff (2023-08-26), the engine ffish-es6@0.7.10
 // reports as "Fairy-Stockfish 230826".
+import { betzaProblem, UNSAFE_BETZA } from './betza';
 import { variantById } from './catalog';
 import { INHERITED, pieceTypeByName } from './piece-types';
-import { MAX_FILES, MAX_RANKS, MIN_FILES, MIN_RANKS, type SetupSpec } from './setup';
+import { type DesignedCopy, MAX_FILES, MAX_RANKS, MIN_FILES, MIN_RANKS, type SetupSpec } from './setup';
 
 /** What needsCustomVariant needs to know about the variant the setup started from. */
 export interface ActiveVariantShape {
@@ -18,6 +19,9 @@ export interface ActiveVariantShape {
 // Anything else (newline, '[', ']', '=', ';') could end the value or start another line or section.
 const SAFE_VALUE = /^[A-Za-z0-9_*~+ /-]*$/;
 const LETTER = /^[a-z]$/;
+/** The engine and ffish both read customPiece1 to customPiece25. */
+export const MAX_DESIGNED = 25;
+export const TOO_MANY_DESIGNED = `A setup can use at most ${MAX_DESIGNED} designed pieces.`;
 // A FEN is checked on its own: board placement, then at most one pocket of letters (`[HEhe]`, maybe empty),
 // then the space-separated fields. No newline, '=', ';' or any other '[' or ']' can get through.
 const SAFE_FEN = /^[A-Za-z0-9/~+*]+(?:\[[A-Za-z]*\])?(?: [A-Za-z0-9/~+*_ -]+)?$/;
@@ -60,6 +64,11 @@ export function generateVariant(spec: SetupSpec, baseTypes?: Map<string, string>
     pieceLines.push(`${safe(pieceTypeByName(type).type, 'piece type')} = ${letter}`);
   }
 
+  const designedLines = designedPieceLines(spec, baseTypes);
+  const designed = spec.designed ?? {};
+  // Every letter the engine is told about, built-in or designed, in one sorted list.
+  const allLetters = [...letters, ...Object.keys(designed)].sort();
+
   // The engine keeps a type on one letter only: a later line moves it, and the earlier letter is lost.
   const byType = new Map<string, string[]>();
   for (const letter of letters) {
@@ -72,7 +81,10 @@ export function generateVariant(spec: SetupSpec, baseTypes?: Map<string, string>
 
   const promotion = [...new Set(spec.promotion.pieceTypes)].sort();
   for (const letter of promotion) {
-    if (!LETTER.test(letter) || !(letter in spec.pieces)) throw new Error(`Promotion to a piece not in the setup: ${letter}`);
+    if (!LETTER.test(letter) || !(letter in spec.pieces || letter in designed)) {
+      throw new Error(`Promotion to a piece not in the setup: ${letter}`);
+    }
+    if (letter in designed) continue; // designed pieces are never royal and never pawns
     const type = spec.pieces[letter];
     if (type !== INHERITED && pieceTypeByName(type).royal) throw new Error(`Pawns cannot promote to a ${type}`);
     if (type === 'pawn') throw new Error('Pawns cannot promote to a pawn');
@@ -88,6 +100,7 @@ export function generateVariant(spec: SetupSpec, baseTypes?: Map<string, string>
     `maxFile = ${String.fromCharCode(96 + spec.files)}`,
     `maxRank = ${spec.ranks}`,
     ...pieceLines,
+    ...designedLines,
     `castling = ${spec.castling}`,
     // promotionRank is deprecated at this engine version; a region of '*<rank>' is the whole rank.
     `promotionRegionWhite = *${spec.ranks}`,
@@ -96,7 +109,7 @@ export function generateVariant(spec: SetupSpec, baseTypes?: Map<string, string>
     `promotionPieceTypes = ${promotion.join('') || '-'}`,
     // Every letter of the setup, so `check` never reports "Missing piece type". Only XBoard reads the
     // table's layout, and the app never talks to XBoard.
-    `pieceToCharTable = ${letters.join('').toUpperCase()}${letters.join('')}`,
+    `pieceToCharTable = ${allLetters.join('').toUpperCase()}${allLetters.join('')}`,
     `startFen = ${fen}`,
   ]
     .map((line) => `${line}\n`)
@@ -107,6 +120,31 @@ export function generateVariant(spec: SetupSpec, baseTypes?: Map<string, string>
   const parent = safe(base.engineName, 'base variant');
   const name = `cx_${fnv1a(`${parent}\n${body}`)}`;
   return { name, ini: `[${name}:${parent}]\n${body}` };
+}
+
+/**
+ * `customPiece<N> = <letter>:<betza>` for each designed letter in sorted order, N from 1. None at all when
+ * the setup has no designed pieces, so setups saved before they existed keep their bodies and names.
+ */
+function designedPieceLines(spec: SetupSpec, baseTypes: Map<string, string> | undefined): string[] {
+  const designed = spec.designed ?? {};
+  const letters = Object.keys(designed).sort();
+  if (letters.length > MAX_DESIGNED) throw new Error(TOO_MANY_DESIGNED);
+  return letters.map((letter, i) => {
+    if (!LETTER.test(letter)) throw new Error(`Piece letters must be one lowercase letter: ${JSON.stringify(letter)}`);
+    if (Object.hasOwn(spec.pieces, letter)) {
+      throw new Error(`The letter ${letter} is both a built-in piece and a designed piece in this setup`);
+    }
+    if (baseTypes?.has(letter)) throw new Error(`The letter ${letter} is already a piece of the base variant`);
+    const copy: unknown = designed[letter];
+    if (typeof copy !== 'object' || copy === null) throw new Error(`The designed piece on ${letter} is not a piece`);
+    const { id, betza, art } = copy as Partial<Record<keyof DesignedCopy, unknown>>;
+    if (typeof id !== 'string' || id === '') throw new Error(`The designed piece on ${letter} has no library id`);
+    if (art !== null && typeof art !== 'string') throw new Error(`The designed piece on ${letter} has invalid art`);
+    const problem = typeof betza === 'string' ? betzaProblem(betza) : UNSAFE_BETZA;
+    if (problem !== null) throw new Error(problem);
+    return `customPiece${i + 1} = ${letter}:${betza}`;
+  });
 }
 
 function checkBaseLetter(letter: string, type: string, baseTypes: Map<string, string> | undefined): void {
@@ -137,6 +175,7 @@ export function needsCustomVariant(spec: SetupSpec, base: ActiveVariantShape): b
   const basePromotion = [...baseLetters].filter((l) => l !== 'k' && !['king', 'pawn'].includes(typeOf(l) ?? '')).sort();
   const promotion = [...new Set(spec.promotion.pieceTypes)].sort();
   return (
+    Object.keys(spec.designed ?? {}).length > 0 ||
     spec.files !== base.files ||
     spec.ranks !== base.ranks ||
     letters.some((l) => !baseLetters.has(l)) ||

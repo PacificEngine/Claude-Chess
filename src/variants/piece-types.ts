@@ -12,48 +12,56 @@ export interface PieceType {
   letter: string;
   /** Only the king is royal. The commoner moves the same but can be captured like any piece. */
   royal: boolean;
+  /**
+   * The Betza the engine plays this type with, so a designed piece can combine with it. '' when Betza can't
+   * describe how the engine plays it: the pawn's double step, en passant and promotion are pawn rules in
+   * Fairy-Stockfish's code, so its "fmWfceF" alone would make a different piece.
+   */
+  betza: string;
 }
 
 // Taken from the PieceMap in Fairy-Stockfish src/piece.cpp at the bundled engine commit (b2e693ef), in the
 // same order. `immobile` (Betza "") is left out: it can never move, so it's not a playable piece.
+// The Betza strings come from piece.cpp at upstream 84e305ff (2023-08-26), the source of ffish's "230826"
+// build. The janggi elephant's is the "nZ" its moves are built from, not the "mafsmafW" it reports to XBoard.
 export const BUILTIN_PIECES: readonly PieceType[] = [
-  { type: 'pawn', name: 'Pawn', letter: 'p', royal: false },
-  { type: 'knight', name: 'Knight', letter: 'n', royal: false },
-  { type: 'bishop', name: 'Bishop', letter: 'b', royal: false },
-  { type: 'rook', name: 'Rook', letter: 'r', royal: false },
-  { type: 'queen', name: 'Queen', letter: 'q', royal: false },
-  { type: 'fers', name: 'Fers', letter: 'f', royal: false },
-  { type: 'alfil', name: 'Alfil', letter: 'e', royal: false },
-  { type: 'fersAlfil', name: 'Fers-Alfil', letter: 'e', royal: false },
-  { type: 'silver', name: 'Silver General', letter: 's', royal: false },
-  { type: 'aiwok', name: 'Aiwok', letter: 'a', royal: false },
-  { type: 'bers', name: 'Bers', letter: 'd', royal: false },
-  { type: 'archbishop', name: 'Archbishop', letter: 'a', royal: false },
-  { type: 'chancellor', name: 'Chancellor', letter: 'c', royal: false },
-  { type: 'amazon', name: 'Amazon', letter: 'a', royal: false },
-  { type: 'knibis', name: 'Knibis', letter: 'n', royal: false },
-  { type: 'biskni', name: 'Biskni', letter: 'b', royal: false },
-  { type: 'kniroo', name: 'Kniroo', letter: 'n', royal: false },
-  { type: 'rookni', name: 'Rookni', letter: 'r', royal: false },
-  { type: 'shogiPawn', name: 'Shogi Pawn', letter: 'p', royal: false },
-  { type: 'lance', name: 'Lance', letter: 'l', royal: false },
-  { type: 'shogiKnight', name: 'Shogi Knight', letter: 'n', royal: false },
-  { type: 'gold', name: 'Gold General', letter: 'g', royal: false },
-  { type: 'dragonHorse', name: 'Dragon Horse', letter: 'h', royal: false },
-  { type: 'clobber', name: 'Clobber Piece', letter: 'p', royal: false },
-  { type: 'breakthrough', name: 'Breakthrough Piece', letter: 'p', royal: false },
-  { type: 'cannon', name: 'Cannon', letter: 'c', royal: false },
-  { type: 'janggiCannon', name: 'Janggi Cannon', letter: 'c', royal: false },
-  { type: 'soldier', name: 'Soldier', letter: 'p', royal: false },
-  { type: 'horse', name: 'Horse', letter: 'n', royal: false },
-  { type: 'elephant', name: 'Elephant', letter: 'b', royal: false },
-  { type: 'janggiElephant', name: 'Janggi Elephant', letter: 'b', royal: false },
-  { type: 'banner', name: 'Banner', letter: 'm', royal: false },
-  { type: 'wazir', name: 'Wazir', letter: 'w', royal: false },
+  { type: 'pawn', name: 'Pawn', letter: 'p', royal: false, betza: '' },
+  { type: 'knight', name: 'Knight', letter: 'n', royal: false, betza: 'N' },
+  { type: 'bishop', name: 'Bishop', letter: 'b', royal: false, betza: 'B' },
+  { type: 'rook', name: 'Rook', letter: 'r', royal: false, betza: 'R' },
+  { type: 'queen', name: 'Queen', letter: 'q', royal: false, betza: 'Q' },
+  { type: 'fers', name: 'Fers', letter: 'f', royal: false, betza: 'F' },
+  { type: 'alfil', name: 'Alfil', letter: 'e', royal: false, betza: 'A' },
+  { type: 'fersAlfil', name: 'Fers-Alfil', letter: 'e', royal: false, betza: 'FA' },
+  { type: 'silver', name: 'Silver General', letter: 's', royal: false, betza: 'FfW' },
+  { type: 'aiwok', name: 'Aiwok', letter: 'a', royal: false, betza: 'RNF' },
+  { type: 'bers', name: 'Bers', letter: 'd', royal: false, betza: 'RF' },
+  { type: 'archbishop', name: 'Archbishop', letter: 'a', royal: false, betza: 'BN' },
+  { type: 'chancellor', name: 'Chancellor', letter: 'c', royal: false, betza: 'RN' },
+  { type: 'amazon', name: 'Amazon', letter: 'a', royal: false, betza: 'QN' },
+  { type: 'knibis', name: 'Knibis', letter: 'n', royal: false, betza: 'mNcB' },
+  { type: 'biskni', name: 'Biskni', letter: 'b', royal: false, betza: 'mBcN' },
+  { type: 'kniroo', name: 'Kniroo', letter: 'n', royal: false, betza: 'mNcR' },
+  { type: 'rookni', name: 'Rookni', letter: 'r', royal: false, betza: 'mRcN' },
+  { type: 'shogiPawn', name: 'Shogi Pawn', letter: 'p', royal: false, betza: 'fW' },
+  { type: 'lance', name: 'Lance', letter: 'l', royal: false, betza: 'fR' },
+  { type: 'shogiKnight', name: 'Shogi Knight', letter: 'n', royal: false, betza: 'fN' },
+  { type: 'gold', name: 'Gold General', letter: 'g', royal: false, betza: 'WfF' },
+  { type: 'dragonHorse', name: 'Dragon Horse', letter: 'h', royal: false, betza: 'BW' },
+  { type: 'clobber', name: 'Clobber Piece', letter: 'p', royal: false, betza: 'cW' },
+  { type: 'breakthrough', name: 'Breakthrough Piece', letter: 'p', royal: false, betza: 'fmWfF' },
+  { type: 'cannon', name: 'Cannon', letter: 'c', royal: false, betza: 'mRcpR' },
+  { type: 'janggiCannon', name: 'Janggi Cannon', letter: 'c', royal: false, betza: 'pR' },
+  { type: 'soldier', name: 'Soldier', letter: 'p', royal: false, betza: 'fsW' },
+  { type: 'horse', name: 'Horse', letter: 'n', royal: false, betza: 'nN' },
+  { type: 'elephant', name: 'Elephant', letter: 'b', royal: false, betza: 'nA' },
+  { type: 'janggiElephant', name: 'Janggi Elephant', letter: 'b', royal: false, betza: 'nZ' },
+  { type: 'banner', name: 'Banner', letter: 'm', royal: false, betza: 'RcpRnN' },
+  { type: 'wazir', name: 'Wazir', letter: 'w', royal: false, betza: 'W' },
   // 'k' would replace the king in a chess-based variant, so the commoner takes the 'm' ("man") FSF also uses.
-  { type: 'commoner', name: 'Commoner', letter: 'm', royal: false },
-  { type: 'centaur', name: 'Centaur', letter: 'c', royal: false },
-  { type: 'king', name: 'King', letter: 'k', royal: true },
+  { type: 'commoner', name: 'Commoner', letter: 'm', royal: false, betza: 'K' },
+  { type: 'centaur', name: 'Centaur', letter: 'c', royal: false, betza: 'KN' },
+  { type: 'king', name: 'King', letter: 'k', royal: true, betza: 'K' },
 ];
 
 export function pieceTypeByName(type: string): PieceType {

@@ -7,7 +7,7 @@ import { type VariantId } from '../../variants/catalog';
 import { buildFen, parseFen } from '../../variants/fen';
 import type { ActiveVariantShape } from '../../variants/generator';
 import { pieceTypeByName } from '../../variants/piece-types';
-import { MAX_FILES, MAX_RANKS, MIN_FILES, MIN_RANKS, type SetupSpec } from '../../variants/setup';
+import { type DesignedCopy, MAX_FILES, MAX_RANKS, MIN_FILES, MIN_RANKS, type SetupSpec } from '../../variants/setup';
 
 export const TOO_MANY_TYPES = 'Too many different piece types for one setup.';
 
@@ -54,6 +54,11 @@ export function editorBases(rules: Rules): BaseLookup {
   };
 }
 
+/** A library piece as the editor places it: its copy for the setup, and the letter it would like. */
+export interface PlaceableDesign extends DesignedCopy {
+  letter: string;
+}
+
 export interface EditorPiece {
   letter: string;
   color: Color;
@@ -76,6 +81,8 @@ export class EditorModel {
   private hand: Record<Color, Map<string, number>> = { white: new Map(), black: new Map() };
   /** Letters the base doesn't define, to the built-in type the setup gives them. */
   private added = new Map<string, string>();
+  /** Letters the base doesn't define, to the setup's copy of a designed piece. Disjoint from `added`. */
+  private designed = new Map<string, DesignedCopy>();
   /**
    * The castling (and gating) rights the player has ticked: the base's for a setup, the game's own when editing
    * one. The FEN gets those the pieces still allow, while castling is on.
@@ -110,6 +117,7 @@ export class EditorModel {
     for (const [letter, type] of Object.entries(active.setup?.pieces ?? {})) {
       if (!m.base.types.has(letter)) m.added.set(letter, type);
     }
+    for (const [letter, copy] of Object.entries(active.setup?.designed ?? {})) m.designed.set(letter, { ...copy });
     m.load(fen);
     // Rights the game has lost (a king or rook that moved and came back) start unticked, never rebuilt from the pieces.
     const [, , rights = '-', ep = '-'] = fen.split(' ');
@@ -125,6 +133,7 @@ export class EditorModel {
     this.ranks = this.base.ranks;
     this.castling = this.base.castling;
     this.added.clear();
+    this.designed.clear();
     this.ticked = new Set(this.baseRights());
     this.gameEp = null;
     this.load(this.base.startFen);
@@ -144,9 +153,25 @@ export class EditorModel {
     this.turn = fen.split(' ')[1] === 'b' ? 'black' : 'white';
   }
 
-  /** The built-in type a letter moves as, or 'inherited' for a base piece that matches none. */
+  /** The built-in type a letter moves as, or 'inherited' for a base piece that matches none. Undefined for a designed letter. */
   typeOf(letter: string): string | undefined {
     return this.base.types.get(letter) ?? this.added.get(letter);
+  }
+
+  /** Whether the setup has a piece for this letter: built-in, the base's own, or designed. */
+  private knows(letter: string): boolean {
+    return this.typeOf(letter) !== undefined || this.designed.has(letter);
+  }
+
+  /** Forgets letters the setup gave but no piece uses any more, so they are free again. */
+  private dropUnused(): void {
+    const used = this.usedLetters();
+    for (const letter of [...this.added.keys()]) if (!used.has(letter)) this.added.delete(letter);
+    for (const letter of [...this.designed.keys()]) if (!used.has(letter)) this.designed.delete(letter);
+  }
+
+  private free(letter: string): boolean {
+    return !this.base.types.has(letter) && !this.added.has(letter) && !this.designed.has(letter);
   }
 
   /**
@@ -156,20 +181,52 @@ export class EditorModel {
    */
   letterFor(type: string): string | null {
     for (const [letter, t] of this.base.types) if (t === type) return letter;
-    const used = this.usedLetters();
-    for (const [letter, t] of [...this.added]) {
-      if (!used.has(letter)) this.added.delete(letter);
-      else if (t === type) return letter;
-    }
-    const free = (l: string) => !this.base.types.has(l) && !this.added.has(l);
-    const letter = [pieceTypeByName(type).letter, ...LETTERS].find(free);
+    this.dropUnused();
+    for (const [letter, t] of this.added) if (t === type) return letter;
+    const letter = [pieceTypeByName(type).letter, ...LETTERS].find((l) => this.free(l));
     if (letter === undefined) return null;
     this.added.set(letter, type);
     return letter;
   }
 
+  /**
+   * The letter to place a designed piece with, copying it into the setup if needed: the letter of the same
+   * copy already in the setup, else its preferred letter if free, else the first free letter. A base letter
+   * is never given to it. A library piece changed since its copy was placed is another piece, with its own
+   * letter: the setup's copy is the source of truth. Null when every letter is taken (TOO_MANY_TYPES).
+   */
+  letterForDesigned(piece: PlaceableDesign): string | null {
+    this.dropUnused();
+    const same = (c: DesignedCopy) => c.id === piece.id && c.betza === piece.betza && c.art === piece.art;
+    for (const [letter, copy] of this.designed) if (same(copy)) return letter;
+    const letter = [piece.letter, ...LETTERS].find((l) => /^[a-z]$/.test(l) && this.free(l));
+    if (letter === undefined) return null;
+    this.designed.set(letter, { id: piece.id, betza: piece.betza, art: piece.art });
+    return letter;
+  }
+
+  /** Whether a piece on the board is a copy of the library piece `id`. */
+  usesPiece(id: string): boolean {
+    this.dropUnused();
+    return [...this.designed.values()].some((c) => c.id === id);
+  }
+
+  /**
+   * "Update everywhere": gives every copy of the library piece `piece.id` its new Betza and art, keeping its
+   * letter. False when the setup holds no copy of it.
+   */
+  rewritePiece(piece: DesignedCopy): boolean {
+    let found = false;
+    for (const [letter, copy] of this.designed) {
+      if (copy.id !== piece.id) continue;
+      this.designed.set(letter, { id: piece.id, betza: piece.betza, art: piece.art });
+      found = true;
+    }
+    return found;
+  }
+
   place(square: string, letter: string, color: Color): void {
-    if (this.typeOf(letter) === undefined) throw new Error(`No piece type for the letter ${letter}`);
+    if (!this.knows(letter)) throw new Error(`No piece type for the letter ${letter}`);
     this.checkSquare(square);
     this.board.set(square, { letter, color });
   }
@@ -191,7 +248,7 @@ export class EditorModel {
   replaceBoard(pieces: Iterable<[string, EditorPiece]>): void {
     const next = new Map<string, EditorPiece>();
     for (const [square, piece] of pieces) {
-      if (this.typeOf(piece.letter) === undefined) throw new Error(`No piece type for the letter ${piece.letter}`);
+      if (!this.knows(piece.letter)) throw new Error(`No piece type for the letter ${piece.letter}`);
       this.checkSquare(square);
       next.set(square, { ...piece });
     }
@@ -249,7 +306,7 @@ export class EditorModel {
 
   setPocket(color: Color, letter: string, count: number): void {
     if (!this.base.pockets) throw new Error('This base variant has no pieces in hand');
-    if (this.typeOf(letter) === undefined) throw new Error(`No piece type for the letter ${letter}`);
+    if (!this.knows(letter)) throw new Error(`No piece type for the letter ${letter}`);
     const n = Math.max(0, Math.floor(count));
     if (n) this.hand[color].set(letter, n);
     else this.hand[color].delete(letter);
@@ -271,6 +328,8 @@ export class EditorModel {
     const used = this.usedLetters();
     const pieces: Record<string, string> = Object.fromEntries(this.base.types);
     for (const [letter, type] of this.added) if (used.has(letter)) pieces[letter] = type;
+    const designed: Record<string, DesignedCopy> = {};
+    for (const [letter, copy] of this.designed) if (used.has(letter)) designed[letter] = { ...copy };
     // Custom setup default: promote to any non-king piece of the setup (never a royal type, nor a pawn). The
     // base's letters are always offered, so an unchanged piece set promotes as the base does.
     const promotion = Object.keys(pieces).filter((l) => {
@@ -279,11 +338,15 @@ export class EditorModel {
       if (l === 'k' || type === 'king' || type === 'pawn') return false;
       return this.base.types.has(l) || !pieceTypeByName(type).royal;
     });
+    // Designed pieces are never royal, so they are promotion pieces too.
+    promotion.push(...Object.keys(designed));
     return {
       base: this.base.id,
       files: this.files,
       ranks: this.ranks,
       pieces,
+      // Left out when there are none, so a setup without designed pieces keeps the shape (and name) it had.
+      ...(Object.keys(designed).length ? { designed } : {}),
       fen: this.fen(),
       castling: this.castling,
       promotion: { rank: 'last', pieceTypes: promotion.sort() },

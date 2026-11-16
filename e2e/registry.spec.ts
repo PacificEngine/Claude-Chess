@@ -45,6 +45,35 @@ test('a valid setup registers in both ffish and the engine and the engine can mo
   expect(r.legal).toContain(r.best);
 });
 
+test('a setup with a designed nightrider registers and the engine plays a legal move in it', async ({ page }) => {
+  const spec: SetupSpec = {
+    base: 'chess',
+    files: 8,
+    ranks: 8,
+    pieces: { k: 'king' },
+    designed: { z: { id: 'nightrider', betza: 'NN', art: null } },
+    fen: '7k/8/8/8/8/8/8/Z6K w - - 0 1',
+    castling: false,
+    promotion: { rank: 'last', pieceTypes: [] },
+  };
+  const r = await page.evaluate(async (spec) => {
+    const { createEngine, loadRules, registerSetup } = window.__engineHarness;
+    const rules = await loadRules();
+    const engine = createEngine();
+    await engine.ready;
+    const result = await registerSetup(rules, engine, spec);
+    if (!result.ok) return { result };
+    await engine.setVariant(result.name, result.ini);
+    const game = rules.newGame(result.name, spec.fen);
+    const best = await engine.search({ fen: game.fen(), moves: [], level: 'beginner', clock: null, now: 0 });
+    return { result, best, legal: game.legalMoves() };
+  }, spec);
+  expect(r.result.ok, JSON.stringify(r.result)).toBe(true);
+  // The nightrider's three-jump ride is legal in ffish, so the designed piece really is a nightrider there.
+  expect(r.legal).toContain('a1d7');
+  expect(r.legal).toContain(r.best);
+});
+
 test('registering the same setup twice succeeds without an "already exists" error', async ({ page }) => {
   const [first, second] = await page.evaluate(async (spec) => {
     const { createEngine, loadRules, registerSetup } = window.__engineHarness;

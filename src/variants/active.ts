@@ -98,3 +98,11 @@ export function artTypeOf(v: ActiveVariant, letter: string): string | undefined 
   if (type === undefined || type === INHERITED) return undefined;
   return v.baseTypes?.get(letter) === type ? undefined : type;
 }
+
+/**
+ * The art id a custom variant's designed letter was given (null: none chosen), or undefined when the letter
+ * isn't designed. The raw id: the UI looks it up in the art catalog, so an id that is gone becomes a token.
+ */
+export function designedArt(v: ActiveVariant, letter: string): string | null | undefined {
+  return v.setup?.designed?.[letter]?.art;
+}

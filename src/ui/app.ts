@@ -2,7 +2,8 @@
 // Views never touch the session directly; every change goes through changed() so it is saved and redrawn.
 import { createEngine, type EngineTestHooks } from '../engine/engine';
 import { levelById } from '../engine/levels';
-import { loadSetups } from '../persistence/setups';
+import { type DesignedPiece, loadPieces } from '../persistence/pieces';
+import { loadSetups, rewritePieceCopies, usesPiece } from '../persistence/setups';
 import { createStore, DEFAULT_SETTINGS, isSettings, SETTINGS_VERSION, type Settings } from '../persistence/store';
 import { loadRules, type Rules } from '../rules/rules';
 import type { Color, GameResult } from '../rules/types';
@@ -11,9 +12,12 @@ import { checkWithoutEngine, type PendingRestore, type Restored, restoreInBackgr
 import { GameSession, isSessionState, type Opponent, type SessionState } from '../session/session';
 import { type ActiveVariant, curatedActive, customActive, variantTypes } from '../variants/active';
 import { CURATED_VARIANTS, type VariantInfo, variantById } from '../variants/catalog';
+import { positionProblems } from '../variants/legality';
+import { registerSetup } from '../variants/registry';
 import type { SetupSpec } from '../variants/setup';
 import { createBoardView, parseUci } from './board-view';
 import { createChoiceDialog } from './choice-dialog';
+import { createDesigner } from './designer/designer';
 import { type ClockTimes, createEditor, type StartVerdict } from './editor/editor';
 import { createSetupChecker, guardChecker, type SetupVerdict } from './editor/editor-check';
 import { editorBases } from './editor/editor-model';
@@ -48,6 +52,10 @@ const MSG_RESTORING = 'Restoring your saved custom game…';
 const MSG_CORRUPT_SETTINGS = "Your saved settings couldn't be read, so the defaults are in use.";
 const MSG_CORRUPT_SETUPS =
   "Your saved setups couldn't be read, so the list starts empty. The damaged data was kept under chess.setups.corrupt.";
+const MSG_GAME_REPLACED = 'The game changed meanwhile and was not updated.';
+const MSG_SETUPS_NOT_UPDATED = "The saved setups that use the piece couldn't be updated: the browser refused to store them.";
+const MSG_CORRUPT_PIECES =
+  "Your designed pieces couldn't be read, so the library starts empty. The damaged data was kept under chess.pieces.corrupt.";
 
 const other = (c: Color): Color => (c === 'white' ? 'black' : 'white');
 const capital = (c: Color) => (c === 'white' ? 'White' : 'Black');
@@ -120,6 +128,8 @@ export async function startApp(root: HTMLElement): Promise<void> {
   let settings: Settings = savedSettings.data ?? { ...DEFAULT_SETTINGS };
   const loadedSetups = loadSetups(store);
   if (loadedSetups.problem) warn(MSG_CORRUPT_SETUPS);
+  const loadedPieces = loadPieces(store);
+  if (loadedPieces.problem) warn(MSG_CORRUPT_PIECES);
   const loaded = store.load('chess.game', GAME_VERSION, {}, isSessionState);
   if (loaded.problem) warn(MSG_CORRUPT_GAME);
   let saved: SessionState | null = null;
@@ -158,7 +168,23 @@ export async function startApp(root: HTMLElement): Promise<void> {
     resume: (verdict, clocks) => resumeEditedGame(verdict, clocks),
     save: (spec, name, id) => setupsCtl.save(spec, name, id),
     close: () => closeEditor(),
+    openDesigner: (piece) => {
+      // The designer is its own screen in front of the editor, which stays open (the game keeps waiting).
+      editor.cover(true);
+      designer.open(piece);
+    },
   });
+  const designer = createDesigner(root, {
+    rules,
+    engine,
+    store,
+    initial: loadedPieces.pieces,
+    changed: (pieces) => editor.setPieces(pieces),
+    inUse: (id) => setupsCtl.usesPiece(id) || gameUsesPiece(id) || editor.usesPiece(id),
+    updateCopies: (piece) => updateCopies(piece),
+    closed: () => editor.cover(false),
+  });
+  editor.setPieces(designer.pieces());
   createSourceLink(root);
   const board = createBoardView(boardHost);
   const panel = createPanel(main, {
@@ -226,6 +252,8 @@ export async function startApp(root: HTMLElement): Promise<void> {
   if (saved) rememberChoice();
   /** The background restore of a saved custom game, while it runs; the board stays disabled meanwhile. */
   let restoring: PendingRestore | null = null;
+  /** The saved custom game that `restoring` is restoring: not on the board yet, but the game in progress. */
+  let restoringGame: SessionState | null = null;
 
   // SAN needs the position before each ply; it is computed once per (position, move) and cached.
   const sanCache = new Map<string, string>();
@@ -573,8 +601,76 @@ export async function startApp(root: HTMLElement): Promise<void> {
     closeEditor(); // starts the clock, saves, and starts the AI's search if it is the AI's turn
   }
 
+  // ---- Updating a designed piece everywhere -------------------------------------------------------
+  function gameUsesPiece(id: string): boolean {
+    // A saved custom game still restoring is the game in progress too, though the board doesn't show it yet.
+    const setups = [session.state().setup, restoring ? restoringGame?.setup : undefined];
+    return setups.some((setup) => setup !== undefined && usesPiece(setup, id));
+  }
+
+  /**
+   * "Update everywhere": the saved setups' copies, then the game's, then the editor's: the setup on its board,
+   * and its copy of the game when it is editing it (else Resume would bring the old piece back). Resolves to
+   * what couldn't be updated.
+   */
+  async function updateCopies(piece: DesignedPiece): Promise<string[]> {
+    const problems: string[] = [];
+    if (!setupsCtl.updatePiece(piece)) {
+      warn(MSG_SETUPS_NOT_UPDATED);
+      problems.push(MSG_SETUPS_NOT_UPDATED);
+    }
+    const gameProblems = await updateGamePiece(piece);
+    // A game that keeps the old piece is edited with it too, so Resume can't bring in what the game refused.
+    editor.rewritePiece(piece, { game: gameProblems.length === 0 });
+    return [...problems, ...gameProblems];
+  }
+
+  /**
+   * Rewrites the game's copy of `piece` and replaces the game with one of the regenerated variant (a new name),
+   * from the current position, as Resume does: the same opponent and clock settings, the paused times, a fresh
+   * move history. The setup keeps its start FEN, so it still generates the game's variant on restore. If the
+   * engine refuses the new definition, or the position is illegal with the new moves (say the piece now gives
+   * check), the old game stays, and the banner says why.
+   */
+  async function updateGamePiece(piece: DesignedPiece): Promise<string[]> {
+    // A saved custom game still restoring is updated once it is on the board. In practice its engine check is
+    // queued before the designer's preview, which Save waits for, so it has always settled by now.
+    if (restoring) await restoring.done.catch(() => {});
+    const s = session;
+    const setup = s.state().setup;
+    if (!setup || !usesPiece(setup, piece.id)) return [];
+    const spec = rewritePieceCopies(setup, piece);
+    await engine.ready.catch(() => {}); // a failed engine is reported by registerSetup
+    const registered = await registerSetup(rules, engine, spec);
+    if (s !== session) {
+      // Another game replaced it meanwhile: the game that used the piece is gone, and the new one wasn't checked.
+      warn(MSG_GAME_REPLACED);
+      return [MSG_GAME_REPLACED];
+    }
+    const fen = s.fen();
+    const problems = registered.ok ? positionProblems(rules, registered.name, fen, variantById(spec.base).engineName) : registered.problems;
+    if (!registered.ok || problems.length) {
+      warn(`The game in progress keeps the piece as it was: ${problems.join(' ')}`);
+      return problems;
+    }
+    const now = Date.now();
+    // The clock ran if the editor (which the designer opened from) paused it, or if it runs now: the editor may
+    // have closed while the engine checked, and restarted it.
+    const clockRan = pausedForDialog || s.state().clock.running !== null;
+    s.pauseClock(now);
+    const { opponent, clockConfig, clock } = s.state();
+    inis.set(registered.name, registered.ini);
+    const next = GameSession.create(rules, { variant: registered.name, setup: spec, fen, opponent, clockConfig, clock }, now);
+    const aiTurn = opponent.kind === 'ai' && !next.state().result && !next.isHumanTurn();
+    // The editor still covers the board, so the clock starts again as it closes.
+    replaceSession(next, { resumeClock: clockRan || aiTurn });
+    changed();
+    return [];
+  }
+
   function closeEditor(): void {
     if (!editor.isOpen()) return;
+    designer.hide();
     editor.hide();
     main.hidden = false;
     resumeAfterDialog();
@@ -653,6 +749,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
   resumeAiTurn();
   if (savedCustom) {
     const pendingSave = savedCustom;
+    restoringGame = pendingSave;
     restoring = restoreInBackground(rules, engine, pendingSave, (r) => onRestored(pendingSave, r));
     restoring.done.catch((e: unknown) => console.error('Restoring the saved custom game failed:', e));
     render();

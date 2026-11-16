@@ -3,7 +3,7 @@ import { loadTestRules } from '../rules/test-rules';
 import type { Rules } from '../rules/types';
 import { type ActiveVariantShape, fnv1a, generateVariant, needsCustomVariant } from './generator';
 import { typesOfVariant } from './piece-types';
-import { isSetupSpec, MAX_FILES, MAX_RANKS, MIN_FILES, MIN_RANKS, type SetupSpec } from './setup';
+import { type DesignedCopy, isSetupSpec, MAX_FILES, MAX_RANKS, MIN_FILES, MIN_RANKS, type SetupSpec } from './setup';
 
 let rules: Rules;
 beforeAll(async () => {
@@ -262,6 +262,125 @@ describe('variant generator', () => {
   });
 });
 
+/** Computed on the generator before designed pieces existed (commit e1dcc59), so saved setups keep their names. */
+const KNOWN_PLAIN_NAME = 'cx_28240a0b';
+const plainSpec = spec;
+
+const copy = (betza: string, id = `piece-${betza}`): DesignedCopy => ({ id, betza, art: null });
+
+/** A chess-based setup with a lone designed nightrider-like piece `z` on a1 and the kings. */
+const withDesigned = (betza: string): SetupSpec => ({
+  base: 'chess',
+  files: 8,
+  ranks: 8,
+  pieces: { k: 'king' },
+  designed: { z: copy(betza) },
+  fen: '7k/8/8/8/8/8/8/Z6K w - - 0 1',
+  castling: false,
+  promotion: { rank: 'last', pieceTypes: [] },
+});
+
+const nameWith = (betza: string) => generateVariant(withDesigned(betza)).name;
+
+/** `count` designed pieces (on letters a, b, c, ...) all moving by `betza`, and no built-in pieces. */
+function specWithDesigned(count: number, betza = 'W'): SetupSpec {
+  const designed: Record<string, DesignedCopy> = {};
+  for (let i = 0; i < count; i++) designed[String.fromCharCode(97 + i)] = copy(betza, `id${i}`);
+  return { ...spec(), pieces: {}, designed, promotion: { rank: 'last', pieceTypes: [] } };
+}
+
+describe('designed pieces', () => {
+  it('emits a designed piece as a custom piece the engine plays by its Betza', () => {
+    const s = withDesigned('NN');
+    const { ini } = generateVariant(s);
+    expect(ini).toContain('customPiece1 = z:NN');
+    expect(ini).toContain('pieceToCharTable = KZkz');
+    // a1-b3-c5-d7 is three knight jumps along one line: only a nightrider gets there in one move.
+    expect(movesFrom(s, 'a1')).toEqual(expect.arrayContaining(['a1b3', 'a1c5', 'a1d7', 'a1c2', 'a1e3', 'a1g4']));
+  });
+
+  it('names setups differently when only a designed piece’s moves differ', () => expect(nameWith('NN')).not.toBe(nameWith('N')));
+
+  it('numbers designed pieces by sorted letter right after the built-in piece lines', () => {
+    const { ini } = generateVariant({
+      ...spec(),
+      designed: { y: copy('NN'), d: copy('WW'), m: copy('F') },
+      promotion: { rank: 'last', pieceTypes: ['q', 'y'] },
+    });
+    const lines = ini.split('\n');
+    const at = lines.indexOf('rook = r');
+    expect(lines.slice(at + 1, at + 4)).toEqual(['customPiece1 = d:WW', 'customPiece2 = m:F', 'customPiece3 = y:NN']);
+    expect(ini).toContain('promotionPieceTypes = qy');
+    expect(ini).toContain('pieceToCharTable = DKMQRYdkmqry');
+  });
+
+  it('allows promotion to a designed piece, and the engine really promotes to it', () => {
+    const s: SetupSpec = {
+      ...withDesigned('NN'),
+      pieces: { k: 'king', p: 'pawn' },
+      fen: '7k/P7/8/8/8/8/8/7K w - - 0 1',
+      promotion: { rank: 'last', pieceTypes: ['z'] },
+    };
+    expect(movesFrom(s, 'a7')).toEqual(['a7a8z']);
+  });
+
+  it('refuses a 26th designed piece with the slot-limit text', () =>
+    expect(() => generateVariant(specWithDesigned(26))).toThrow('A setup can use at most 25 designed pieces.'));
+
+  it('accepts 25 designed pieces, the engine’s last slot', () => {
+    const { ini } = generateVariant(specWithDesigned(25));
+    expect(ini).toContain('customPiece25 = y:W');
+    expect(ini).not.toContain('customPiece26');
+  });
+
+  it('refuses unsafe Betza with the safety text', () => {
+    expect(() => generateVariant(specWithDesigned(1, 'jR'))).toThrow('The "j" modifier is not supported by the engine.');
+    expect(() => generateVariant(specWithDesigned(1, 'W\ncastling = true'))).toThrow(
+      'This move description uses characters the engine does not accept.',
+    );
+  });
+
+  it('refuses a designed letter that is also a built-in or base letter', () => {
+    const chess = new Map([
+      ['p', 'pawn'],
+      ['n', 'knight'],
+      ['b', 'bishop'],
+      ['r', 'rook'],
+      ['q', 'queen'],
+      ['k', 'king'],
+    ]);
+    expect(() => generateVariant({ ...spec(), designed: { n: copy('NN') } }, chess)).toThrow(
+      new Error('The letter n is already a piece of the base variant'),
+    );
+    expect(() => generateVariant({ ...spec(), designed: { q: copy('NN') } })).toThrow(
+      new Error('The letter q is both a built-in piece and a designed piece in this setup'),
+    );
+    expect(() => generateVariant({ ...spec(), designed: { z: copy('NN') } }, chess)).not.toThrow();
+  });
+
+  it('refuses designed letters that are not one lowercase letter, and copies without an id', () => {
+    expect(() => generateVariant({ ...spec(), designed: { Z: copy('NN') } })).toThrow(new Error('Piece letters must be one lowercase letter: "Z"'));
+    expect(() => generateVariant({ ...spec(), designed: { 'z\n[x]': copy('NN') } })).toThrow(
+      new Error('Piece letters must be one lowercase letter: "z\\n[x]"'),
+    );
+    expect(() => generateVariant({ ...spec(), designed: { z: copy('NN', '') } })).toThrow(new Error('The designed piece on z has no library id'));
+    expect(() => generateVariant({ ...spec(), designed: { z: null as unknown as DesignedCopy } })).toThrow(
+      new Error('The designed piece on z is not a piece'),
+    );
+  });
+
+  it('accepts setups without designed pieces exactly as before', () => {
+    expect(generateVariant(plainSpec()).name).toBe(KNOWN_PLAIN_NAME);
+    expect(generateVariant({ ...plainSpec(), designed: {} }).name).toBe(KNOWN_PLAIN_NAME);
+  });
+
+  it('needs a custom variant whenever the setup has a designed piece', () => {
+    const base = chessSpecWithDifferentFen();
+    expect(needsCustomVariant({ ...base, designed: {} }, CHESS_SHAPE)).toBe(false);
+    expect(needsCustomVariant({ ...base, designed: { z: copy('NN') } }, CHESS_SHAPE)).toBe(true);
+  });
+});
+
 describe('pockets and letter clashes', () => {
   it('generates and loads a Seirawan setup with its pieces in hand intact', () => {
     const start = rules.newGame('seirawan');
@@ -353,5 +472,21 @@ describe('isSetupSpec', () => {
     expect(isSetupSpec({ ...spec(), castling: 'no' })).toBe(false);
     expect(isSetupSpec({ ...spec(), promotion: { rank: 'first', pieceTypes: [] } })).toBe(false);
     expect(isSetupSpec({ ...spec(), promotion: { rank: 'last', pieceTypes: [1] } })).toBe(false);
+  });
+
+  it('accepts setups with and without designed-piece copies', () => {
+    expect(isSetupSpec({ ...spec(), designed: {} })).toBe(true);
+    expect(isSetupSpec({ ...spec(), designed: { z: { id: 'p1', betza: 'NN', art: null } } })).toBe(true);
+    expect(isSetupSpec({ ...spec(), designed: { z: { id: 'p1', betza: 'NN', art: 'merida/wN' } } })).toBe(true);
+  });
+
+  it('rejects corrupted designed-piece copies', () => {
+    expect(isSetupSpec({ ...spec(), designed: null })).toBe(false);
+    expect(isSetupSpec({ ...spec(), designed: [] })).toBe(false);
+    expect(isSetupSpec({ ...spec(), designed: { z: 'p1' } })).toBe(false);
+    expect(isSetupSpec({ ...spec(), designed: { z: { id: 1, betza: 'NN', art: null } } })).toBe(false);
+    expect(isSetupSpec({ ...spec(), designed: { z: { id: 'p1', betza: 2, art: null } } })).toBe(false);
+    expect(isSetupSpec({ ...spec(), designed: { z: { id: 'p1', betza: 'NN' } } })).toBe(false);
+    expect(isSetupSpec({ ...spec(), designed: { z: { id: 'p1', betza: 'NN', art: 3 } } })).toBe(false);
   });
 });
