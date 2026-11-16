@@ -1,10 +1,11 @@
 // The editor screen: wires the model to the board and palette, the controls and the setup checker. Problems are
 // worked out on every change; a setup that needs a custom variant is checked by the engine after a short pause,
 // so dragging pieces about doesn't send the engine a definition per square.
+import type { DesignedPiece } from '../../persistence/pieces';
 import type { Color } from '../../rules/types';
 import type { ActiveVariant } from '../../variants/active';
 import type { VariantId } from '../../variants/catalog';
-import type { SetupSpec } from '../../variants/setup';
+import type { DesignedCopy, SetupSpec } from '../../variants/setup';
 import { clockProblem, formatClockInput, parseClockInput } from './clock-time';
 import { guardChecker, type SetupChecker, type SetupVerdict } from './editor-check';
 import { createEditorControls } from './editor-controls';
@@ -23,6 +24,8 @@ export interface EditorHandlers {
   /** Saves the setup; `id` is the saved setup this editor session saved before, or null. Returns the saved id, or null on failure. */
   save(spec: SetupSpec, name: string, id: string | null): string | null;
   close(): void;
+  /** Opens the piece designer on a library piece, or a new piece (null). */
+  openDesigner(piece: DesignedPiece | null): void;
 }
 
 /** Both sides' clock times, in ms. */
@@ -37,7 +40,20 @@ export interface Editor {
    */
   openGame(active: ActiveVariant, fen: string, clocks: ClockTimes | null): void;
   hide(): void;
+  /** Open, even while the piece designer covers it: the game keeps waiting until the editor itself closes. */
   isOpen(): boolean;
+  /** Hides the editor behind the piece designer, or shows it again, leaving the setup as it was. */
+  cover(covered: boolean): void;
+  /** The piece library, for the palette's "Your pieces". */
+  setPieces(pieces: readonly DesignedPiece[]): void;
+  /** Whether the setup being built for Play, or the game being edited, holds a copy of the library piece `id`. */
+  usesPiece(id: string): boolean;
+  /**
+   * "Update everywhere": the setup being built for Play takes the new Betza and art of `piece` (owner decision,
+   * 2026-11-16), and so does the game being edited when `game` is true, so Resume keeps them. `game` is false
+   * when the game itself kept the old piece: Resume must not bring in what the game refused.
+   */
+  rewritePiece(piece: DesignedCopy, { game }: { game: boolean }): void;
   /** The setup being edited and its name, for the Play dialog. */
   spec(): SetupSpec;
   name(): string;
@@ -66,6 +82,8 @@ export function createEditor(host: HTMLElement, bases: BaseLookup, unguarded: Se
   section.append(boardHost, side);
   host.append(section);
 
+  /** Open, whether or not the piece designer covers it. */
+  let opened = false;
   let model: EditorModel | null = null;
   /** The game in progress while it is being edited; null when the editor builds a setup. */
   let gameModel: EditorModel | null = null;
@@ -87,6 +105,8 @@ export function createEditor(host: HTMLElement, bases: BaseLookup, unguarded: Se
         draw();
       } else changed();
     },
+    newPiece: () => handlers.openDesigner(null),
+    editPiece: (piece) => handlers.openDesigner(piece),
   });
 
   const current = (): EditorModel => gameModel ?? (model ??= EditorModel.fromBase('chess', bases));
@@ -198,6 +218,7 @@ export function createEditor(host: HTMLElement, bases: BaseLookup, unguarded: Se
   function show(): void {
     notice = '';
     refusal = null;
+    opened = true;
     section.hidden = false;
     // Drawn once visible, so the board measures its real size.
     recheck();
@@ -218,10 +239,29 @@ export function createEditor(host: HTMLElement, bases: BaseLookup, unguarded: Se
       show();
     },
     hide() {
+      opened = false;
       section.hidden = true;
       view.disarm();
     },
-    isOpen: () => !section.hidden,
+    isOpen: () => opened,
+    cover(covered) {
+      if (!opened) return;
+      view.disarm();
+      section.hidden = covered;
+      // Drawn once visible again, with the library as it is now.
+      if (!covered) draw();
+    },
+    setPieces(pieces) {
+      view.setPieces(pieces);
+      if (!section.hidden) draw();
+    },
+    usesPiece: (id) => (model?.usesPiece(id) ?? false) || (gameModel?.usesPiece(id) ?? false),
+    rewritePiece(piece, { game }) {
+      const setup = model?.rewritePiece(piece) ?? false;
+      const edited = game && (gameModel?.rewritePiece(piece) ?? false);
+      // Checked again: Play and Resume need a verdict for the setup as it is now.
+      if (setup || edited) changed();
+    },
     spec: () => current().toSpec(),
     name: () => controls.name() || 'Untitled setup',
   };

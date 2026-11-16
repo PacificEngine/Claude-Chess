@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { SetupSpec } from '../variants/setup';
-import { loadSetups, type SavedSetup, saveSetups, SETUPS_VERSION } from './setups';
+import type { DesignedPiece } from './pieces';
+import { loadSetups, rewritePieceCopies, type SavedSetup, saveSetups, SETUPS_VERSION, setupsUsingPiece, usesPiece } from './setups';
 import { createStore, type Store } from './store';
 
 class MemoryStorage implements Storage {
@@ -70,5 +71,37 @@ describe('saved setups', () => {
       throw new Error('QuotaExceededError');
     };
     expect(saveSetups(store, [saved])).toBe(false);
+  });
+});
+
+describe('designed-piece copies in setups', () => {
+  const twoPieces: SetupSpec = {
+    ...spec,
+    designed: { z: { id: 'rider', betza: 'NN', art: 'alfaerie/horse' }, y: { id: 'wazir', betza: 'W', art: null } },
+    fen: '4k5/10/10/10/10/10/10/AZY1K5 w - - 0 1',
+  };
+  const changed: DesignedPiece = { id: 'rider', name: 'Rider', letter: 'q', betza: 'NNF', art: 'merida/n', savedAt: 2 };
+
+  it('rewrites only the copies of the changed piece, keeping letters', () => {
+    const next = rewritePieceCopies(twoPieces, changed);
+    expect(next.designed).toEqual({ z: { id: 'rider', betza: 'NNF', art: 'merida/n' }, y: { id: 'wazir', betza: 'W', art: null } });
+    expect({ ...next, designed: undefined }).toEqual({ ...twoPieces, designed: undefined });
+    // The original is left as it was.
+    expect(twoPieces.designed!.z).toEqual({ id: 'rider', betza: 'NN', art: 'alfaerie/horse' });
+    // And shares no copy with the result, so changing one never changes the other.
+    expect(next.designed!.y).not.toBe(twoPieces.designed!.y);
+  });
+
+  it('leaves a setup without the piece as it was', () => {
+    expect(rewritePieceCopies(spec, changed)).toEqual(spec);
+    expect(rewritePieceCopies(twoPieces, { ...changed, id: 'other' })).toEqual(twoPieces);
+  });
+
+  it('finds the saved setups that hold a copy of a piece', () => {
+    const other: SavedSetup = { id: 'id-2', name: 'Two', spec: twoPieces, savedAt: 2 };
+    expect(usesPiece(twoPieces, 'wazir')).toBe(true);
+    expect(usesPiece(spec, 'wazir')).toBe(false);
+    expect(setupsUsingPiece([saved, other], 'rider')).toEqual([other]);
+    expect(setupsUsingPiece([saved, other], 'nope')).toEqual([]);
   });
 });

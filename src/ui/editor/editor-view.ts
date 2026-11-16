@@ -1,9 +1,11 @@
 // The editor's board and piece palette. Pieces move freely (no legality: the editor's problems list says what
 // can't be played). Clicking a palette piece arms it; each click on a square then places it, until the
-// piece (or Escape) disarms it. The eraser removes, and so does dragging a piece off the board.
+// piece (or Escape) disarms it. The eraser removes, and so does dragging a piece off the board. "Your pieces"
+// lists the piece library, each wearing the art the player chose, with New piece… and Edit… for the designer.
 import { Chessground } from 'chessgroundx';
 import type { Api } from 'chessgroundx/api';
 import type * as cg from 'chessgroundx/types';
+import type { DesignedPiece } from '../../persistence/pieces';
 import type { Color } from '../../rules/types';
 import { type ActiveVariant, customActive } from '../../variants/active';
 import { BUILTIN_PIECES, INHERITED } from '../../variants/piece-types';
@@ -11,12 +13,19 @@ import { fromKey, observePieces } from '../board-view';
 import { artUrl, tokenClass } from '../pieces';
 import { type EditorModel, TOO_MANY_TYPES } from './editor-model';
 
-/** A palette entry: a built-in type, or a base variant's own piece (by its letter). */
-type Tool = { kind: 'piece'; color: Color; type: string; letter?: string } | { kind: 'eraser' };
+/** A palette entry: a built-in type, a base variant's own piece (by its letter), or a library piece. */
+type Tool =
+  | { kind: 'piece'; color: Color; type: string; letter?: string }
+  | { kind: 'designed'; color: Color; piece: DesignedPiece }
+  | { kind: 'eraser' };
 
 export interface EditorViewHandlers {
   /** The model changed; `notice` is a one-off message for the player, e.g. TOO_MANY_TYPES. */
   changed(notice?: string): void;
+  /** Opens the piece designer on a new piece. */
+  newPiece(): void;
+  /** Opens the piece designer on a library piece. */
+  editPiece(piece: DesignedPiece): void;
 }
 
 export interface EditorView {
@@ -24,6 +33,8 @@ export interface EditorView {
   render(model: EditorModel): void;
   /** Disarms the palette (e.g. when the editor closes). */
   disarm(): void;
+  /** The piece library for "Your pieces"; the palette is rebuilt on the next render. */
+  setPieces(pieces: readonly DesignedPiece[]): void;
 }
 
 const COLORS: Color[] = ['white', 'black'];
@@ -43,6 +54,7 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
   let api: Api | null = null;
   let builtFor = '';
   let paletteFor = '';
+  let library: readonly DesignedPiece[] = [];
   let armed: Tool | null = null;
   const buttons = new Map<HTMLButtonElement, Tool>();
 
@@ -66,7 +78,8 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
       model.remove(square);
       return handlers.changed();
     }
-    const letter = armed.letter ?? model.letterFor(armed.type);
+    const letter =
+      armed.kind === 'designed' ? model.letterForDesigned(armed.piece) : (armed.letter ?? model.letterFor(armed.type));
     if (letter === null) return handlers.changed(TOO_MANY_TYPES);
     model.place(square, letter, armed.color);
     handlers.changed();
@@ -148,29 +161,75 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
         }),
       ];
       for (const entry of entries) {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = `palette-piece ${color}`;
         const id = entry.tool.kind === 'piece' && entry.tool.letter ? `own-${entry.letter}` : (entry.tool as { type: string }).type;
-        b.dataset.testid = `palette-${color}-${id}`;
-        b.title = `${capital(color)} ${entry.name}`;
-        b.setAttribute('aria-label', b.title);
-        const icon = document.createElement('span');
-        icon.className = 'palette-icon';
-        if (entry.url) icon.style.backgroundImage = `url("${import.meta.env.BASE_URL}${entry.url}")`;
-        else {
-          icon.classList.add(...tokenClass(entry.letter).split(' '), color);
-          icon.dataset.letter = entry.letter.toUpperCase();
-        }
-        b.append(icon);
-        buttons.set(b, entry.tool);
-        b.addEventListener('click', () => arm(armed === entry.tool ? null : entry.tool));
-        group.append(b);
+        group.append(paletteButton(entry.tool as Tool & { color: Color }, `palette-${color}-${id}`, `${capital(color)} ${entry.name}`, entry.url, entry.letter));
       }
       paletteHost.append(group);
     }
+    paletteHost.append(yourPieces(m));
     paletteFor = m.base.id;
     arm(null);
+  }
+
+  function paletteButton(tool: Tool & { color: Color }, testid: string, label: string, url: string | null, letter: string): HTMLButtonElement {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `palette-piece ${tool.color}`;
+    b.dataset.testid = testid;
+    b.title = label;
+    b.setAttribute('aria-label', label);
+    const icon = document.createElement('span');
+    icon.className = 'palette-icon';
+    if (url) icon.style.backgroundImage = `url("${import.meta.env.BASE_URL}${url}")`;
+    else {
+      icon.classList.add(...tokenClass(letter).split(' '), tool.color);
+      icon.dataset.letter = letter.toUpperCase();
+    }
+    b.append(icon);
+    buttons.set(b, tool);
+    b.addEventListener('click', () => arm(armed === tool ? null : tool));
+    return b;
+  }
+
+  /** The piece library: a White and a Black button per piece (its name tells same-art pieces apart), and Edit…. */
+  function yourPieces(m: EditorModel): HTMLElement {
+    const section = document.createElement('div');
+    section.className = 'palette-designed';
+    section.setAttribute('role', 'group');
+    section.setAttribute('aria-label', 'Your pieces');
+    const heading = document.createElement('h3');
+    heading.textContent = 'Your pieces';
+    section.append(heading);
+    for (const piece of library) {
+      const row = document.createElement('div');
+      row.className = 'palette-designed-row';
+      const name = document.createElement('span');
+      name.className = 'palette-designed-name';
+      name.textContent = piece.name;
+      row.append(name);
+      for (const color of COLORS) {
+        // The art the player chose, or a token, never the base's art for the letter (designedArt in artUrl).
+        const url = artUrl(piece.letter, color, m.base.id, undefined, piece.art);
+        row.append(paletteButton({ kind: 'designed', color, piece }, `palette-${color}-designed-${piece.id}`, `${capital(color)} ${piece.name}`, url, piece.letter));
+      }
+      const edit = document.createElement('button');
+      edit.type = 'button';
+      edit.className = 'secondary small';
+      edit.textContent = 'Edit…';
+      edit.dataset.testid = `palette-edit-${piece.id}`;
+      edit.setAttribute('aria-label', `Edit ${piece.name}`);
+      edit.addEventListener('click', () => handlers.editPiece(piece));
+      row.append(edit);
+      section.append(row);
+    }
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'secondary small';
+    add.textContent = 'New piece…';
+    add.dataset.testid = 'palette-new-piece';
+    add.addEventListener('click', () => handlers.newPiece());
+    section.append(add);
+    return section;
   }
 
   return {
@@ -190,6 +249,10 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
     },
     disarm() {
       arm(null);
+    },
+    setPieces(pieces) {
+      library = pieces;
+      paletteFor = ''; // rebuilt on the next render
     },
   };
 }

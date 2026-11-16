@@ -46,6 +46,24 @@ describe('registerSetup', () => {
     if (!result.ok) expect(result.problems).toEqual(['Files must be 5 to 12, not 13']);
   });
 
+  it('reports the designed-piece slot limit and Betza safety texts exactly, for the editor to show', async () => {
+    const designed = Object.fromEntries(
+      'abcdefghijklmnopqrstuvwxyz'.split('').map((l) => [l, { id: `id-${l}`, betza: 'W', art: null }]),
+    );
+    const many: SetupSpec = { ...spec(), pieces: {}, designed, promotion: { rank: 'last', pieceTypes: [] } };
+    const check = vi.fn(async () => []);
+    expect(await registerSetup(rules, fakeEngine(check), many)).toEqual({
+      ok: false,
+      problems: ['A setup can use at most 25 designed pieces.'],
+    });
+    const unsafe: SetupSpec = { ...spec(), designed: { z: { id: 'p1', betza: 'jN', art: null } } };
+    expect(await registerSetup(rules, fakeEngine(check), unsafe)).toEqual({
+      ok: false,
+      problems: ['The "j" modifier is not supported by the engine.'],
+    });
+    expect(check).not.toHaveBeenCalled();
+  });
+
   it('reports an engine that fails during the check as a problem instead of rejecting', async () => {
     const dying = fakeEngine(async () => {
       throw new Error('worker died');

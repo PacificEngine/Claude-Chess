@@ -7,6 +7,7 @@ import type { Color } from '../rules/types';
 import type { ActiveVariant } from '../variants/active';
 import type { VariantId } from '../variants/catalog';
 import { INHERITED } from '../variants/piece-types';
+import { artChoice } from './art-catalog';
 
 type Colors = Color | 'both';
 interface ArtRule {
@@ -104,8 +105,18 @@ export function hasArt(letter: string, variant: string): boolean {
  * for the letter (`artTypeOf`). A type with art wins, so the piece looks like what it moves like; a type
  * without art is a token, never the base's art for a piece it no longer is. Without a type (or with
  * 'inherited') the base variant's art for the letter is used, then a token.
+ *
+ * `designedArt` is given (even as null) for a designed letter (`designedArt` in active.ts): it draws the art
+ * the player chose, or a token for none or an id no longer in the catalog, never the base's or a type's art.
  */
-export function artUrl(letter: string, color: Color, artBase: VariantId, type?: string): string | null {
+export function artUrl(
+  letter: string,
+  color: Color,
+  artBase: VariantId,
+  type?: string,
+  designedArt?: string | null,
+): string | null {
+  if (designedArt !== undefined) return artChoice(designedArt)?.[color] ?? null;
   const side = color === 'white' ? 'w' : 'b';
   const byType = type === undefined ? undefined : TYPE_ART[type];
   if (byType) return `pieces/${byType.rule.dir}/${side}${byType.file}.svg`;

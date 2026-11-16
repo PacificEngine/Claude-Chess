@@ -1,6 +1,7 @@
 // Saved setups and the editor's setup as the Play dialog lists them: it holds the saved list, answers the dialog's
 // setup checks and deletes, and saves the editor's setup. app.ts owns the game; this owns chess.setups.
-import { type SavedSetup, saveSetups } from '../persistence/setups';
+import type { DesignedPiece } from '../persistence/pieces';
+import { rewritePieceCopies, type SavedSetup, saveSetups, setupsUsingPiece } from '../persistence/setups';
 import type { Store } from '../persistence/store';
 import { variantById } from '../variants/catalog';
 import type { SetupSpec } from '../variants/setup';
@@ -15,6 +16,10 @@ export interface SetupsController {
   spec(id: string): SetupSpec | undefined;
   /** Saves the editor's setup, replacing the saved setup `id` when given. Returns the saved id, or null if storage refused it. */
   save(spec: SetupSpec, name: string, id: string | null): string | null;
+  /** True when a saved setup holds a copy of the library piece `id`. */
+  usesPiece(id: string): boolean;
+  /** "Update everywhere": rewrites every saved copy of `piece`. False (nothing changed) if storage refused it. */
+  updatePiece(piece: DesignedPiece): boolean;
 }
 
 export interface SetupsDeps {
@@ -67,6 +72,13 @@ export function createSetupsController({ store, initial, editor, checker, playDi
       if (!saveSetups(store, next)) return null;
       setups = next;
       return entry.id;
+    },
+    usesPiece: (id) => setupsUsingPiece(setups, id).length > 0,
+    updatePiece(piece) {
+      const next = setups.map((x) => ({ ...x, spec: rewritePieceCopies(x.spec, piece) }));
+      if (!saveSetups(store, next)) return false;
+      setups = next;
+      return true;
     },
   };
 }
