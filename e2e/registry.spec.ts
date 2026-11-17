@@ -135,3 +135,30 @@ test('a saved custom game whose engine check dies with the worker is kept for la
   expect(r.status).toBe('unavailable');
   expect(r.result).toEqual({ ok: false, reason: 'engine' });
 });
+
+test("the engine deletes each variant file once it has read it, and still plays the variants it loaded", async ({ page }) => {
+  const r = await page.evaluate(async (spec) => {
+    const { createEngine, loadRules, generateVariant, registerSetup } = window.__engineHarness;
+    const rules = await loadRules();
+    const engine = createEngine();
+    await engine.ready;
+    // Twenty checks, as twenty designer previews would make, then a custom variant loaded for play.
+    for (let i = 0; i < 20; i++) {
+      const designed = { ...spec, designed: { z: { id: `p${i}`, betza: `W${(i % 7) + 1}`, art: null } }, fen: '7k/8/8/8/8/8/8/Z6K w - - 0 1' };
+      await engine.check(generateVariant(designed).ini);
+    }
+    const result = await registerSetup(rules, engine, spec);
+    if (!result.ok) return { result };
+    await engine.setVariant(result.name, result.ini);
+    const files = await engine.test!.variantFiles();
+    // The loaded variant still plays after switching away and back by name alone.
+    await engine.setVariant('chess');
+    await engine.setVariant(result.name);
+    const game = rules.newGame(result.name);
+    const best = await engine.search({ fen: game.fen(), moves: [], level: 'beginner', clock: null, now: 0 });
+    return { result, files, best, legal: game.legalMoves() };
+  }, SPEC);
+  expect(r.result.ok, JSON.stringify(r.result)).toBe(true);
+  expect(r.files).toEqual([]);
+  expect(r.legal).toContain(r.best);
+});

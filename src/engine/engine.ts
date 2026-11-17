@@ -50,6 +50,8 @@ export interface EngineTestHooks {
   breakWorker(): void;
   /** The next search analyses this position instead of the requested one, to get a real unusable answer. */
   searchFenOnce(fen: string): void;
+  /** The variants files still in the engine's file system, once every queued command has run. */
+  variantFiles(): Promise<string[]>;
 }
 
 /**
@@ -69,12 +71,20 @@ export function createEngine(): Engine {
   const waiters = new Set<{ match(line: string): void; fail(e: Error): void }>();
   let worker: Worker | null = null;
   let iniCount = 0;
+  /**
+   * Writes ini text to a new file in the engine's in-memory file system. The engine reads a file once, when
+   * `check` or `setoption VariantPath` names it, so each caller removes it again after the next `readyok`:
+   * without that, every designer preview and every custom game left a file behind until the page closed.
+   */
   const writeIni = (ini: string) => {
     const path = `/variants-${iniCount++}.ini`;
     send({ type: 'writeFile', path, text: ini });
     return path;
   };
+  const removeIni = (path: string) => send({ type: 'removeFile', path });
   let fenOverride: string | null = null;
+  /** Test builds: resolves the pending `variantFiles` request. */
+  let filesListed: ((paths: string[]) => void) | null = null;
   let rejectReady: (e: Error) => void = () => {};
   let startupTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -143,6 +153,8 @@ export function createEngine(): Engine {
         for (const w of [...waiters]) w.match(msg.line);
       } else if (msg.type === 'error') {
         fail(new Error(msg.message));
+      } else if (msg.type === 'files') {
+        filesListed?.(msg.paths);
       } else if (!started) {
         started = true;
         const uciok = waitFor((l) => l === 'uciok');
@@ -200,11 +212,12 @@ export function createEngine(): Engine {
     setVariant(name, ini) {
       if (searching) cmd('stop');
       return enqueue(async () => {
-        if (ini !== undefined) {
-          cmd(`setoption name VariantPath value ${writeIni(ini)}`);
-        }
+        const path = ini === undefined ? null : writeIni(ini);
+        if (path !== null) cmd(`setoption name VariantPath value ${path}`);
         cmd(`setoption name UCI_Variant value ${name}`);
         await sync();
+        // Loaded into the engine by now; it never reads the file again.
+        if (path !== null) removeIni(path);
       });
     },
     check(ini) {
@@ -216,13 +229,15 @@ export function createEngine(): Engine {
           () => fail(new Error(`engine did not answer readyok within ${ENGINE_STARTUP_TIMEOUT_MS} ms`)),
           ENGINE_STARTUP_TIMEOUT_MS,
         );
-        cmd(`check ${writeIni(ini)}`);
+        const path = writeIni(ini);
+        cmd(`check ${path}`);
         cmd('isready');
         try {
           await readyok;
         } finally {
           clearTimeout(deadline);
         }
+        removeIni(path);
         return lines.map((l) => l.trim()).filter(isProblemLine);
       });
     },
@@ -272,6 +287,18 @@ export function createEngine(): Engine {
         searchFenOnce: (fen: string) => {
           fenOverride = fen;
         },
+        // Queued, so it answers after every command sent before it has run.
+        variantFiles: () =>
+          enqueue(
+            () =>
+              new Promise<string[]>((resolve) => {
+                filesListed = (paths) => {
+                  filesListed = null;
+                  resolve(paths);
+                };
+                send({ type: 'listFiles' });
+              }),
+          ),
       },
     }),
   };
