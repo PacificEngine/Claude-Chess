@@ -35,8 +35,7 @@ export function createSettingsDialog(host: HTMLElement): SettingsDialog {
   heading.textContent = 'Settings';
 
   const highlight = checkbox('settings-highlight', 'Highlight legal moves');
-  const sound = checkbox('settings-sound', 'Sound (not available yet)');
-  sound.input.disabled = true;
+  const sound = checkbox('settings-sound', 'Sound');
 
   const themeLabel = document.createElement('label');
   themeLabel.className = 'field';
@@ -101,7 +100,7 @@ export function createSettingsDialog(host: HTMLElement): SettingsDialog {
   dialog.addEventListener('close', () => closeListener());
   form.addEventListener('submit', () => {
     if (!base) return;
-    saveListener({ ...base, highlightLegal: highlight.input.checked, boardTheme: theme.value, pieceSet: pieces.value });
+    saveListener({ ...base, highlightLegal: highlight.input.checked, boardTheme: theme.value, pieceSet: pieces.value, sound: sound.input.checked });
   });
 
   return {

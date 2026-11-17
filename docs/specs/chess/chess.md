@@ -45,6 +45,10 @@ A static, browser-only chess site hosted on GitHub Pages. It covers standard che
     - *Trap:* the set in use is module state in `src/ui/piece-sets.ts`, so boards and the palette subscribe to its changes instead of being told by app.ts. The six standard pieces of every set are also designed-piece art choices (`art-catalog.ts`), because designed pieces may use any two-colour art the site ships.
   - *Trap:* Alfaerie has no formal licence, only David Howe's "you may download and use" permission; see ATTRIBUTION.md. The owner chose to rely on it.
   - *Trap:* chessgroundx draws pieces as CSS background images, and an SVG used as an image can't load other files, so each shogi tile embeds its piece (`yarn art:pieces` rebuilds them).
+- **Sound** (owner decisions, 2026-11-17): short tones made in the browser (Web Audio), so no sound files or licences. Off until the player ticks Sound in Settings; settings saved before sound worked are migrated to off once (settings version 2), since their `sound: true` was only the disabled box's default.
+  - A move, a capture and a check each have a tone; check wins over capture. The move that ends a game plays the end tone instead: against the AI the win or lose tune from the human's side, in hot-seat the win tune for any decisive result, and the draw tone for a draw. A human's running clock dropping under 10 s beeps once per game; the AI's never does.
+  - Undo, a new game, a restore, the editor and the designer are silent. In the tutorial, lesson moves and the written reply make the same move sounds, "Solved!" plays the win tune, and a wrong move plays nothing.
+  - *Trap:* cues come from comparing each new game state with the last one heard (`hearChange` in app.ts), so every way a move happens (the player, the AI, a flag) sounds alike. Test builds record each cue in `window.__chessTest.sounds`, since a test can't listen.
 
 ### Must Not Do
 - No backend, accounts, networking, or analytics.
@@ -53,7 +57,6 @@ A static, browser-only chess site hosted on GitHub Pages. It covers standard che
 - Lose the game in progress on reload.
 
 ### Nice to Have
-- Sound.
 - An on-screen debug panel showing raw engine output.
 - Usable on a phone (not a target, but it shouldn't break).
 

@@ -18,6 +18,7 @@ import { createPuzzleRun, createTryRun, type PuzzleRun, type TryRun } from '../r
 import { createLessonList, TRACK_NAMES } from './lesson-list';
 import { createLessonView, type StepState } from './lesson-view';
 import { createVariantPage } from './variant-page';
+import { type Cue, moveCue } from '../../ui/sound-cues';
 
 export const MSG_WRONG = 'Not quite. Try again.';
 export const MSG_SOLVED = 'Solved!';
@@ -33,6 +34,8 @@ export interface TutorialDeps {
   progress: TutorialProgress;
   playVariant(id: VariantId): void;
   close(): void;
+  /** Plays a sound cue; the player decides in Settings whether it is heard. */
+  sound(cue: Cue): void;
 }
 
 export interface Tutorial {
@@ -363,7 +366,9 @@ export function createTutorial(host: HTMLElement, deps: TutorialDeps): Tutorial 
       const run = tryRun;
       const uci = await pick(run.legalFrom(from), to);
       if (t !== token) return;
-      if (uci && run.play(uci) === 'done') {
+      const result = uci ? run.play(uci) : 'illegal';
+      if (result !== 'illegal') deps.sound('move');
+      if (result === 'done') {
         done.add(stepIndex);
         feedback = MSG_TRY_DONE;
       }
@@ -381,23 +386,40 @@ export function createTutorial(host: HTMLElement, deps: TutorialDeps): Tutorial 
   }
 
   function played(run: PuzzleRun, variant: string, before: string, uci: string, count: number): void {
+    const san = sanAt(variant, before, uci);
     const outcome = run.play(uci);
     if (outcome.result === 'wrong') {
+      // Undone at once and flagged in the panel: no sound.
       feedback = MSG_WRONG;
     } else if (outcome.result === 'solved') {
+      deps.sound('win');
       feedback = MSG_SOLVED;
       puzzleSolved = true;
       progress.markSolved(lesson!.id, puzzleIndex, count);
     } else {
       feedback = '';
+      deps.sound(moveCue(san));
       const m = parseUci(uci)!;
-      beforeReply = { fen: positionAfter(variant, before, uci), move: [m.from, m.to] };
+      const after = positionAfter(variant, before, uci);
+      const replySan = sanAt(variant, after, outcome.reply);
+      beforeReply = { fen: after, move: [m.from, m.to] };
       const t = token;
       replyTimer = setTimeout(() => {
         if (t !== token) return;
+        deps.sound(moveCue(replySan));
         beforeReply = null;
         draw();
       }, REPLY_DELAY_MS);
+    }
+  }
+
+  /** The SAN of `uci` from `fen`, for its sound. */
+  function sanAt(variant: string, fen: string, uci: string): string {
+    const game = rules.newGame(variant, fen);
+    try {
+      return game.san(uci);
+    } finally {
+      game.dispose();
     }
   }
 
