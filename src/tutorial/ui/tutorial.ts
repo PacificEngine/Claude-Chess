@@ -3,7 +3,7 @@
 // moves to the runners, which decide what is legal and when a goal is met.
 import type { Engine } from '../../engine/engine';
 import type { Color, Rules } from '../../rules/types';
-import { type BoardPosition, createBoardView, parseUci } from '../../ui/board-view';
+import { type BoardPosition, createBoardView, moveSquares, parseUci } from '../../ui/board-view';
 import type { ChoiceDialog } from '../../ui/choice-dialog';
 import { type ActiveVariant, curatedActive, customActive, variantTypes } from '../../variants/active';
 import { type VariantId, variantById } from '../../variants/catalog';
@@ -97,7 +97,7 @@ export function createTutorial(host: HTMLElement, deps: TutorialDeps): Tutorial 
   let puzzleRun: PuzzleRun | null = null;
   let puzzleSolved = false;
   /** The position after the player's right first move, shown until the written reply is played. */
-  let beforeReply: { fen: string; move: [string, string] } | null = null;
+  let beforeReply: { fen: string; move: string[] } | null = null;
   let replyTimer: ReturnType<typeof setTimeout> | undefined;
   /** Bumped whenever the screen moves on, so a board still loading or a reply still waiting is dropped. */
   let token = 0;
@@ -234,7 +234,7 @@ export function createTutorial(host: HTMLElement, deps: TutorialDeps): Tutorial 
           turn: turnOf(fen),
           movable: puzzleSolved || beforeReply ? null : 'white',
           legalFrom: (sq) => run.legalFrom(sq),
-          lastMove: beforeReply?.move ?? (last ? [last.from, last.to] : null),
+          lastMove: beforeReply?.move ?? (last ? moveSquares(last) : null),
         };
         break;
       }
@@ -402,7 +402,7 @@ export function createTutorial(host: HTMLElement, deps: TutorialDeps): Tutorial 
       const m = parseUci(uci)!;
       const after = positionAfter(variant, before, uci);
       const replySan = sanAt(variant, after, outcome.reply);
-      beforeReply = { fen: after, move: [m.from, m.to] };
+      beforeReply = { fen: after, move: moveSquares(m) };
       const t = token;
       replyTimer = setTimeout(() => {
         if (t !== token) return;

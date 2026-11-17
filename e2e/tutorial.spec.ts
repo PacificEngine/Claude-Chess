@@ -374,11 +374,11 @@ test("the top bar's Tutorial opens the lesson list grouped by track", async ({ p
   expect(at('Promotion')).toBeLessThan(at('Draws'));
   const fairy = await names('fairy');
   const fairyAt = (name: string) => fairy.findIndex((t) => t.startsWith(name));
-  const fairyNames = ['Fers', 'Wazir', 'Commoner', 'Alfil', 'Archbishop', 'Hawk (Seirawan)', 'Warlord (Spartan)', 'Banner', 'Hoplite (Spartan)', 'Lieutenant (Spartan)', 'Captain (Spartan)'];
-  for (const name of [...fairyNames, 'General (Spartan)']) expect(fairyAt(name), name).toBeGreaterThan(-1);
+  const fairyNames = ['Fers', 'Wazir', 'Commoner', 'Alfil', 'Archbishop', 'Hawk (Seirawan)', 'Warlord (Spartan)', 'Banner', 'Hoplite (Spartan)', 'Lieutenant (Spartan)', 'Captain (Spartan)', 'General (Xiangqi)', 'Advisor (Xiangqi)', 'Elephant (Xiangqi)', 'Soldier (Xiangqi)'];
+  for (const name of [...fairyNames, 'General (Spartan)', 'Dragon King (Shogi)']) expect(fairyAt(name), name).toBeGreaterThan(-1);
   // A commoner is a fers and a wazir together, so its card follows the Wazir's; the Spartan pieces come last.
   for (const [a, b] of fairyNames.slice(1).map((name, i) => [fairyNames[i], name])) expect(fairyAt(a), `${a} before ${b}`).toBeLessThan(fairyAt(b));
-  await expect(cards('variants')).toHaveText([/^Chess/, /Capablanca/, /Grand Chess/, /Seirawan/, /Amazon/, /Shako/, /Spartan/, /Antichess/]);
+  await expect(cards('variants')).toHaveText([/^Chess/, /Capablanca/, /Grand Chess/, /Seirawan/, /Amazon/, /Shako/, /Spartan/, /Antichess/, /Shogi/, /Xiangqi/]);
   for (const c of await list(page).locator('[data-testid^=card-]').all()) await expect(c).toHaveAttribute('data-finished', 'false');
   // Back to game closes the tutorial.
   await page.getByTestId('lesson-list-back').click();

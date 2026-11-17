@@ -168,6 +168,12 @@ export class GameSession {
     return this.s.result ? [] : this.game.legalMovesFrom(sq);
   }
 
+  /** The legal drops of a piece in hand, by its letter in either case: UCI like `P@e5`, from the rules. */
+  legalDrops(letter: string): string[] {
+    const prefix = `${letter.toUpperCase()}@`;
+    return this.s.result ? [] : this.game.legalMoves().filter((m) => m.startsWith(prefix));
+  }
+
   isHumanTurn(): boolean {
     return this.isHuman(this.game.turn());
   }

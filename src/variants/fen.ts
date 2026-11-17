@@ -7,23 +7,33 @@ export interface Position {
   /** Square index (file + rank * files, rank 0 = rank 1) to FEN piece character. */
   squares: Map<number, string>;
   pocket: string[];
+  /** Square indexes of promoted pieces (`+P` in Shogi); the piece's own letter is in `squares`. */
+  promoted: Set<number>;
 }
 
 export function parseFen(fen: string): Position {
   const [placement] = fen.split(' ');
   const pocketMatch = /\[([^\]]*)\]/.exec(placement);
-  // Bottom row first. Digits are runs of empty squares; '~' (promoted) and '+' markers aren't pieces.
+  // Bottom row first. Digits are runs of empty squares; '~' (promoted) and '+' markers aren't pieces, though a
+  // '+' piece is noted in `promoted`.
   const rows: string[][] = placement
     .replace(/\[[^\]]*\]/, '')
     .split('/')
     .reverse()
     .map((row) =>
-      (row.match(/\d+|[A-Za-z]/g) ?? []).flatMap((t) => (/\d/.test(t) ? new Array<string>(Number(t)).fill('') : [t])),
+      (row.match(/\d+|\+?[A-Za-z]/g) ?? []).flatMap((t) => (/\d/.test(t) ? new Array<string>(Number(t)).fill('') : [t])),
     );
   const files = rows[0].length;
   const squares = new Map<number, string>();
-  rows.forEach((row, rank) => row.forEach((c, file) => c && squares.set(file + rank * files, c)));
-  return { files, ranks: rows.length, squares, pocket: [...(pocketMatch?.[1] ?? '')] };
+  const promoted = new Set<number>();
+  rows.forEach((row, rank) =>
+    row.forEach((c, file) => {
+      if (!c) return;
+      squares.set(file + rank * files, c.slice(-1));
+      if (c.length > 1) promoted.add(file + rank * files);
+    }),
+  );
+  return { files, ranks: rows.length, squares, pocket: [...(pocketMatch?.[1] ?? '')], promoted };
 }
 
 /** A square's index in `Position.squares`, on a board `files` wide. */
@@ -40,14 +50,32 @@ export function pieceOn(fen: string, square: string): string | undefined {
   return squares.get(squareIndex(square, files));
 }
 
-/** A UCI move's from- and to-squares; any promotion or gating letter after them is dropped. */
-export function uciSquares(uci: string): { from: string; to: string } {
-  const [from = '', to = ''] = uci.match(/[a-z]\d+/g) ?? [];
-  return { from, to };
+/** A UCI move split up. A drop (`B@a2`) has no from-square and names the dropped piece. */
+export interface UciMove {
+  from: string | null;
+  to: string;
+  /** What follows the squares: a promotion letter, Shogi's '+', or a Seirawan gating letter. */
+  suffix: string;
+  /** The dropped piece's letter, or null for a move on the board. */
+  drop: string | null;
+}
+
+/** Splits a UCI move, or returns null when the text is not one. */
+export function parseUci(uci: string): UciMove | null {
+  const drop = /^([A-Za-z])@([a-z]\d+)$/.exec(uci);
+  if (drop) return { from: null, to: drop[2], suffix: '', drop: drop[1] };
+  const m = /^([a-z]\d+)([a-z]\d+)(.*)$/.exec(uci);
+  return m ? { from: m[1], to: m[2], suffix: m[3], drop: null } : null;
+}
+
+/** A UCI move's from- and to-squares (from is null for a drop); a suffix after them is dropped. */
+export function uciSquares(uci: string): { from: string | null; to: string } {
+  const m = parseUci(uci);
+  return { from: m?.from ?? null, to: m?.to ?? '' };
 }
 
 /** A FEN from its pieces; by default with no castling, en passant or gating rights, so only the pieces decide what's legal. */
-export function buildFen({ files, ranks, squares, pocket }: Position, rest = 'w - - 0 1'): string {
+export function buildFen({ files, ranks, squares, pocket }: Omit<Position, 'promoted'>, rest = 'w - - 0 1'): string {
   const rows: string[] = [];
   for (let rank = ranks - 1; rank >= 0; rank--) {
     let row = '';

@@ -1,0 +1,84 @@
+{
+  "id": "xiangqi-general",
+  "track": "fairy",
+  "order": 33,
+  "title": "The Xiangqi general",
+  "cards": [{ "track": "fairy", "name": "General (Xiangqi)" }],
+  "teaches": [{ "variant": "xiangqi", "letter": "k" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The general is the king of Xiangqi, Chinese chess: checkmate it and you win. It steps one square straight, forward, back or sideways, never diagonally, and takes the same way. It may never leave its palace, the middle three files of its back three ranks: the nine squares from d1 to f3. And the two generals may never face each other on an open file, with nothing between them. Here the general on e2 can't step to d2, where it would face the black general on d10. The sides are Red and Black in Xiangqi; this app calls Red White, and you play it. The marked squares are every square it can reach.",
+      "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/9/9/9/4K4/9 w - - 0 1" },
+      "square": "e2"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Walk the general to the marked square, f3, the far corner of the palace. It can't step diagonally, so go around. Your soldier on e4 stands between the generals, so the e-file is not open and the general may cross it.",
+      "board": { "variant": "xiangqi", "fen": "4k4/9/9/9/9/9/4P4/9/9/3K5 w - - 0 1" },
+      "square": "d1",
+      "targets": ["f3"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "Because the generals may never face each other, your general guards its whole file, though it can't take along it: on an open file it keeps the black general off that file. Here it steps to e1, and the black general on d10 may no longer step across to e10.",
+          "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/9/9/9/9/5K3 w - - 0 1" },
+          "arrows": [["f1", "e1"]]
+        },
+        {
+          "text": "The same rule pins. A piece standing alone between the two generals may not leave their file, since the generals would then face each other. Here the black horse on e5 is stuck on the e-file while your general stays on e2.",
+          "board": { "variant": "xiangqi", "fen": "4k4/9/9/9/9/4n4/9/9/4K4/9 w - - 0 1" },
+          "square": "e2"
+        },
+        {
+          "text": "The general is weak on its own: it has at most four squares, all inside the palace. Keep it at home, with its advisors beside it on the back rank and its elephants beyond them, where it is hardest to check. Here it steps back down to e1, between its two advisors.",
+          "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/9/9/9/4K4/2BA1AB2 w - - 0 1" },
+          "arrows": [["e2", "e1"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black soldier on e2.",
+          "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/9/9/9/4pK3/9 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "e2" },
+          "moves": 1,
+          "line": ["f2e2"],
+          "hint": "A soldier that walks into your palace is in reach of the general. It takes one square straight."
+        },
+        {
+          "prompt": "Win the black horse on e3 in two moves.",
+          "board": { "variant": "xiangqi", "fen": "4k4/9/9/5N3/9/9/9/4n4/5K3/9 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "e3" },
+          "moves": 2,
+          "line": ["f2e2", "e10f10", "e2e3"],
+          "hint": "The general can't take diagonally. Step onto the horse's file instead: then it stands alone between the generals and may not move away."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "xiangqi", "fen": "4k4/9/6N2/9/9/4P4/9/9/4K4/4C4 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["e2d2"],
+          "hint": "A cannon takes by jumping over exactly one piece, and your cannon on e1 has two in front of it: your general and your soldier. Step the general aside, onto the file that takes the last square from the black general."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/8R/9/9/9/5K3 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["f1e1", "d10d9", "i5d5"],
+          "hint": "No check yet. Take the e-file from the black general with your own general, and it is left on the d-file, where your chariot can check it."
+        }
+      ]
+    }
+  ]
+}

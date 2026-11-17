@@ -147,6 +147,39 @@ it('reports the current position and side to move so the board can draw it', () 
   expect(s.turn()).toBe('black');
 });
 
+describe('Shogi drops', () => {
+  const shogi = (fen: string) => GameSession.create(rules, { variant: 'shogi', fen, opponent: { kind: 'hotseat' }, clockConfig: null }, 0);
+
+  it("lists a hand piece's legal drops, from the rules, and only that piece's", () => {
+    // A pawn and a bishop in hand, a pawn already on the e-file: no pawn drop there or on the last rank.
+    const s = shogi('4k4/9/9/9/9/9/4P4/9/4K4[BP] w - - 0 1');
+    const pawn = s.legalDrops('p');
+    expect(pawn).toContain('P@d5');
+    expect(pawn).not.toContain('P@e5');
+    expect(pawn.some((m) => m.endsWith('9'))).toBe(false);
+    expect(pawn.every((m) => m.startsWith('P@'))).toBe(true);
+    expect(s.legalDrops('B')).toContain('B@e5');
+    expect(s.legalDrops('g')).toEqual([]);
+  });
+
+  it('plays a drop, and undo puts the piece back in hand', () => {
+    const s = shogi('4k4/9/9/9/9/9/9/9/4K4[B] w - - 0 1');
+    s.play('B@e5', 0);
+    expect(s.fen()).toBe('4k4/9/9/9/4B4/9/9/9/4K4[] b - - 0 1');
+    s.undo(1);
+    expect(s.fen()).toBe('4k4/9/9/9/9/9/9/9/4K4[B] w - - 0 1');
+  });
+
+  it('offers no drops once the game is over', () => {
+    const fen = '4k4/9/9/9/9/9/9/9/4K4[B] w - - 0 1';
+    const s = GameSession.create(rules, { variant: 'shogi', fen, opponent: { kind: 'hotseat' }, clockConfig: { baseMs: 1000, incrementMs: 0 } }, 0);
+    expect(s.legalDrops('b').length).toBeGreaterThan(0);
+    s.checkFlag(5000); // White's time ran out
+    expect(s.state().result).not.toBeNull();
+    expect(s.legalDrops('b')).toEqual([]);
+  });
+});
+
 describe('isSessionState', () => {
   const saved = () => {
     const s = hotseat({ baseMs: 60000, incrementMs: 0 });

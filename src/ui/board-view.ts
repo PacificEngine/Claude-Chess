@@ -1,13 +1,14 @@
 // Wraps chessgroundx. It only draws positions and reports where the player dragged or clicked a piece:
-// legality comes from the `legalFrom` callback (the rules adapter via the session), never from here.
+// legality comes from the `legalFrom` and `legalDrops` callbacks (the rules adapter via the session), never from here.
 import { Chessground } from 'chessgroundx';
 import type { Api } from 'chessgroundx/api';
 import type { Config } from 'chessgroundx/config';
 import type * as cg from 'chessgroundx/types';
 import type { Color } from '../rules/types';
 import { type ActiveVariant, artTypeOf, designedArt } from '../variants/active';
+import { parseUci, type UciMove } from '../variants/fen';
 import { currentPieceSet, onPieceSetChange } from './piece-sets';
-import { artUrl, parsePieceClass, pocketRoles, tokenClass } from './pieces';
+import { artUrl, facingUrl, parsePieceClass, pocketRoles, promotedArtUrl, promotedMark, promotedMarkClass, tokenClass } from './pieces';
 
 export interface BoardPosition {
   variant: ActiveVariant;
@@ -18,7 +19,10 @@ export interface BoardPosition {
   movable: Color | null;
   /** UCI moves from a UCI square, e.g. legalFrom('e2') -> ['e2e4', 'e2e3']. */
   legalFrom: (square: string) => string[];
-  lastMove: [string, string] | null;
+  /** UCI drops of a piece in hand, by its letter, e.g. legalDrops('b') -> ['B@a1', ...]. None without it. */
+  legalDrops?: (letter: string) => string[];
+  /** The last move's squares, from `moveSquares`: [from, to], or [to] for a drop. */
+  lastMove: string[] | null;
   check: boolean;
   showDests: boolean;
   /** Squares to mark (a lesson's highlights), each with what it marks. */
@@ -32,6 +36,8 @@ export interface BoardView {
   show(pos: BoardPosition): void;
   /** Called with UCI squares when the player moves a piece. The view does not apply the move itself. */
   onMove(cb: (from: string, to: string) => void): void;
+  /** Called with the dropped piece's letter (uppercase, as in UCI) and the UCI square it was dropped on. */
+  onDrop(cb: (letter: string, to: string) => void): void;
 }
 
 // chessgroundx names rank 10 ':' (its ranks run '1'..'9', ':', ';', ...), so UCI squares are translated.
@@ -42,11 +48,11 @@ export const toKey = (square: string): cg.Key => {
 };
 export const fromKey = (key: string): string => `${key[0]}${CG_RANKS.indexOf(key[1]) + 1}`;
 
-/** Splits a UCI move into squares and a suffix (promotion piece or Seirawan gating piece). */
-export function parseUci(uci: string): { from: string; to: string; suffix: string } | null {
-  const m = /^([a-p])(\d+)([a-p])(\d+)(.*)$/.exec(uci);
-  return m ? { from: `${m[1]}${m[2]}`, to: `${m[3]}${m[4]}`, suffix: m[5] } : null;
-}
+// The UCI parser lives with the rules-side helpers; it's re-exported here for the views that already use it.
+export { parseUci };
+
+/** The squares to highlight for a move: from and to, or only the to-square for a drop. */
+export const moveSquares = (m: UciMove): string[] => (m.from ? [m.from, m.to] : [m.to]);
 
 /**
  * Gives every piece element its art (an inline background image) or, when the variant has none for it, the
@@ -59,15 +65,22 @@ export function observePieces(host: HTMLElement, variant: () => ActiveVariant | 
     if (!parsed) return;
     const v = variant();
     if (!v) return;
-    const url = artUrl(parsed.letter, parsed.color, v.artBase, artTypeOf(v, parsed.letter), designedArt(v, parsed.letter), currentPieceSet());
+    const own = parsed.promoted
+      ? promotedArtUrl(parsed.letter, parsed.color, v.artBase)
+      : artUrl(parsed.letter, parsed.color, v.artBase, artTypeOf(v, parsed.letter), designedArt(v, parsed.letter), currentPieceSet());
+    // chessgroundx marks the side at the bottom `ally` and the other `enemy`, on the board and in the pockets.
+    const side = piece.classList.contains('ally') ? 'ally' : piece.classList.contains('enemy') ? 'enemy' : null;
+    const url = own && facingUrl(own, parsed.color, side);
     piece.style.backgroundImage = url ? `url("${import.meta.env.BASE_URL}${url}")` : '';
+    const mark = parsed.promoted && url !== null && promotedMark(parsed.letter, v.artBase);
+    if (piece.classList.contains(promotedMarkClass) !== mark) piece.classList.toggle(promotedMarkClass, mark);
     const token = tokenClass(parsed.letter).split(' ');
     // Touch the class only when it must change: a class write is itself a mutation this observer would see.
     const hasToken = token.every(c => piece.classList.contains(c));
     if (url && hasToken) piece.classList.remove(...token);
     if (!url && !hasToken) piece.classList.add(...token);
     if (url) piece.removeAttribute('data-letter');
-    else piece.dataset.letter = parsed.letter.toUpperCase();
+    else piece.dataset.letter = `${parsed.promoted ? '+' : ''}${parsed.letter.toUpperCase()}`;
   };
   const all = (): void => host.querySelectorAll<HTMLElement>('piece').forEach(style);
   // A new piece set in Settings redraws this board's pieces, whether it is on screen or not.
@@ -88,6 +101,7 @@ export function createBoardView(host: HTMLElement): BoardView {
   let api: Api | null = null;
   let builtFor: string | null = null;
   let moveListener: (from: string, to: string) => void = () => {};
+  let dropListener: (letter: string, to: string) => void = () => {};
   // chessgroundx 10.7 has no custom square highlights, so marks are drawn in an overlay over the squares,
   // styled like the designer's reach preview.
   const markLayer = document.createElement('div');
@@ -130,7 +144,13 @@ export function createBoardView(host: HTMLElement): BoardView {
       autoCastle: true,
       premovable: { enabled: false },
       drawable: { enabled: true },
-      movable: { free: false, events: { after: (orig, dest) => moveListener(fromKey(orig), fromKey(dest)) } },
+      movable: {
+        free: false,
+        events: {
+          after: (orig, dest) => moveListener(fromKey(orig), fromKey(dest)),
+          afterNewPiece: (piece, dest) => dropListener(piece.role[0]!.toUpperCase(), fromKey(dest)),
+        },
+      },
       ...(roles && { pocketRoles: { white: roles, black: roles } }),
     };
     api = Chessground(wrap, config, pocketTop, pocketBottom);
@@ -153,7 +173,7 @@ export function createBoardView(host: HTMLElement): BoardView {
       board.set({
         fen: pos.fen,
         turnColor: pos.turn,
-        lastMove: pos.lastMove ? [toKey(pos.lastMove[0]), toKey(pos.lastMove[1])] : undefined,
+        lastMove: pos.lastMove?.map(toKey),
         check: pos.check,
         movable: { color: pos.movable ?? undefined, dests: new Map(), showDests: pos.showDests },
       });
@@ -169,6 +189,15 @@ export function createBoardView(host: HTMLElement): BoardView {
           }
           if (targets.size) dests.set(key, [...targets]);
         }
+        // A piece in hand may go only where the rules allow its drops: chessgroundx keys those `P@`.
+        for (const role of pos.legalDrops ? (pocketRoles(pos.variant) ?? []) : []) {
+          const letter = role[0]!.toUpperCase();
+          const targets = pos.legalDrops!(letter).flatMap((uci) => {
+            const m = parseUci(uci);
+            return m && m.drop === letter ? [toKey(m.to)] : [];
+          });
+          if (targets.length) dests.set(`${letter}@` as cg.DropOrig, targets);
+        }
         board.set({ movable: { dests } });
       }
       board.setAutoShapes((pos.arrows ?? []).map(([from, to]) => ({ orig: toKey(from), dest: toKey(to), brush: 'green' })));
@@ -178,6 +207,9 @@ export function createBoardView(host: HTMLElement): BoardView {
     },
     onMove(cb) {
       moveListener = cb;
+    },
+    onDrop(cb) {
+      dropListener = cb;
     },
   };
 }

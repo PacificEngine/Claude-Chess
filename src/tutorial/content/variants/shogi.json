@@ -1,0 +1,11 @@
+{
+  "id": "variant-shogi",
+  "variant": "shogi",
+  "order": 9,
+  "differences": [
+    "A piece you capture changes sides and goes into your hand. Instead of moving, you may place a piece from your hand on almost any empty square: it is dropped, and plays for you from then on.",
+    "A piece that moves into, within or out of the three ranks nearest your opponent may promote. Promotion is optional, unless the piece could never move again: a pawn or lance on the last rank, or a knight on the last two, must promote.",
+    "The pawn, lance, knight and silver general each promote to move like a gold general. The bishop becomes the dragon horse, which can also step one square straight, and the rook becomes the dragon king, which can also step one square diagonally. The king and the gold general never promote.",
+    "The side that moves first is traditionally called Black in Shogi. This app calls it White, as in chess."
+  ]
+}

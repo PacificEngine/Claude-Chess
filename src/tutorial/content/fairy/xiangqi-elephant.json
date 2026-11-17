@@ -1,0 +1,84 @@
+{
+  "id": "xiangqi-elephant",
+  "track": "fairy",
+  "order": 35,
+  "title": "The Xiangqi elephant",
+  "cards": [{ "track": "fairy", "name": "Elephant (Xiangqi)" }],
+  "teaches": [{ "variant": "xiangqi", "letter": "b" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The elephant of Xiangqi, Chinese chess, moves exactly two squares diagonally, and takes the same way. It doesn't jump: if the square in between is taken, it can't go that way. And it may never cross the river in the middle of the board, so it stays on your half, on just seven squares: a3, c1, c5, e3, g1, g5 and i3. This elephant on c5 stands at the river's edge. It may not cross to a7 or e7, so it can only go back, to a3 or e3. The marked squares are every square it can reach.",
+      "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/2B6/9/9/9/4K4 w - - 0 1" },
+      "square": "c5"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the elephant to the marked square, g5, across your half of the board. It moves two squares diagonally at a time, so go by way of e3.",
+      "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/9/9/9/9/2B1K4 w - - 0 1" },
+      "square": "c1",
+      "targets": ["g5"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The square in between is called the elephant's eye. When any piece stands on it, that way is shut. Here your general on d2 stands on the eye between e3 and c1, so the elephant can't go to c1.",
+          "board": { "variant": "xiangqi", "fen": "4k4/9/9/9/9/9/9/4B4/3K5/9 w - - 0 1" },
+          "square": "e3"
+        },
+        {
+          "text": "The elephant never crosses the river, so it is a defender, worth about two soldiers. A pair guard each other when they stand one elephant move apart, as on c1 and e3 here, and together they keep enemy horses and cannons off the squares in front of your palace.",
+          "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/9/9/4B4/9/2B1K4 w - - 0 1" },
+          "square": "e3"
+        },
+        {
+          "text": "An elephant on e3 stands on your general's file, and blocks it. Move it away and the file opens, and your general keeps the black general off it. Here the elephant leaves e3 for g5, and the black general on d10 may no longer step to e10.",
+          "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/9/9/4B4/9/4K4 w - - 0 1" },
+          "arrows": [["e3", "g5"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black horse on g1.",
+          "board": { "variant": "xiangqi", "fen": "5k3/9/9/9/9/9/9/4B4/4K4/6n2 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "g1" },
+          "moves": 1,
+          "line": ["e3g1"],
+          "hint": "The horse is two squares diagonally from your elephant, and the eye between them, f2, is empty."
+        },
+        {
+          "prompt": "Win the black horse on e3 in two moves.",
+          "board": { "variant": "xiangqi", "fen": "4k4/9/9/9/9/2P6/9/B3n4/9/4K4 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "e3" },
+          "moves": 2,
+          "line": ["a3c1", "e10d10", "c1e3"],
+          "hint": "The horse stands alone between the generals, so it can't move away. Your soldier is in the way on c5, so go round by c1."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "xiangqi", "fen": "4k4/9/2N6/9/9/2B6/9/9/4C4/5K3 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["c5e3"],
+          "hint": "Your cannon on e2 takes by jumping over exactly one piece, and it has none in front of it. Give it a screen on the e-file. Your general holds the f-file, and your horse covers d10."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "xiangqi", "fen": "9/3k5/9/9/9/2r6/9/4B4/9/R3K4 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["e3c5", "d9d10", "a1d1"],
+          "hint": "No check yet. One elephant move opens your general's file and takes the black chariot, which would otherwise block your own chariot's check on the d-file."
+        }
+      ]
+    }
+  ]
+}

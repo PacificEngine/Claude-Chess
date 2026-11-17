@@ -19,7 +19,7 @@ function isEnPassant(game: RulesGame, uci: string): boolean {
   const { from, to } = uciSquares(uci);
   return beforeMove(game, uci, () => {
     const fen = game.fen();
-    return pieceOn(fen, from)?.toLowerCase() === 'p' && from[0] !== to[0] && pieceOn(fen, to) === undefined;
+    return from !== null && pieceOn(fen, from)?.toLowerCase() === 'p' && from[0] !== to[0] && pieceOn(fen, to) === undefined;
   });
 }
 

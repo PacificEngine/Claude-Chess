@@ -1,0 +1,84 @@
+{
+  "id": "xiangqi-soldier",
+  "track": "fairy",
+  "order": 36,
+  "title": "The Xiangqi soldier",
+  "cards": [{ "track": "fairy", "name": "Soldier (Xiangqi)" }],
+  "teaches": [{ "variant": "xiangqi", "letter": "p" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The soldier is the pawn of Xiangqi, Chinese chess. It steps one square straight forward, and takes the same way, never diagonally. The river across the middle of the board changes it. On your own side of the river it can only step forward. Once it has crossed, it may also step one square sideways, and take sideways too. It never moves back, and it never promotes. This soldier on e6 has just crossed, so it can go forward to e7 or sideways to d6 or f6. The marked squares are every square it can reach.",
+      "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/4P4/9/9/9/9/4K4 w - - 0 1" },
+      "square": "e6"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the soldier to the marked square, d6. It can't step sideways yet, so first march it forward across the river, and turn once it is on the far side.",
+      "board": { "variant": "xiangqi", "fen": "4k4/9/9/9/9/9/2P6/9/9/3K5 w - - 0 1" },
+      "square": "c4",
+      "targets": ["d6"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "On its own side of the river a soldier is weak: it has one move, straight ahead, and a single piece in front of it stops it. Across the river it has three, and is worth about twice as much. So push it over when you can. Here the soldier on c4 steps to c5, the last rank on your side; one more step and it is across.",
+          "board": { "variant": "xiangqi", "fen": "4k4/9/9/9/9/9/2P6/9/9/3K5 w - - 0 1" },
+          "arrows": [["c4", "c5"]]
+        },
+        {
+          "text": "Soldiers that have crossed work well side by side. Each can take sideways onto the other's square, so they guard each other: a piece that takes one is taken back. Here the soldiers on d7 and e7 guard each other.",
+          "board": { "variant": "xiangqi", "fen": "3k5/9/9/3PP4/9/9/9/9/9/4K4 w - - 0 1" },
+          "square": "e7"
+        },
+        {
+          "text": "A soldier can't come back, so don't rush it to the end. On the last rank it can only step sideways along it, and does little. It is strongest one or two ranks short, next to the black palace, where it takes squares from the general. This soldier on b10 has gone too far: it can only go to a10 or c10.",
+          "board": { "variant": "xiangqi", "fen": "1P2k4/9/9/9/9/9/9/9/9/3K5 w - - 0 1" },
+          "square": "b10"
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black soldier on f7.",
+          "board": { "variant": "xiangqi", "fen": "9/9/5k3/4Pp3/9/9/9/9/9/5K3 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "f7" },
+          "moves": 1,
+          "line": ["e7f7"],
+          "hint": "Your soldier has crossed the river, so it can take sideways."
+        },
+        {
+          "prompt": "Win the black horse on e9 in two moves.",
+          "board": { "variant": "xiangqi", "fen": "4k4/4n4/3P5/9/9/9/9/9/9/4K4 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "e9" },
+          "moves": 2,
+          "line": ["d8d9", "e10f10", "d9e9"],
+          "hint": "The horse stands alone between the two generals, so it may not leave the e-file. Step up beside it rather than onto its file, which would free it."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "xiangqi", "fen": "4k4/1N1Pn4/9/9/9/9/9/5K3/9/9 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["d9d10"],
+          "hint": "Your general on f3 keeps the black general off the open f-file. Check it from the side, on a square your horse guards."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "xiangqi", "fen": "5k3/9/4PP3/9/9/9/9/4p4/9/5K3 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["e8e9", "e3e2", "f8f9"],
+          "hint": "No check yet. Move one soldier so the general has no square left, then check with the other, side by side so they guard each other."
+        }
+      ]
+    }
+  ]
+}

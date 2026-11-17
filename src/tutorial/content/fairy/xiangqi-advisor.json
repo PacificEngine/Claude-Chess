@@ -1,0 +1,84 @@
+{
+  "id": "xiangqi-advisor",
+  "track": "fairy",
+  "order": 34,
+  "title": "The Xiangqi advisor",
+  "cards": [{ "track": "fairy", "name": "Advisor (Xiangqi)" }],
+  "teaches": [{ "variant": "xiangqi", "letter": "a" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The advisor of Xiangqi, Chinese chess, steps one square diagonally, and takes the same way. Like its general, it may never leave its palace, the middle three files of its back three ranks. Moving only diagonally, it can stand on just five squares in the whole game: the four corners of the palace, d1, f1, d3 and f3, and its centre, e2. From the centre it reaches all four corners. The marked squares are every square it can reach.",
+      "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/9/9/9/4A4/4K4 w - - 0 1" },
+      "square": "e2"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the advisor to the marked square, f3, the far corner of the palace. It moves only diagonally, so it must go through the centre.",
+      "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/9/9/9/9/3AK4 w - - 0 1" },
+      "square": "d1",
+      "targets": ["f3"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The advisors never cross the board, so their work is defence: they stay beside the general and block checks. Here the black chariot on e8 checks your general down the e-file, and the advisor on f1 steps up to e2 to block it, where the general guards it.",
+          "board": { "variant": "xiangqi", "fen": "3k5/9/4r4/9/9/9/9/9/9/3AKA3 w - - 0 1" },
+          "arrows": [["f1", "e2"]]
+        },
+        {
+          "text": "With one advisor in the centre, the two guard each other: here the advisor on e2 guards the one on d1, and the one on d1 guards it back. Lose both and the general is easy to attack.",
+          "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/9/9/9/4A4/3AK4 w - - 0 1" },
+          "square": "e2"
+        },
+        {
+          "text": "An advisor in front of your general also blocks the general's file. Step it aside and the file opens, and your general keeps the black general off it. Here the advisor leaves e2 for f3, and the black general on d10 may no longer step to e10.",
+          "board": { "variant": "xiangqi", "fen": "3k5/9/9/9/9/9/9/9/4A4/4K4 w - - 0 1" },
+          "arrows": [["e2", "f3"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black chariot on d3.",
+          "board": { "variant": "xiangqi", "fen": "5k3/9/9/9/9/9/9/3r5/4A4/4K4 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "d3" },
+          "moves": 1,
+          "line": ["e2d3"],
+          "hint": "The chariot has come into your palace, one diagonal step from your advisor."
+        },
+        {
+          "prompt": "Win the black horse on f3 in two moves.",
+          "board": { "variant": "xiangqi", "fen": "9/5k3/9/9/9/9/9/5n3/5K3/3A5 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "f3" },
+          "moves": 2,
+          "line": ["d1e2", "f9f10", "e2f3"],
+          "hint": "Your general can't take it, as it would then face the black general. But the horse stands alone between the generals, so it can't move away. Bring the advisor round through the centre."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "xiangqi", "fen": "5k3/9/3N5/9/9/9/9/5A3/9/3K1R3 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["f3e2"],
+          "hint": "Your advisor on f3 stands in front of your chariot. Step it out of the way, and your horse covers the squares the black general would run to."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "xiangqi", "fen": "9/3k5/9/9/9/9/9/9/4A4/R3KA3 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["e2f3", "d9d8", "a1d1"],
+          "hint": "No check yet. Open your general's file, so the black general can't step across to it, but don't block your chariot's way along the back rank or up the d-file."
+        }
+      ]
+    }
+  ]
+}

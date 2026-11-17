@@ -1,6 +1,6 @@
 // Plain-English reasons a position can't be played, for the editor's disabled Play/Resume button. No DOM imports.
 import type { Rules } from '../rules/types';
-import { royalLetters } from './fen';
+import { parseFen, royalLetters } from './fen';
 
 const INVALID_FEN = 'The position is not a valid FEN for this variant.';
 const NO_MOVES = 'There are no legal moves from this position.';
@@ -56,6 +56,10 @@ export function positionProblems(rules: Rules, variant: string, fen: string, roy
   }
   if (kingProblems.length) return kingProblems;
 
+  // Placements the game forbids but the engine accepts (Xiangqi's palace, Shogi's dead pieces and nifu).
+  const placement = placementProblems(variant, fen);
+  if (placement.length) return placement;
+
   // The check test needs the other side to move. A flipped FEN the engine rejects can't be evaluated, so
   // (like every other position we can't evaluate) it is reported as invalid rather than skipped.
   const flipped = flipTurn(fen);
@@ -80,4 +84,82 @@ function inCheck(rules: Rules, variant: string, fen: string): boolean {
   } finally {
     board.dispose();
   }
+}
+
+const SIDES = [
+  { name: 'White', upper: true },
+  { name: 'Black', upper: false },
+] as const;
+
+/** Pieces as the player places them: file 0-based from a, rank 1-based, promoted for a Shogi `+`. */
+interface Placed {
+  letter: string;
+  white: boolean;
+  file: number;
+  rank: number;
+  promoted: boolean;
+}
+
+function placed(fen: string): Placed[] {
+  const { files, squares, promoted } = parseFen(fen);
+  return [...squares].map(([index, c]) => ({
+    letter: c.toLowerCase(),
+    white: c !== c.toLowerCase(),
+    file: index % files,
+    rank: Math.floor(index / files) + 1,
+    promoted: promoted.has(index),
+  }));
+}
+
+/** Squares as file letter and rank, White's side; Black's are the same files on rank 11 - r. */
+const points = (list: string) => list.split(' ').map((sq) => ({ file: sq.charCodeAt(0) - 97, rank: Number(sq.slice(1)) }));
+const XIANGQI_ADVISOR = points('d1 f1 e2 d3 f3');
+const XIANGQI_ELEPHANT = points('a3 e3 i3 c1 g1 c5 g5');
+
+/**
+ * Where the game's rules forbid a piece to stand, though Fairy-Stockfish accepts the FEN: Xiangqi's general and
+ * advisors leave the palace in no game, its elephants never cross the river nor leave their points, and its
+ * soldiers never step back; a Shogi pawn, lance or knight can't stand where it could never move again, nor two
+ * unpromoted pawns of a side on one file. Nor may the Xiangqi generals face each other on an open file. Other
+ * variants have none. Each problem is named once per side.
+ */
+export function placementProblems(variant: string, fen: string): string[] {
+  if (variant !== 'xiangqi' && variant !== 'shogi') return [];
+  const pieces = placed(fen);
+  const problems: string[] = [];
+  for (const side of SIDES) {
+    const own = pieces.filter((p) => p.white === side.upper);
+    // Ranks counted from the side's own back rank (1), so one test serves both sides.
+    const rel = (rank: number) => (side.upper ? rank : (variant === 'xiangqi' ? 11 : 10) - rank);
+    const some = (letter: string, bad: (p: Placed) => boolean) => own.some((p) => p.letter === letter && bad(p));
+    const at = (list: { file: number; rank: number }[]) => (p: Placed) => list.some((q) => q.file === p.file && q.rank === rel(p.rank));
+    if (variant === 'xiangqi') {
+      const inPalace = (p: Placed) => p.file >= 3 && p.file <= 5 && rel(p.rank) <= 3;
+      if (some('k', (p) => !inPalace(p))) problems.push(`${side.name}'s general must stay inside its palace.`);
+      if (some('a', (p) => !at(XIANGQI_ADVISOR)(p))) problems.push(`${side.name}'s advisors must stay on the diagonal points of its palace.`);
+      if (some('b', (p) => !at(XIANGQI_ELEPHANT)(p))) {
+        problems.push(`${side.name}'s elephants must stay on their own side of the river, on the elephant points.`);
+      }
+      if (some('p', (p) => rel(p.rank) <= 3)) problems.push(`${side.name}'s soldiers can't stand behind their starting rank.`);
+    } else {
+      const last = (p: Placed) => !p.promoted && rel(p.rank) === 9;
+      if (some('p', last) || some('l', last)) problems.push(`${side.name} has a pawn or lance on its last rank, where it could never move.`);
+      if (some('n', (p) => !p.promoted && rel(p.rank) >= 8)) problems.push(`${side.name} has a knight on its last two ranks, where it could never move.`);
+      const pawnFiles = own.filter((p) => p.letter === 'p' && !p.promoted).map((p) => p.file);
+      if (new Set(pawnFiles).size < pawnFiles.length) problems.push(`${side.name} has two unpromoted pawns on one file.`);
+    }
+  }
+  if (variant === 'xiangqi' && generalsFace(pieces)) problems.push('The generals face each other on an open file.');
+  return problems;
+}
+
+/**
+ * Whether the two Xiangqi generals stand on one file with nothing between them. Fairy-Stockfish forbids moving
+ * into it but counts it as no check, so a FEN that starts there would pass every other test.
+ */
+function generalsFace(pieces: Placed[]): boolean {
+  const [white, black] = SIDES.map((side) => pieces.find((p) => p.letter === 'k' && p.white === side.upper));
+  if (!white || !black || white.file !== black.file) return false;
+  const [low, high] = [Math.min(white.rank, black.rank), Math.max(white.rank, black.rank)];
+  return !pieces.some((p) => p.file === white.file && p.rank > low && p.rank < high);
 }

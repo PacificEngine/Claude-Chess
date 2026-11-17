@@ -4,6 +4,7 @@
 //   GOAL   mate1, mate2, capture1 or capture2
 //   COUNT  how many to find (default 5)
 //   SEED   the PRNG seed (default 1); the same seed finds the same puzzles
+//   EXTRAS the letters the other pieces may use, comma-separated (default the variant's pawn and knight: p,n)
 // The search stops after 60 s with whatever it found.
 import { it } from 'vitest';
 import { loadTestRules } from '../src/rules/test-rules';
@@ -17,9 +18,10 @@ it('finds puzzles', async () => {
   if (!piece || !goal) throw new Error('Set PIECE (a type or <variant>:<letter>) and GOAL (mate1, mate2, capture1 or capture2)');
   const count = Number(process.env.COUNT ?? 5);
   const seed = Number(process.env.SEED ?? 1);
+  const extras = process.env.EXTRAS?.split(',').map((c) => c.trim()).filter(Boolean);
   const rules = await loadTestRules();
   const started = Date.now();
-  const found = searchPuzzles(rules, { piece, goal, count, seed, timeLimitMs: TIME_LIMIT_MS });
+  const found = searchPuzzles(rules, { piece, goal, count, seed, timeLimitMs: TIME_LIMIT_MS, extras });
   const seconds = ((Date.now() - started) / 1000).toFixed(1);
   const summary = found.length
     ? `Found ${found.length} of ${count} ${goal} puzzles for ${piece} (seed ${seed}) in ${seconds} s.`

@@ -19,7 +19,7 @@ import { positionProblems } from '../variants/legality';
 import { pieceTypeByName } from '../variants/piece-types';
 import { registerSetup } from '../variants/registry';
 import type { SetupSpec } from '../variants/setup';
-import { createBoardView, parseUci } from './board-view';
+import { createBoardView, moveSquares, parseUci } from './board-view';
 import { createChoiceDialog, pieceName } from './choice-dialog';
 import { createDesigner } from './designer/designer';
 import { type ClockTimes, createEditor, type StartVerdict } from './editor/editor';
@@ -398,7 +398,8 @@ export async function startApp(root: HTMLElement): Promise<void> {
       orientation: humanColor(),
       movable: !restoring && !st.result && session.isHumanTurn() ? session.turn() : null,
       legalFrom: (sq) => session.legalMovesFrom(sq),
-      lastMove: last ? [last.from, last.to] : null,
+      legalDrops: (letter) => session.legalDrops(letter),
+      lastMove: last ? moveSquares(last) : null,
       check: /[+#]/.test(lastSan),
       showDests: settings.highlightLegal,
     });
@@ -504,10 +505,15 @@ export async function startApp(root: HTMLElement): Promise<void> {
     if (candidates.length > 1) {
       // Several legal moves share these squares (promotion or gating): the player must choose.
       const variant = activeVariant();
-      const choices = candidates.map((u) => ({ uci: u, suffix: parseUci(u)!.suffix }));
-      const gating = variant.artBase === 'seirawan';
+      // Shogi's choice is promote or not: the promotion comes first, as it is the usual pick.
+      const choices = candidates
+        .map((u) => ({ uci: u, suffix: parseUci(u)!.suffix }))
+        .sort((a, b) => Number(b.suffix === '+') - Number(a.suffix === '+'));
+      // The "Promote?" title keys on a `+` suffix, which only Shogi writes (other promotions name a piece).
+      const shogi = choices.some((c) => c.suffix === '+');
+      const title = variant.artBase === 'seirawan' ? 'Bring in a piece from hand?' : shogi ? 'Promote?' : 'Promote to';
       pauseForDialog();
-      const picked = await choiceDialog.ask(variant.artBase, gating ? 'Bring in a piece from hand?' : 'Promote to', choices);
+      const picked = await choiceDialog.ask(variant.artBase, title, choices);
       if (s !== session) return render();
       if (picked === null) {
         resumeAfterDialog();
@@ -517,6 +523,21 @@ export async function startApp(root: HTMLElement): Promise<void> {
       pausedForDialog = false;
       uci = picked;
     }
+    playHumanMove(s, uci);
+  }
+  board.onMove((from, to) => void onBoardMove(from, to));
+
+  /** A piece dragged from hand: the board offered only the rules' drops, but the session still checks it. */
+  function onBoardDrop(letter: string, to: string): void {
+    const s = session;
+    if (restoring || st.result || !s.isHumanTurn()) return render();
+    const uci = `${letter}@${to}`;
+    if (!s.legalDrops(letter).includes(uci)) return render();
+    playHumanMove(s, uci);
+  }
+  board.onDrop(onBoardDrop);
+
+  function playHumanMove(s: GameSession, uci: string): void {
     const now = Date.now();
     if (s.checkFlag(now)) return changed();
     // A restored game's clock is paused; it starts again with this move.
@@ -529,7 +550,6 @@ export async function startApp(root: HTMLElement): Promise<void> {
     }
     changed();
   }
-  board.onMove((from, to) => void onBoardMove(from, to));
 
   function undo(): void {
     if (!session.canUndo()) return;

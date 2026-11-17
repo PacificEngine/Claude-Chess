@@ -7,7 +7,9 @@ export type VariantId =
   | 'amazon'
   | 'shako'
   | 'spartan'
-  | 'antichess';
+  | 'antichess'
+  | 'shogi'
+  | 'xiangqi';
 
 export interface VariantInfo {
   id: VariantId;
@@ -76,6 +78,22 @@ export const CURATED_VARIANTS: readonly VariantInfo[] = [
     files: 8,
     ranks: 8,
     blurb: 'Captures are mandatory and you win by losing all your pieces or by being stalemated.',
+  },
+  {
+    id: 'shogi',
+    label: 'Shogi',
+    engineName: 'shogi',
+    files: 9,
+    ranks: 9,
+    blurb: 'Japanese chess on a 9x9 board: captured pieces change sides and can be dropped back in, and pieces promote in the far three ranks.',
+  },
+  {
+    id: 'xiangqi',
+    label: 'Xiangqi',
+    engineName: 'xiangqi',
+    files: 9,
+    ranks: 10,
+    blurb: 'Chinese chess on a 9x10 board, with cannons that capture by jumping, a river and generals kept in their palaces.',
   },
 ];
 

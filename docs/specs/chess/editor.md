@@ -22,6 +22,8 @@ The board editor builds custom setups and edits games in progress. The piece des
     - *Reason (owner decision, 2026-11-12):* one box for every right could not express a game in which only one side, or one wing, may still castle.
   - set both clock times, when editing a timed game (see `./chess.md`, Edit current game)
   - set pieces in hand, for variants that have them
+- **Shogi and Xiangqi bases are position-only** (2026-11-17, from the Shogi and Xiangqi builder check): the board size is fixed, the palette offers only the game's own pieces (Shogi's promoted forms included), pieces in hand are set with the pocket controls, and there are no promotion controls. A setup or an edited game is always played as the curated game from its FEN, never as a generated variant.
+  - *Reason:* Fairy-Stockfish ties Xiangqi's palace and river and Shogi's promotion zone to fixed squares, and the generator writes chess-style promotion, so any generated variant would quietly break the game (a probe showed Shogi's three-rank zone shrinking to one). This keeps the rule that editing keeps a variant's rules.
 - **Base rules:**
   - A setup made from scratch picks a base variant from the curated list.
   - An edited game uses its current variant as the base (a custom game, its setup's base), and the base can't be changed while editing it: another base would be another game.

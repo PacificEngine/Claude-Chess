@@ -42,6 +42,38 @@ const ART: Record<string, Record<string, ArtRule>> = {
     h: { dir: 'spartan', colors: 'black', files: { h: 'P' } }, // the hoplite
   },
   amazon: { a: { ...ALFAERIE, files: { a: 'amazon' } } },
+  // Shogi's king, rook and bishop are the standard pieces (from the chosen set); its pawn and knight move
+  // differently, so they have their own tiles even though the letters are standard.
+  shogi: {
+    p: { ...SHOGI_TILE, files: { p: 'shogiPawn' } },
+    l: { ...SHOGI_TILE, files: { l: 'lance' } },
+    n: { ...SHOGI_TILE, files: { n: 'shogiKnight' } },
+    s: { ...SHOGI_TILE, files: { s: 'silver' } },
+    g: { ...SHOGI_TILE, files: { g: 'gold' } },
+  },
+  // Xiangqi's chariot (r) and general (k) are drawn as the rook and king from the chosen set.
+  xiangqi: {
+    a: { ...ALFAERIE, files: { a: 'ferz' } }, // advisor
+    b: { ...ALFAERIE, files: { b: 'elephantwazir' } }, // elephant
+    n: { ...ALFAERIE, files: { n: 'horse' } },
+    c: { dir: 'merida/shako', colors: 'both' }, // cannon, Shako's
+    p: { ...ALFAERIE, files: { p: 'chinesepawn' } }, // soldier
+  },
+};
+
+// Art for promoted pieces (chessgroundx's `+P`, drawn as role `pp-piece`), per variant and unpromoted letter.
+// `mark` puts a small marker on a promoted piece whose image another, unpromoted piece also wears, so a
+// promoted pawn never passes for a gold (pieces.css draws it).
+const PROMOTED_ART: Record<string, Record<string, { rule: ArtRule; file: string; mark?: true }>> = {
+  shogi: {
+    // The promoted pawn, lance, knight and silver move like the gold, so they wear its tile.
+    p: { rule: SHOGI_TILE, file: 'gold', mark: true },
+    l: { rule: SHOGI_TILE, file: 'gold', mark: true },
+    n: { rule: SHOGI_TILE, file: 'gold', mark: true },
+    s: { rule: SHOGI_TILE, file: 'gold', mark: true },
+    b: { rule: SHOGI_TILE, file: 'dragonHorse' },
+    r: { rule: ALFAERIE, file: 'kingrook' }, // the dragon king moves as the bers
+  },
 };
 
 // Art by built-in piece type, for a custom variant's letters. Each entry is
@@ -81,11 +113,11 @@ const TYPE_ART: Record<string, { rule: ArtRule; file: string }> = {
   dragonHorse: { rule: SHOGI_TILE, file: 'dragonHorse' },
 };
 
+// A variant's own art for a letter wins over the standard piece, so a standard letter that is another piece
+// there (the Shogi pawn, the Xiangqi horse) never falls back to the chess piece's art.
 function rule(letter: string, variant: string): ArtRule | null {
-  if (STANDARD.includes(letter)) {
-    return variant === 'spartan' && letter === 'k' ? { dir: 'spartan', colors: 'black', files: { k: 'K' } } : MERIDA;
-  }
-  return ART[variant]?.[letter] ?? null;
+  if (variant === 'spartan' && letter === 'k') return { dir: 'spartan', colors: 'black', files: { k: 'K' } };
+  return ART[variant]?.[letter] ?? (STANDARD.includes(letter) ? MERIDA : null);
 }
 
 /** Whether `letter` has art in `variant` (for at least one side). */
@@ -132,6 +164,41 @@ export function artUrl(
   return `pieces/${r.dir}/${side}${file}.svg`;
 }
 
+/**
+ * Path under public/ of a promoted piece's SVG (`+P`, by its unpromoted letter), or null when the variant
+ * gives that promoted piece no art, so it is a lettered token. Promoted art is never the piece set's: the set
+ * draws the six standard pieces, and no promoted form is one of them.
+ *
+ * It takes no piece type or designed art, unlike artUrl: only Shogi has promoted pieces, and a Shogi setup is
+ * position-only (POSITION_ONLY_BASES), never a custom variant, so no letter of a promoted piece changes type.
+ */
+export function promotedArtUrl(letter: string, color: Color, artBase: VariantId): string | null {
+  const art = PROMOTED_ART[artBase]?.[letter];
+  return art ? `pieces/${art.rule.dir}/${color === 'white' ? 'w' : 'b'}${art.file}.svg` : null;
+}
+
+const TILE_DIR = `pieces/${SHOGI_TILE.dir}/`;
+
+/**
+ * A shogi tile points toward the opponent, whichever way up the board is: the side at the bottom of the board
+ * (chessgroundx's `ally`) points up and the side at the top (`enemy`) down. A tile's own file points up for
+ * White and down for Black, so a tile on the other side gets its `turned/` file. `side` is null off a board
+ * (no ally or enemy class), where the tile keeps its own direction; art that is not a tile never turns.
+ */
+export function facingUrl(url: string, color: Color, side: 'ally' | 'enemy' | null): string {
+  if (!url.startsWith(TILE_DIR) || side === null) return url;
+  const turn = color === 'white' ? side === 'enemy' : side === 'ally';
+  return turn ? `${TILE_DIR}turned/${url.slice(TILE_DIR.length)}` : url;
+}
+
+/** Whether a promoted piece wears the promoted marker (`promotedMarkClass`), because it shares its image. */
+export function promotedMark(letter: string, artBase: VariantId): boolean {
+  return PROMOTED_ART[artBase]?.[letter]?.mark === true;
+}
+
+/** The class pieces.css draws the promoted marker from. */
+export const promotedMarkClass = 'promoted-mark';
+
 /** The class chessgroundx puts on a piece element, e.g. `n-piece white`. */
 export function pieceClass(letter: string, color: Color): string {
   return `${letter}-piece ${color}`;
@@ -142,11 +209,15 @@ export function tokenClass(letter: string): string {
   return `token token-${letter}`;
 }
 
-/** Parses a piece class like `a-piece white` (a pocket piece may also carry other classes). */
-export function parsePieceClass(className: string): { letter: string; color: Color } | null {
-  const m = /(?:^|\s)([a-z])-piece(?:\s|$)/.exec(className);
+/**
+ * Parses a piece class like `a-piece white` (a pocket piece may also carry other classes). chessgroundx draws
+ * a `+P` from a FEN as role `pp-piece`, so a role of `p` and a letter is that letter promoted. (A `~` piece,
+ * as in Crazyhouse, keeps its own role and is not promoted here: it looks like the piece it became.)
+ */
+export function parsePieceClass(className: string): { letter: string; color: Color; promoted: boolean } | null {
+  const m = /(?:^|\s)(p)?([a-z])-piece(?:\s|$)/.exec(className);
   const color = /(?:^|\s)(white|black)(?:\s|$)/.exec(className)?.[1] as Color | undefined;
-  return m && color ? { letter: m[1]!, color } : null;
+  return m && color ? { letter: m[2]!, color, promoted: m[1] !== undefined } : null;
 }
 
 /** Distinct lowercase piece letters in a FEN: the board, and the pockets of a drop variant like Seirawan. */
@@ -160,6 +231,8 @@ export function pieceLettersOf(fen: string): string[] {
 // Pieces held in hand, shown as pockets beside the board, for curated variants with pockets.
 const POCKET_ROLES: Partial<Record<string, cg.Role[]>> = {
   seirawan: ['h-piece', 'e-piece'],
+  // Every piece but the king can be captured into hand (a promoted piece goes back unpromoted).
+  shogi: ['r-piece', 'b-piece', 'g-piece', 's-piece', 'n-piece', 'l-piece', 'p-piece'],
 };
 
 /**

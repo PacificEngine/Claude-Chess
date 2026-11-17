@@ -85,6 +85,13 @@ export const INHERITED = 'inherited';
  * Pawn-like pieces need no special case: they're measured only as White from a central rank, so no double
  * step or promotion applies, and the forward-only and capture-only moves are part of the offsets.
  *
+ * Every measurement is taken twice, on two squares that mirror each other through the board's centre, one
+ * on each side of its middle rank or file. A letter matches a type only when it moves like it on both. That
+ * keeps out pieces whose moves depend on where they stand: Xiangqi's general and advisor can't move outside
+ * the palace, and its elephant and soldier move differently on each side of the river, so all four come out
+ * 'inherited' by measurement. They are not measured inside the palace on purpose: there the advisor would pass
+ * for the fers, yet the palace is part of how it moves, and no built-in type keeps a piece in one.
+ *
  * Royal letters are found first: removing every copy of a royal letter makes the FEN invalid. A royal
  * letter is compared only with the king, and other letters only with the non-royal types.
  */
@@ -119,31 +126,46 @@ export function typesOfVariant(rules: Rules, engineName: string): Map<string, st
   return result;
 }
 
-interface Geometry {
+interface Probe {
   center: number;
-  whiteCorner: number;
-  blackCorner: number;
   box: number[];
 }
 
+interface Geometry {
+  /** Two probe squares, each the other's mirror image through the board's centre. */
+  probes: [Probe, Probe];
+  whiteCorner: number;
+  blackCorner: number;
+}
+
 /**
- * Picks a central square whose 5x5 box stays two squares clear of the corner kings, and from which no
- * rook or bishop line reaches either corner, so the probed piece never gives check or is blocked by a king.
+ * Picks the square nearest the centre whose 5x5 box fits on the board and stays two squares clear of the
+ * corner kings, and from which no rook or bishop line reaches either corner, so the probed piece never gives
+ * check or is blocked by a king. Its mirror image through the centre is the second probe square: swapping
+ * the corners maps one onto the other, so it meets the same conditions. The tie-break keeps the first square
+ * on 8x8, 10x8 and 10x10 at d5, e4 and e6.
  */
-function probeGeometry(files: number, ranks: number): Geometry {
+export function probeGeometry(files: number, ranks: number): Geometry {
   const whiteCorner = { f: 0, r: 0 };
   const blackCorner = { f: files - 1, r: ranks - 1 };
   const onLine = (a: { f: number; r: number }, b: { f: number; r: number }) =>
     a.f === b.f || a.r === b.r || Math.abs(a.f - b.f) === Math.abs(a.r - b.r);
-  for (const f of [Math.floor((files - 1) / 2), Math.ceil((files - 1) / 2)]) {
-    for (const r of [Math.ceil((ranks - 1) / 2), Math.floor((ranks - 1) / 2)]) {
-      const c = { f, r };
-      const clear = (k: { f: number; r: number }) => Math.max(Math.abs(k.f - f), Math.abs(k.r - r)) >= 4;
-      if (onLine(c, whiteCorner) || onLine(c, blackCorner) || !clear(whiteCorner) || !clear(blackCorner)) continue;
-      const box: number[] = [];
-      for (let df = -2; df <= 2; df++) for (let dr = -2; dr <= 2; dr++) if (df || dr) box.push(f + df + (r + dr) * files);
-      return { center: f + r * files, whiteCorner: 0, blackCorner: files * ranks - 1, box };
-    }
+  const mid = { f: (files - 1) / 2, r: (ranks - 1) / 2 };
+  const distance = ({ f, r }: { f: number; r: number }) => (f - mid.f) ** 2 + (r - mid.r) ** 2;
+  const squares: { f: number; r: number }[] = [];
+  for (let f = 2; f <= files - 3; f++) for (let r = 2; r <= ranks - 3; r++) squares.push({ f, r });
+  // Nearest first; among equals, the lower file and then the higher rank.
+  squares.sort((a, b) => distance(a) - distance(b) || a.f - b.f || b.r - a.r);
+  const probe = ({ f, r }: { f: number; r: number }): Probe => {
+    const box: number[] = [];
+    for (let df = -2; df <= 2; df++) for (let dr = -2; dr <= 2; dr++) if (df || dr) box.push(f + df + (r + dr) * files);
+    return { center: f + r * files, box };
+  };
+  for (const c of squares) {
+    const clear = (k: { f: number; r: number }) => Math.max(Math.abs(k.f - c.f), Math.abs(k.r - c.r)) >= 4;
+    if (onLine(c, whiteCorner) || onLine(c, blackCorner) || !clear(whiteCorner) || !clear(blackCorner)) continue;
+    const mirror = { f: files - 1 - c.f, r: ranks - 1 - c.r };
+    return { probes: [probe(c), probe(mirror)], whiteCorner: 0, blackCorner: files * ranks - 1 };
   }
   throw new Error(`No probe square on a ${files}x${ranks} board`);
 }
@@ -155,7 +177,7 @@ interface Setup {
   kingAtCenter: boolean;
 }
 
-/** The probed piece's moves as offsets, on an empty board and then boxed in by enemy pieces. */
+/** The probed piece's moves as offsets, on an empty board and then boxed in, on each probe square. */
 function measure(
   rules: Rules,
   variant: string,
@@ -164,27 +186,43 @@ function measure(
   g: Geometry,
   s: Setup,
 ): string | undefined {
+  const [a, b] = g.probes.map((p) => measureAt(rules, variant, files, ranks, g, p, s));
+  return a === undefined || b === undefined ? undefined : `${a} || ${b}`;
+}
+
+/** The probed piece's moves as offsets from one probe square, on an empty board and then boxed in. */
+function measureAt(
+  rules: Rules,
+  variant: string,
+  files: number,
+  ranks: number,
+  g: Geometry,
+  p: Probe,
+  s: Setup,
+): string | undefined {
   const scene = (boxed: boolean): string | undefined => {
-    const squares = new Map<number, string>([[g.center, s.letter.toUpperCase()]]);
+    const squares = new Map<number, string>([[p.center, s.letter.toUpperCase()]]);
     if (s.cornerLetter) {
       if (!s.kingAtCenter) squares.set(g.whiteCorner, s.cornerLetter.toUpperCase());
       squares.set(g.blackCorner, s.cornerLetter.toLowerCase());
     }
     if (boxed) {
-      if (!s.fillerLetter) return 'none';
-      for (const sq of g.box) squares.set(sq, s.fillerLetter.toLowerCase());
+      // A boxed-in king's moves depend on what the filler attacks (a Shogi pawn attacks straight ahead, a chess
+      // pawn diagonally), and a royal letter is only ever compared with the king, so it is measured unboxed.
+      if (!s.fillerLetter || s.kingAtCenter) return 'none';
+      for (const sq of p.box) squares.set(sq, s.fillerLetter.toLowerCase());
     }
     const fen = buildFen({ files, ranks, squares, pocket: [] });
     if (!rules.validateFen(variant, fen)) return undefined;
     const game = rules.newGame(variant, fen);
     try {
-      const from = squareName(g.center, files);
+      const from = squareName(p.center, files);
       const offsets = game.legalMovesFrom(from).map((m) => {
         const to = /^[a-z]\d+([a-z])(\d+)/.exec(m);
         if (!to) throw new Error(`Unexpected move: ${m}`);
         const tf = to[1].charCodeAt(0) - 97;
         const tr = Number(to[2]) - 1;
-        return `${tf - (g.center % files)},${tr - Math.floor(g.center / files)}`;
+        return `${tf - (p.center % files)},${tr - Math.floor(p.center / files)}`;
       });
       return [...new Set(offsets)].sort().join(' ');
     } finally {

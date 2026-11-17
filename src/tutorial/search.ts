@@ -5,6 +5,7 @@ import { variantTypes } from '../variants/active';
 import { CURATED_VARIANTS, variantById } from '../variants/catalog';
 import { buildFen, pieceOn, squareName, uciSquares } from '../variants/fen';
 import { generateVariant } from '../variants/generator';
+import { placementProblems } from '../variants/legality';
 import { BUILTIN_PIECES } from '../variants/piece-types';
 import type { SetupSpec } from '../variants/setup';
 import { checkLesson, isPlaceholderProblem } from './check';
@@ -27,6 +28,8 @@ export interface SearchOptions {
   timeLimitMs?: number;
   /** Stop after this many random positions; default 200000. */
   maxTries?: number;
+  /** The letters the other pieces may use; default the variant's pawn and knight. */
+  extras?: string[];
 }
 
 /** At most this many pieces besides both kings and the taught piece, so the content check stays fast. */
@@ -52,6 +55,8 @@ interface Target {
   letter: string;
   /** The other non-king letters the extras may use. */
   extras: string[];
+  /** Whether the taught piece is the king (a Xiangqi general), so it is not placed twice. */
+  royal: boolean;
   /** The pocket suffix the variant's FEN needs ('' or '[]'). */
   hand: string;
   teaches: Teaches;
@@ -85,7 +90,8 @@ function targetOf(rules: Rules, piece: string): Target {
     if (!info) throw new Error(`Unknown curated variant: ${variantId}`);
     const types = variantTypes(rules, info.engineName);
     if (!types.has(curatedLetter)) throw new Error(`${info.id} has no piece letter ${curatedLetter}`);
-    if (curatedLetter === 'k') throw new Error('The search teaches a non-king piece');
+    // A chess king has its own lesson; a curated variant's own king (the Xiangqi general) is taught here.
+    if (types.get(curatedLetter) === 'king') throw new Error('The search teaches a non-king piece');
     const start = rules.newGame(info.engineName);
     const hand = /\[/.test(start.fen().split(' ')[0]) ? '[]' : '';
     start.dispose();
@@ -94,6 +100,7 @@ function targetOf(rules: Rules, piece: string): Target {
       files: info.files,
       ranks: info.ranks,
       letter: curatedLetter,
+      royal: curatedLetter === 'k',
       extras: ['p', 'n'].filter((c) => types.has(c) && c !== curatedLetter),
       hand,
       teaches: { variant: id, letter: curatedLetter },
@@ -119,6 +126,7 @@ function targetOf(rules: Rules, piece: string): Target {
     files: 8,
     ranks: 8,
     letter,
+    royal: false,
     extras: ['p', 'n'].filter((c) => c !== letter),
     hand: '',
     teaches: { type: builtin.type },
@@ -155,7 +163,9 @@ function randomPosition(rules: Rules, t: Target, rand: () => number, wantsBlackP
   const inCorner = (i: number) => (fileOf(i) === 0 || fileOf(i) === files - 1) && (rankOf(i) === 0 || rankOf(i) === ranks - 1);
   // Mates mostly happen on the edge, so the black king goes there more often than not.
   const spot = rand();
-  const bk = pick((i) => (spot < 0.3 ? inCorner(i) : spot < 0.8 ? onEdge(i) : true));
+  // Squares the game lets the piece stand on (Xiangqi's palace, river and soldiers), which the FEN check allows.
+  const fits = (i: number, c: string) => placementProblems(t.variant, buildFen({ files, ranks, squares: new Map([[i, c]]), pocket: [] })).length === 0;
+  const bk = pick((i) => fits(i, 'k') && (spot < 0.3 ? inCorner(i) : spot < 0.8 ? onEdge(i) : true)) ?? pick((i) => fits(i, 'k'));
   if (bk === null) return null;
   squares.set(bk, 'k');
   // Most pieces go near the black king, where they can take part: the White king and the taught piece close
@@ -164,14 +174,16 @@ function randomPosition(rules: Rules, t: Target, rand: () => number, wantsBlackP
   const pawnOk = (i: number) => rankOf(i) > 0 && rankOf(i) < ranks - 1;
   const place = (c: string, radius: number): boolean => {
     const close = rand() < 0.8;
-    const ok = (j: number) => free(j) && distance(j) > (c === 'K' ? 1 : 0) && (!close || distance(j) <= radius);
-    const i = pick((j) => ok(j) && (c.toLowerCase() !== 'p' || pawnOk(j)));
+    const ok = (j: number, near: boolean) =>
+      free(j) && distance(j) > (c === 'K' ? 1 : 0) && (!near || distance(j) <= radius) && (c.toLowerCase() !== 'p' || pawnOk(j)) && fits(j, c);
+    // A piece the game keeps far from the black king (a Xiangqi general or elephant) goes anywhere it may stand.
+    const i = pick((j) => ok(j, close)) ?? (close ? pick((j) => ok(j, false)) : null);
     if (i === null) return false;
     squares.set(i, c);
     return true;
   };
-  if (!place('K', 2) || !place(t.letter.toUpperCase(), 2)) return null;
-  const letters = [...t.extras, t.letter];
+  if (!place('K', 2) || (!t.royal && !place(t.letter.toUpperCase(), 2))) return null;
+  const letters = t.royal ? t.extras : [...t.extras, t.letter];
   const extras = Math.floor(rand() * (MAX_EXTRAS + 1));
   for (let n = 0; n < extras; n++) {
     const letter = letters[Math.floor(rand() * letters.length)];
@@ -268,7 +280,8 @@ function puzzleFor(rules: Rules, t: Target, kind: SearchGoal, fen: string, goal:
   const wins = forcedWins(rules, t.variant, fen, goal, moves);
   const key = uciSquares(wins[0]);
   if (wins.some((uci) => uciSquares(uci).from !== key.from || uciSquares(uci).to !== key.to)) return null;
-  if (pieceOn(fen, key.from) !== t.letter.toUpperCase()) return null;
+  // A drop has no square on the board, so it is never the taught piece's move.
+  if (key.from === null || pieceOn(fen, key.from) !== t.letter.toUpperCase()) return null;
   const line = [wins[0]];
   if (moves === 2) {
     // The reply leaving the fewest finishing moves is the most testing defence.
@@ -304,9 +317,9 @@ function puzzleProblems(rules: Rules, t: Target, puzzle: Puzzle): string[] {
  * more, where the only forced win is one move (any promotion suffix) by the taught piece.
  */
 export function searchPuzzles(rules: Rules, opts: SearchOptions): Puzzle[] {
-  const { piece, goal: kind, count = 5, seed = 1, timeLimitMs = Infinity, maxTries = 200000 } = opts;
+  const { piece, goal: kind, count = 5, seed = 1, timeLimitMs = Infinity, maxTries = 200000, extras } = opts;
   if (!SEARCH_GOALS.includes(kind)) throw new Error(`Unknown goal: ${kind} (use ${SEARCH_GOALS.join(', ')})`);
-  const t = targetOf(rules, piece);
+  const t = { ...targetOf(rules, piece), ...(extras ? { extras } : {}) };
   const rand = prng(seed);
   const deadline = Date.now() + timeLimitMs;
   const seen = new Set<string>();

@@ -2,14 +2,14 @@
   "id": "bers",
   "track": "fairy",
   "order": 21,
-  "title": "The bers, also called General",
-  "cards": [{ "track": "fairy", "name": "Bers" }, { "track": "fairy", "name": "General (Spartan)" }],
+  "title": "The bers, also called General and Dragon King",
+  "cards": [{ "track": "fairy", "name": "Bers" }, { "track": "fairy", "name": "General (Spartan)" }, { "track": "fairy", "name": "Dragon King (Shogi)" }],
   "teaches": [{ "type": "bers" }],
   "steps": [
     {
       "kind": "see",
       "title": "See it",
-      "text": "The bers moves as a rook or one square diagonally, and takes the same way. It is named after the queen of shatar, Mongolian chess, which moves like this. In shogi (Japanese chess) a rook that promotes, the dragon king, moves the same way, and so does the general, one of the Spartans' pieces in Spartan chess. The marked squares are every square it can reach.",
+      "text": "The bers moves as a rook or one square diagonally, and takes the same way. It is named after the queen of shatar, Mongolian chess, which moves like this. In Shogi (Japanese chess) the promoted rook, the dragon king, moves this way. So does the general, one of the Spartans' pieces in Spartan chess. The marked squares are every square it can reach.",
       "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "d": "bers" }, "fen": "4k3/8/8/8/3D4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
       "square": "d4"
     },

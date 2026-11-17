@@ -2,14 +2,14 @@
   "id": "soldier",
   "track": "fairy",
   "order": 10,
-  "title": "The soldier",
-  "cards": [{ "track": "fairy", "name": "Soldier" }],
+  "title": "The soldier, as the editor plays it",
+  "cards": [{ "track": "fairy", "name": "Soldier (editor)" }],
   "teaches": [{ "type": "soldier" }],
   "steps": [
     {
       "kind": "see",
       "title": "See it",
-      "text": "The soldier moves one square straight forward or one square straight sideways, and takes the same way. It never moves back. It comes from xiangqi (Chinese chess) and janggi (Korean chess). In xiangqi it may move sideways only once it has crossed the river in the middle of the board; this app plays it as janggi does outside the palace (the squares around each king where janggi adds diagonal steps), so it may always move sideways. It never promotes. The marked squares are every square it can reach.",
+      "text": "The soldier moves one square straight forward or one square straight sideways, and takes the same way. It never moves back. It comes from xiangqi (Chinese chess) and janggi (Korean chess). The editor's soldier moves freely: it may always step sideways, as in janggi outside the palace (the squares around each king where janggi adds diagonal steps). In the Xiangqi game the river in the middle of the board confines it: it may step sideways only once it has crossed. The Soldier (Xiangqi) lesson teaches it as the game plays it. It never promotes. The marked squares are every square it can reach.",
       "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "soldier" }, "fen": "4k3/8/8/8/3S4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
       "square": "d4"
     },
