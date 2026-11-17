@@ -1,0 +1,71 @@
+{
+  "id": "how-to-win",
+  "track": "basics",
+  "order": 1,
+  "title": "How a game is won",
+  "cards": [{ "track": "basics", "name": "How a game is won" }],
+  "teaches": [],
+  "steps": [
+    {
+      "kind": "read",
+      "title": "Learn",
+      "pages": [
+        {
+          "text": "Chess is a game for two players, White and Black. White moves first, and then the players take turns. Each player has one king and fifteen other pieces.",
+          "board": { "variant": "chess", "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" }
+        },
+        {
+          "text": "A piece can capture an enemy piece: it moves onto that piece's square, and the enemy piece leaves the board. Here the white rook can capture the black knight.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/n7/8/8/8/R3K3 w - - 0 1" },
+          "arrows": [["a1", "a5"]]
+        },
+        {
+          "text": "A piece attacks a square when it could move there on its next move, capturing whatever stands there. When a piece attacks the king, the king is in check. A king in check is in danger, and its player must get it out of check on the very next move. Here the rook moves to a8 and gives check along the top row.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/8/8/8/8/R5K1 w - - 0 1" },
+          "arrows": [["a1", "a8"]]
+        },
+        {
+          "text": "Checkmate is a check the king can't get out of. Nothing can block the attack or capture the attacker, and every square the king could step to is attacked too. Checkmate ends the game, and the player who gave it wins. Here the rook moves to a8 and gives checkmate: the king can't step down, because its own pawns are in the way.",
+          "board": { "variant": "chess", "fen": "6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1" },
+          "arrows": [["a1", "a8"]]
+        },
+        {
+          "text": "So the goal of chess is to checkmate the other king. The king itself is never captured: the game ends at checkmate first. Some games end with no winner. That is a draw, and the last lesson in this track explains it."
+        },
+        {
+          "text": "Try it now. In these puzzles your piece is a rook. A rook moves in a straight line, up, down or sideways, as far as it likes. The next lessons teach every piece."
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Checkmate in one move. Move the rook so it attacks the king, and the king has nowhere to go.",
+          "board": { "variant": "chess", "fen": "k7/ppp5/8/8/8/8/8/6RK w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["g1g8"],
+          "hint": "The black king is stuck on the top row, behind its own pawns."
+        },
+        {
+          "prompt": "Checkmate in one move. Your own king helps by guarding squares.",
+          "board": { "variant": "chess", "fen": "7k/8/6K1/8/8/8/8/R7 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["a1a8"],
+          "hint": "Your king already guards the two squares just below the black king. Find a check that leaves it no square to step to."
+        },
+        {
+          "prompt": "Checkmate in one move. You have two rooks: one already blocks a row.",
+          "board": { "variant": "chess", "fen": "7k/R7/8/8/8/8/8/1R4K1 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["b1b8"],
+          "hint": "The rook on the second row from the top keeps the king from stepping down. Use the other rook."
+        }
+      ]
+    }
+  ]
+}

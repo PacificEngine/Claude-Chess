@@ -1,0 +1,72 @@
+{
+  "id": "the-board",
+  "track": "basics",
+  "order": 2,
+  "title": "The board",
+  "cards": [{ "track": "basics", "name": "The board" }],
+  "teaches": [],
+  "steps": [
+    {
+      "kind": "read",
+      "title": "Learn",
+      "pages": [
+        {
+          "text": "The board has 64 squares, light and dark, in 8 rows and 8 columns. A column is called a file. The files are named with the letters a to h, from White's left to White's right. A row is called a rank. The ranks are numbered 1 to 8, starting from White's side.",
+          "board": { "variant": "chess", "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" }
+        },
+        {
+          "text": "Every square has a name: its file letter, then its rank number. This rook stands on e4, where file e meets rank 4. The marked squares are where it can move.",
+          "board": { "variant": "chess", "fen": "7k/8/8/8/4R3/8/8/K7 w - - 0 1" },
+          "square": "e4"
+        },
+        {
+          "text": "At the start, White's pieces fill ranks 1 and 2, and Black's fill ranks 7 and 8. The board is turned so that each player has a light square in the corner on their right.",
+          "board": { "variant": "chess", "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" }
+        },
+        {
+          "text": "A move is named by where a piece starts and where it lands. Here the pawn moves from e2 to e4.",
+          "board": { "variant": "chess", "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" },
+          "arrows": [["e2", "e4"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Move the rook to e5.",
+          "board": { "variant": "chess", "fen": "7k/8/8/R7/8/8/8/K7 w - - 0 1" },
+          "goal": { "kind": "reach", "from": "a5", "to": "e5" },
+          "moves": 1,
+          "line": ["a5e5"],
+          "hint": "The rook is on rank 5 already. Count along the files: a, b, c, d, e."
+        },
+        {
+          "prompt": "Move the rook to c8.",
+          "board": { "variant": "chess", "fen": "7k/8/8/8/8/8/2R5/K7 w - - 0 1" },
+          "goal": { "kind": "reach", "from": "c2", "to": "c8" },
+          "moves": 1,
+          "line": ["c2c8"],
+          "hint": "The rook is on file c already. Rank 8 is the top row."
+        },
+        {
+          "prompt": "Move the rook to h3.",
+          "board": { "variant": "chess", "fen": "7k/8/8/8/8/1R6/8/K7 w - - 0 1" },
+          "goal": { "kind": "reach", "from": "b3", "to": "h3" },
+          "moves": 1,
+          "line": ["b3h3"],
+          "hint": "File h is the last column on the right. Find where it meets rank 3."
+        },
+        {
+          "prompt": "Move the rook to d1.",
+          "board": { "variant": "chess", "fen": "7k/8/8/8/8/8/8/K5R1 w - - 0 1" },
+          "goal": { "kind": "reach", "from": "g1", "to": "d1" },
+          "moves": 1,
+          "line": ["g1d1"],
+          "hint": "Rank 1 is the bottom row, nearest to you."
+        }
+      ]
+    }
+  ]
+}

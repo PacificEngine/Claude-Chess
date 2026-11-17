@@ -1,0 +1,84 @@
+{
+  "id": "queen",
+  "track": "basics",
+  "order": 7,
+  "title": "The queen",
+  "cards": [{ "track": "basics", "name": "Queen" }],
+  "teaches": [{ "type": "queen" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The queen moves like a rook and a bishop together: in a straight line or diagonally, as far as she likes. She can't jump over pieces. She is the strongest piece on the board. The marked squares are every square she can reach.",
+      "board": { "variant": "chess", "fen": "4k3/8/8/8/3Q4/8/8/4K3 w - - 0 1" },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the queen to each marked square. Each one takes two moves.",
+      "board": { "variant": "chess", "fen": "7k/8/8/8/8/3Q4/8/K7 w - - 0 1" },
+      "square": "d3",
+      "targets": ["b6", "g4"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The queen is worth about as much as two rooks, so guard her well. Before you move her, check that no smaller enemy piece can capture her there. Here the queen could go to h5, but the knight on f6 guards that square.",
+          "board": { "variant": "chess", "fen": "rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2" },
+          "arrows": [["d1", "h5"]]
+        },
+        {
+          "text": "The queen and the king together can checkmate a lone king. Here the queen moves next to the black king, on g7, where her own king protects her. The black king can't capture her and has no square to go to.",
+          "board": { "variant": "chess", "fen": "7k/8/5K2/8/8/8/8/6Q1 w - - 0 1" },
+          "arrows": [["g1", "g7"]]
+        },
+        {
+          "text": "Watch out for stalemate. If the player to move is not in check but has no legal move (no move the rules allow), the game is a draw, not a win. Here the queen going to f7 would leave the black king with no move at all, and throw the win away.",
+          "board": { "variant": "chess", "fen": "7k/8/6K1/8/8/8/5Q2/8 w - - 0 1" },
+          "arrows": [["f2", "f7"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black rook.",
+          "board": { "variant": "chess", "fen": "7k/3r4/8/8/Q7/8/8/4K3 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "d7" },
+          "moves": 1,
+          "line": ["a4d7"],
+          "hint": "The queen moves diagonally as well as in straight lines."
+        },
+        {
+          "prompt": "Win the black rook in two moves.",
+          "board": { "variant": "chess", "fen": "r5k1/8/8/8/8/8/8/3Q2K1 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "a8" },
+          "moves": 2,
+          "line": ["d1d5", "g8h7", "d5a8"],
+          "hint": "Find a square where the queen checks the king and attacks the rook at the same time."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "chess", "fen": "k7/8/1K6/8/8/8/7Q/8 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["h2h8"],
+          "hint": "Your king already guards the squares beside the black king. Find a check it can't step away from."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "chess", "fen": "5r1k/6pp/7N/3Q4/8/8/8/6K1 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["d5g8", "f8g8", "h6f7"],
+          "hint": "Give up the queen with check, so the black king ends up boxed in by its own pieces. Then the knight finishes."
+        }
+      ]
+    }
+  ]
+}

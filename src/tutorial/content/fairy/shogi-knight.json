@@ -1,0 +1,83 @@
+{
+  "id": "shogi-knight",
+  "track": "fairy",
+  "order": 8,
+  "title": "The shogi knight",
+  "cards": [{ "track": "fairy", "name": "Shogi Knight" }],
+  "teaches": [{ "type": "shogiKnight" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The shogi knight jumps like a chess knight, but only to the two squares furthest forward: two squares ahead, then one to the side. It jumps over whatever stands in between, and takes the same way. It comes from shogi, Japanese chess, where it promotes to move like a gold general once it reaches the far three ranks, and where a captured piece joins the side that took it and can be dropped back onto the board. This app plays neither rule. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "shogiKnight" }, "fen": "4k3/8/8/8/3S4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the shogi knight to each marked square, one after the other.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "shogiKnight" }, "fen": "7k/8/8/8/3S4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["e6", "f8"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The shogi knight is weak, worth about half a chess knight. It has only two squares, and every move takes it further up the board: it can never come back.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "shogiKnight" }, "fen": "4k3/8/8/8/3S4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "c6"], ["d4", "e6"]]
+        },
+        {
+          "text": "Like a chess knight, it is good at forks: a move that attacks two pieces at once. Here it attacks both black knights, and Black can save only one of them.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "shogiKnight" }, "fen": "4k3/8/2n1n3/8/3S4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "c6"], ["d4", "e6"]]
+        },
+        {
+          "text": "Don't jump it forward too soon. On the last two ranks it has no move at all, like this one on d7, and it is stuck there for the rest of the game. In shogi it may not even stand there.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "shogiKnight" }, "fen": "7k/3S4/8/8/8/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } }
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black shogi knight.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "shogiKnight" }, "fen": "8/8/8/8/8/3s4/2k1K3/2S5 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "d3" },
+          "moves": 1,
+          "line": ["c1d3"],
+          "hint": "The shogi knight jumps over the pieces in front of it."
+        },
+        {
+          "prompt": "Win the black pawn in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "shogiKnight" }, "fen": "k7/p7/N7/8/5K2/S7/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "a7" },
+          "moves": 2,
+          "line": ["a3b5", "a8b7", "b5a7"],
+          "hint": "The pawn can't move, as your knight blocks it. Jump to a square from which the shogi knight attacks it."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "shogiKnight" }, "fen": "k7/Pn6/K7/8/S7/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["a4b6"],
+          "hint": "The black king has no squares to go to. Check it with a jump."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "shogiKnight" }, "fen": "k7/P6p/K7/8/8/8/3S4/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["d2c4", "h7h6", "c4b6"],
+          "hint": "The black king can't move. Find the square where the shogi knight would check it, and get there in two jumps."
+        }
+      ]
+    }
+  ]
+}

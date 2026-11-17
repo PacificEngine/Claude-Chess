@@ -1,0 +1,10 @@
+{
+  "id": "variant-amazon",
+  "variant": "amazon",
+  "order": 5,
+  "differences": [
+    "Everything is as in chess, except that each side's queen is replaced by an amazon.",
+    "The amazon moves as a queen or as a knight, so it can attack from squares a queen cannot reach.",
+    "With such a strong piece on the board, attacks come quickly: keep your king safe early."
+  ]
+}

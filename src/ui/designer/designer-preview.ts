@@ -7,12 +7,12 @@
 //   position is then illegal. h1 and a8 are four squares away (beyond every leap), off d4's ranks, files and
 //   diagonals, and off the nightrider's lines, so no move the designer offers reaches either king or is
 //   blocked by one.
-// - Move squares are where the piece's legal moves go in that position without capturing.
-// - Capture-only squares are where it can capture but not move: the screens it can take, and every other empty
-//   square where it could capture a Black piece put there (one at a time, so a cannon still has its screens).
-//   The piece put there is a pawn, or a knight on the first and last ranks, where a pawn can't stand.
+// - What it reaches there (move squares and capture-only squares) is `reachFrom`'s probe.
 import type { Rules } from '../../rules/types';
+import { type Reach, reachFrom } from '../../variants/reach';
 import type { SetupSpec } from '../../variants/setup';
+
+export type { Reach } from '../../variants/reach';
 
 export const PREVIEW_SQUARE = 'd4';
 /** Any letter chess leaves free: the preview's piece is never placed in a setup. */
@@ -58,39 +58,9 @@ export function previewSpec(betza: string): SetupSpec {
   };
 }
 
-export interface Reach {
-  /** Squares the piece moves to without capturing, sorted. */
-  moves: string[];
-  /** Squares where it can capture but not move, sorted. */
-  captures: string[];
-}
-
-function destinations(rules: Rules, variant: string, fen: string): string[] {
-  const game = rules.newGame(variant, fen);
-  try {
-    return game.legalMovesFrom(PREVIEW_SQUARE).map((uci) => uci.slice(2, 4));
-  } finally {
-    game.dispose();
-  }
-}
-
 /** Where the preview piece goes in `variant`, a registered `previewSpec`. */
 export function reachOf(rules: Rules, variant: string): Reach {
-  const moves: string[] = [];
-  const captures = new Set<string>();
-  for (const to of new Set(destinations(rules, variant, PREVIEW_FEN))) {
-    if (POSITION[to]) captures.add(to);
-    else moves.push(to);
-  }
-  for (let file = 0; file < 8; file++) {
-    for (let rank = 1; rank <= 8; rank++) {
-      const square = `${String.fromCharCode(97 + file)}${rank}`;
-      if (POSITION[square] || moves.includes(square)) continue;
-      const target = rank === 1 || rank === 8 ? 'n' : 'p';
-      if (destinations(rules, variant, fenOf({ ...POSITION, [square]: target })).includes(square)) captures.add(square);
-    }
-  }
-  return { moves: moves.sort(), captures: [...captures].sort() };
+  return reachFrom(rules, variant, PREVIEW_FEN, PREVIEW_SQUARE);
 }
 
 /** Every piece must move: somewhere to go, or something to capture. */

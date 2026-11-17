@@ -1,0 +1,69 @@
+{
+  "id": "draws",
+  "track": "basics",
+  "order": 13,
+  "title": "Draws",
+  "cards": [{ "track": "basics", "name": "Draws" }],
+  "teaches": [],
+  "steps": [
+    {
+      "kind": "read",
+      "title": "Learn",
+      "pages": [
+        {
+          "text": "Not every game has a winner. A game that ends with no winner is a draw. There are a few ways it can happen."
+        },
+        {
+          "text": "Stalemate: the player to move is not in check, but has no legal move at all: no move the rules allow. The game ends at once in a draw. Here, if the queen went to b6, the black king could not move anywhere, and it would be stalemate.",
+          "board": { "variant": "chess", "fen": "k7/8/2K5/8/8/8/8/1Q6 w - - 0 1" },
+          "arrows": [["b1", "b6"]]
+        },
+        {
+          "text": "Repetition: if the same position comes up three times, with the same player to move, the game is a draw. This often happens when one player keeps giving check and the other king can't get away from it. Here Black has two rooks against your queen, but the white queen can check forever: on f7, then on f8, then on f7 again. The black king can only step between h8 and h7, and no black piece can block, so the same position keeps coming back and the game is drawn.",
+          "board": { "variant": "chess", "fen": "8/7k/6pp/8/2Q5/1r6/r5PP/7K w - - 0 1" },
+          "arrows": [["c4", "f7"]]
+        },
+        {
+          "text": "The fifty-move rule: if each player makes fifty moves in a row with no capture and no pawn move, the game is a draw. It stops a game from going on forever when nobody can make progress."
+        },
+        {
+          "text": "Not enough pieces, also called insufficient material: when neither player has enough pieces left to give checkmate, the game is a draw. A king alone, or a king with just one bishop or one knight, can never checkmate. Here White has a bishop, but it can't win.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/8/8/8/8/2B1K3 w - - 0 1" }
+        },
+        {
+          "text": "The players can also simply agree to a draw. And when you are losing, look for a stalemate: a draw is much better than a loss. In these puzzles you are behind. Find the move that leaves Black with no legal move."
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "You are a pawn down. Make a move that leaves Black stalemated.",
+          "board": { "variant": "chess", "fen": "8/8/8/8/8/6p1/4K1Pp/7k w - - 0 1" },
+          "goal": { "kind": "stalemate" },
+          "moves": 1,
+          "line": ["e2f1"],
+          "hint": "Black's pawns are stuck. Take away the black king's last free squares, without giving check."
+        },
+        {
+          "prompt": "Black has an extra pawn. Save the game with a stalemate.",
+          "board": { "variant": "chess", "fen": "k7/p7/P2K4/8/1p6/1p6/1P6/8 w - - 0 1" },
+          "goal": { "kind": "stalemate" },
+          "moves": 1,
+          "line": ["d6c7"],
+          "hint": "None of Black's pawns can move. Which squares can the black king still step to?"
+        },
+        {
+          "prompt": "Black has a rook; you have only a bishop and a pawn. Save the game with a stalemate.",
+          "board": { "variant": "chess", "fen": "4K2k/6r1/6P1/8/8/8/8/B7 w - - 0 1" },
+          "goal": { "kind": "stalemate" },
+          "moves": 1,
+          "line": ["e8f8"],
+          "hint": "The black rook is pinned: if it moved, your bishop would attack the black king. Now guard the king's last square."
+        }
+      ]
+    }
+  ]
+}

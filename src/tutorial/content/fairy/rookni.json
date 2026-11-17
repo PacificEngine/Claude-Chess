@@ -1,0 +1,84 @@
+{
+  "id": "rookni",
+  "track": "fairy",
+  "order": 26,
+  "title": "The rookni",
+  "cards": [{ "track": "fairy", "name": "Rookni" }],
+  "teaches": [{ "type": "rookni" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The rookni moves like a rook but takes like a knight. It slides along a rank or a file to an empty square, as far as it likes, and it captures with a knight's jump. It can't take along its lines, and it can't jump to an empty square. Its name joins rook and knight, the other way round from the kniroo. In New Zealand chess the rooks play this way. The dots mark where it can move, and the rings mark where it could take an enemy piece.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "o": "rookni" }, "fen": "4k3/8/8/8/3O4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Slide up the file to d7, then take the black knight on f6 with a knight's jump.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "o": "rookni" }, "fen": "7k/8/5n2/8/3O4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["d7", "f6"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The rookni crosses the board like a rook, but strikes only close by, with a knight's jump. Here it can take the rook on c6, or slide up the file to d8.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "o": "rookni" }, "fen": "4k3/8/2r5/8/3O4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "c6"], ["d4", "d8"]]
+        },
+        {
+          "text": "It gives check only with a knight's jump, so first it slides to a square a jump away from the king. Here it slides up the file to f7 and checks the king on h8 from there. Your king and other pieces must cover the squares around the king that the rookni leaves open.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "o": "rookni" }, "fen": "7k/8/8/8/8/8/8/K4O2 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["f1", "f7"]]
+        },
+        {
+          "text": "It can't take along its lines, so a rook can attack it and not be taken back. Here the black rook on d8 attacks it down the file. The rookni slides away, here to a4.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "o": "rookni" }, "fen": "3rk3/8/8/8/3O4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "a4"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black rookni.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "o": "rookni" }, "fen": "6ok/8/3n1K1O/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "g8" },
+          "moves": 1,
+          "line": ["h6g8"],
+          "hint": "The rookni takes like a knight."
+        },
+        {
+          "prompt": "Win the black pawn in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "o": "rookni" }, "fen": "5K2/8/8/8/8/8/p1O5/1k6 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "a2" },
+          "moves": 2,
+          "line": ["c2c3", "b1a1", "c3a2"],
+          "hint": "Slide to a square from which a knight's jump checks the king and another would take the pawn."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "o": "rookni" }, "fen": "8/8/8/8/8/6KO/6O1/7k w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["g2f2"],
+          "hint": "Slide to a square a knight's jump from the king. Your king and your other rookni cover the rest."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "o": "rookni" }, "fen": "8/8/2p5/8/8/8/O7/kOK5 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["b1b4", "c6c5", "a2c2"],
+          "hint": "Your rookni on b1 isn't helping: it doesn't guard a2. Slide it to a square that guards a2 with a knight's jump; then the other one can check."
+        }
+      ]
+    }
+  ]
+}

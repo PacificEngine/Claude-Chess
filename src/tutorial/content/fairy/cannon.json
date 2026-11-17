@@ -1,0 +1,84 @@
+{
+  "id": "cannon",
+  "track": "fairy",
+  "order": 27,
+  "title": "The cannon",
+  "cards": [{ "track": "fairy", "name": "Cannon" }],
+  "teaches": [{ "type": "cannon" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The cannon moves like a rook: along a rank or a file, as far as it likes, to an empty square. It takes differently. It must jump over exactly one piece, of either side, called the screen, and take the first piece beyond it, if that piece is an enemy. This is the cannon of xiangqi (Chinese chess), and Shako brings it to a ten-by-ten board with the chess pieces. Here the black pawn on e7 is a screen. The dots mark where the cannon can move, and the rings beyond the pawn mark where it could take an enemy piece. It can't take the pawn itself, as there is nothing between them to jump over.",
+      "board": { "variant": "shako", "fen": "5k4/10/10/4p5/10/10/10/4C5/10/5K4 w - - 0 1" },
+      "square": "e3"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Slide to h3 like a rook, then take the black knight on h8 by jumping over your pawn on h5.",
+      "board": { "variant": "shako", "fen": "9k/10/7n2/10/10/7P2/10/2C7/10/K9 w - - 0 1" },
+      "square": "c3",
+      "targets": ["h3", "h8"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The cannon is strongest early in the game, when the board is full of pieces to jump over, and weaker near the end, when few are left. Here it takes the rook on e9 by jumping over the pawn on e6. A rook on e3 couldn't reach it, as the pawn would be in its way.",
+          "board": { "variant": "shako", "fen": "5k4/4r5/10/10/4p5/10/10/4C5/10/5K4 w - - 0 1" },
+          "arrows": [["e3", "e9"]]
+        },
+        {
+          "text": "Your own pieces make good screens. Here the cannon moves to e2, behind your knight on e5, and checks the king on e10 through it. If the knight moved away, the check would be gone, so keep the screen where it is.",
+          "board": { "variant": "shako", "fen": "4k5/10/10/10/10/4N5/10/10/C9/9K w - - 0 1" },
+          "arrows": [["a2", "e2"]]
+        },
+        {
+          "text": "With nothing to jump over, it can't take at all. Here the black rook on e8 attacks it down the file, and the cannon can't take back, because nothing stands between them. It steps aside, here to a3.",
+          "board": { "variant": "shako", "fen": "5k4/10/4r5/10/10/10/10/4C5/10/5K4 w - - 0 1" },
+          "arrows": [["e3", "a3"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black pawn on i2.",
+          "board": { "variant": "shako", "fen": "10/10/10/10/10/10/10/7K2/6Cpp1/7k2 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "i2" },
+          "moves": 1,
+          "line": ["g2i2"],
+          "hint": "The pawn next to your cannon can be its screen."
+        },
+        {
+          "prompt": "Win the black pawn on f5 in two moves.",
+          "board": { "variant": "shako", "fen": "3K6/10/4C5/5p4/4pk4/5p4/10/3c6/10/10 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "f5" },
+          "moves": 2,
+          "line": ["e8f8", "f6g7", "f8f5"],
+          "hint": "Line the cannon up on the king's file, with a pawn as the screen."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "shako", "fen": "k9/p1K7/10/10/10/10/10/3C6/10/10 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["d3a3"],
+          "hint": "Black's own pawn can be the screen."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "shako", "fen": "10/10/10/3c6/10/10/10/10/7C1p/7K1k w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["h2h3", "d7d1", "h3j3"],
+          "hint": "Black's own pawn on j2 can be the screen for a check. Find the way to get the cannon behind it."
+        }
+      ]
+    }
+  ]
+}

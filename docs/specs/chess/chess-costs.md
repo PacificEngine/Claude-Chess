@@ -13,3 +13,4 @@ No budget needed. It's a personal project.
 
 ## 3-Year Cost Projections
 Expected cost is $0. All computation happens in the player's browser, and the site is small static files, far below the GitHub Pages limits (1 GB per site, 100 GB/month of bandwidth).
+- **Tutorial (2026-11-16):** no new costs. Lessons ship as static data with the site.

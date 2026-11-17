@@ -1,0 +1,84 @@
+{
+  "id": "breakthrough-piece",
+  "track": "fairy",
+  "order": 15,
+  "title": "The breakthrough piece",
+  "cards": [{ "track": "fairy", "name": "Breakthrough Piece" }],
+  "teaches": [{ "type": "breakthrough" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The breakthrough piece moves one square straight forward or one square diagonally forward. It takes only diagonally forward, like a chess pawn, so a piece right in front of it blocks it. It never moves two squares at once, and never moves back. It comes from Breakthrough, a game in which each side has only these pieces and the first to reach the far side wins. This app doesn't play that rule: here it never promotes, and on the last rank it can't move at all. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "breakthrough" }, "fen": "4k3/8/8/8/3E4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the breakthrough piece to each marked square, one after the other.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "breakthrough" }, "fen": "7k/8/8/8/3E4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["e5", "e7"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The breakthrough piece is worth about a chess pawn. It is a little quicker than a pawn at getting past the enemy, as it can step diagonally without taking anything, but it can't promote here.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "breakthrough" }, "fen": "4k3/8/8/8/3E4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d5"], ["d4", "c5"]]
+        },
+        {
+          "text": "Like chess pawns, breakthrough pieces protect each other from diagonally behind. Here the piece on e3 guards the one on d4. Advance them together, so each one stays guarded.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "breakthrough" }, "fen": "4k3/8/8/8/3E4/4E3/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d5"]]
+        },
+        {
+          "text": "A piece right in front of it blocks it, and it can't take that piece. Here the black pawn on d5 stops it, but it can still go around diagonally.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "breakthrough" }, "fen": "4k3/8/8/3p4/3E4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "c5"], ["d4", "e5"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black knight.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "breakthrough" }, "fen": "k7/npK5/1E6/4e3/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "a7" },
+          "moves": 1,
+          "line": ["b6a7"],
+          "hint": "It takes diagonally forward, not straight ahead."
+        },
+        {
+          "prompt": "Win the black pawn in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "breakthrough" }, "fen": "8/8/1K6/1p6/k7/8/1E6/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "b5" },
+          "moves": 2,
+          "line": ["b2c3", "b5b4", "c3b4"],
+          "hint": "The black king guards the pawn. Find the move that leaves it lost whatever Black does: your king can help take it."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "breakthrough" }, "fen": "6nk/8/6KE/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["h6g7"],
+          "hint": "It checks diagonally forward. Your king can guard the square."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "breakthrough" }, "fen": "7k/7p/4EKE1/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["g6g7", "h8g8", "e6f7"],
+          "hint": "Step straight forward to give check. Then the other piece steps up diagonally to finish."
+        }
+      ]
+    }
+  ]
+}

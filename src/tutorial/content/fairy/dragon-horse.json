@@ -1,0 +1,84 @@
+{
+  "id": "dragon-horse",
+  "track": "fairy",
+  "order": 22,
+  "title": "The dragon horse",
+  "cards": [{ "track": "fairy", "name": "Dragon Horse" }],
+  "teaches": [{ "type": "dragonHorse" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The dragon horse moves as a bishop or one square straight, and takes the same way. It comes from shogi (Japanese chess), where a bishop that promotes becomes a dragon horse. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "dragonHorse" }, "fen": "4k3/8/8/8/3H4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the dragon horse to the marked square, two squares straight ahead. Its straight step goes only one square, so it takes two moves.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "dragonHorse" }, "fen": "6k1/8/8/8/3H4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["d6"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The dragon horse is worth more than a bishop, about as much as a rook. A bishop stays on squares of one colour, but the dragon horse's straight step lands on the other colour, so it can reach every square. Here it can run along the diagonal to h8, or step to d5.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "dragonHorse" }, "fen": "4k3/8/8/8/3H4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "h8"], ["d4", "d5"]]
+        },
+        {
+          "text": "With its king's help it checkmates up close. Here it steps up to g7, where your king guards it. It checks the king along the diagonal, and its straight steps cover g8 and h7.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "dragonHorse" }, "fen": "7k/8/5KH1/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["g6", "g7"]]
+        },
+        {
+          "text": "Past one square it can't move straight, so a rook can attack it from far along a line and it can't hit back. Here the black rook on d8 attacks it, and the dragon horse must step away, here to e5.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "dragonHorse" }, "fen": "3rk3/8/8/8/3H4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "e5"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black dragon horse.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "dragonHorse" }, "fen": "7k/7h/7H/8/8/8/7K/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "h7" },
+          "moves": 1,
+          "line": ["h6h7"],
+          "hint": "You don't need a diagonal for this one."
+        },
+        {
+          "prompt": "Win the black pawn in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "dragonHorse" }, "fen": "8/8/8/8/8/6K1/7p/5H1k w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "h2" },
+          "moves": 2,
+          "line": ["f1h3", "h1g1", "h3h2"],
+          "hint": "The pawn is not on any of your diagonals. Find a square from which a straight step will take it."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "dragonHorse" }, "fen": "6nk/5Kp1/6H1/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["g6g7"],
+          "hint": "Which capture gives check, on a square your king guards?"
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "dragonHorse" }, "fen": "7k/8/7K/8/7H/1n6/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["h4f6", "h8g8", "f6g7"],
+          "hint": "Check along the diagonal first. Then step to a square your king guards."
+        }
+      ]
+    }
+  ]
+}

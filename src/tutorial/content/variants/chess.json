@@ -1,0 +1,9 @@
+{
+  "id": "variant-chess",
+  "variant": "chess",
+  "order": 1,
+  "differences": [
+    "This is the standard game. Every other variant here starts from it and changes a few things.",
+    "If you are new to chess, start with the Chess basics lessons: they teach how a game is won, each piece, castling, en passant and promotion."
+  ]
+}

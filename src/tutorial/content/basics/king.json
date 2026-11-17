@@ -1,0 +1,87 @@
+{
+  "id": "king",
+  "track": "basics",
+  "order": 8,
+  "title": "The king",
+  "cards": [
+    { "track": "basics", "name": "King" },
+    { "track": "fairy", "name": "Commoner", "order": 2.5 }
+  ],
+  "teaches": [{ "type": "king" }, { "type": "commoner" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The king moves one square in any direction. It is the most important piece: if your king is checkmated, you lose. So the king may never move to a square where an enemy piece could capture it. In some fairy games (chess games with new pieces or rules) there is a commoner, which moves just like the king but isn't royal (it is not the piece whose checkmate ends the game), so it can be captured and the game goes on. The marked squares are every square this king can reach.",
+      "board": { "variant": "chess", "fen": "4k3/8/8/8/3K4/8/8/8 w - - 0 1" },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Walk the king to each marked square, one step at a time.",
+      "board": { "variant": "chess", "fen": "7k/8/8/8/3K4/8/8/8 w - - 0 1" },
+      "square": "d4",
+      "targets": ["f6", "b2"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "While many pieces are on the board, keep your king safe behind a wall of pawns, near a corner. Castling, a later lesson, is the usual way to get it there.",
+          "board": { "variant": "chess", "fen": "6k1/5ppp/8/8/8/8/5PPP/4K2R w K - 0 1" },
+          "arrows": [["e1", "g1"]]
+        },
+        {
+          "text": "Two kings can never stand next to each other, because a king may not move where it could be captured. Here the white king can step up to e5. It can't go on to d6, e6 or f6, because the black king guards them.",
+          "board": { "variant": "chess", "fen": "8/4k3/8/8/4K3/8/8/8 w - - 0 1" },
+          "arrows": [["e4", "e5"]]
+        },
+        {
+          "text": "When only a few pieces are left, the king becomes a fighter. Bring it toward the middle, where it can help its pawns forward and attack the enemy's pawns.",
+          "board": { "variant": "chess", "fen": "4k3/p7/8/8/8/8/3P4/4K3 w - - 0 1" },
+          "arrows": [["e1", "e2"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black knight.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/8/8/8/3n4/4K3 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "d2" },
+          "moves": 1,
+          "line": ["e1d2"],
+          "hint": "The knight is right next to your king, and nothing protects it."
+        },
+        {
+          "prompt": "Win the black knight in two moves.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/8/8/5K2/P7/7n w - - 0 1" },
+          "goal": { "kind": "capture", "square": "h1" },
+          "moves": 2,
+          "line": ["f3g2", "e8d7", "g2h1"],
+          "hint": "The knight in the corner has no safe square to jump to. Step your king next to it."
+        },
+        {
+          "prompt": "Checkmate in one move, with a king move.",
+          "board": { "variant": "chess", "fen": "7k/7p/5K2/8/8/8/8/B7 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["f6f7"],
+          "hint": "Your king stands in the bishop's way. Step aside so the bishop gives check, and guard the black king's last square as you go."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "chess", "fen": "7k/R7/5K2/8/8/8/8/8 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["f6g6", "h8g8", "a7a8"],
+          "hint": "The rook alone can't do it yet. First bring your king closer, so the black king has only one square left."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "id": "knight",
+  "track": "basics",
+  "order": 4,
+  "title": "The knight",
+  "cards": [{ "track": "basics", "name": "Knight" }],
+  "teaches": [{ "type": "knight" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The knight moves in an L shape: two squares in a straight line, then one square to the side. It is the only piece that can jump over other pieces. The marked squares are every square it can reach.",
+      "board": { "variant": "chess", "fen": "4k3/8/8/8/3N4/8/8/4K3 w - - 0 1" },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the knight to each marked square, one after the other. The second one takes two jumps.",
+      "board": { "variant": "chess", "fen": "7k/8/8/8/3N4/8/8/K7 w - - 0 1" },
+      "square": "d4",
+      "targets": ["f5", "b5"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "A knight in the middle of the board reaches eight squares. On the edge it reaches four or fewer, and in a corner only two, like this one. Bring your knights toward the middle.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/8/8/8/8/4K2N w - - 0 1" },
+          "arrows": [["h1", "g3"], ["h1", "f2"]]
+        },
+        {
+          "text": "A fork is a move that attacks two enemy pieces at once. Knights are very good at forks. Here the knight jumps to c7 and attacks the king and the rook together. Black must move the king out of check, and then the knight takes the rook.",
+          "board": { "variant": "chess", "fen": "r3k3/8/8/1N6/8/8/8/4K3 w - - 0 1" },
+          "arrows": [["b5", "c7"]]
+        },
+        {
+          "text": "Because it jumps, a knight can come out at the very start, before any pawn has moved.",
+          "board": { "variant": "chess", "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" },
+          "arrows": [["g1", "f3"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black queen.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/3q4/8/2N5/8/K7 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "d5" },
+          "moves": 1,
+          "line": ["c3d5"],
+          "hint": "Count the L from the knight: two squares up, then one to the side."
+        },
+        {
+          "prompt": "Win the black rook in two moves.",
+          "board": { "variant": "chess", "fen": "2r3k1/8/8/3N4/8/8/8/6K1 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "c8" },
+          "moves": 2,
+          "line": ["d5e7", "g8f7", "e7c8"],
+          "hint": "Look for a fork: a square where the knight checks the king and attacks the rook at once."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "chess", "fen": "6rk/6pp/8/6N1/8/8/8/6K1 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["g5f7"],
+          "hint": "The black king is boxed in by its own pieces. Only a knight can check it over their heads."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "chess", "fen": "8/8/8/7n/8/8/7p/5KNk w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["g1e2", "h5g3", "e2g3"],
+          "hint": "The black king can't move at all. Find the square where a knight would check it, and get a knight ready to land there."
+        }
+      ]
+    }
+  ]
+}

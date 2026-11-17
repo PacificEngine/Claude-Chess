@@ -1,0 +1,84 @@
+{
+  "id": "lance",
+  "track": "fairy",
+  "order": 9,
+  "title": "The lance",
+  "cards": [{ "track": "fairy", "name": "Lance" }],
+  "teaches": [{ "type": "lance" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The lance moves straight forward like a rook, as many squares as it likes, and takes the same way. It can't move sideways or back. It comes from shogi, Japanese chess, where it promotes to move like a gold general once it reaches the far three ranks, and where a captured piece joins the side that took it and can be dropped back onto the board. This app plays neither rule, and here on the last rank the lance can't move at all. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "l": "lance" }, "fen": "4k3/8/8/8/3L4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the lance to the marked square. It gets there in one move.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "l": "lance" }, "fen": "7k/8/8/8/3L4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["d8"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The lance is worth less than a knight or a bishop. It is strongest on an open file, with nothing in its way, and it is best kept back on its own side: once it moves forward, it can never come back.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "l": "lance" }, "fen": "4k3/8/8/8/3L4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d8"]]
+        },
+        {
+          "text": "From behind, a lance backs up the pieces in front of it. Here it guards the pawn on d4 from all the way back on d1, and it will keep guarding it as the pawn goes forward.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "l": "lance" }, "fen": "4k3/8/8/8/3P4/8/8/3LK3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d1", "d3"]]
+        },
+        {
+          "text": "A lance can't move sideways. Here the black rook attacks it from b4, and the lance can only run forward up its file. A piece beside it or behind it is always safe from it.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "l": "lance" }, "fen": "4k3/8/8/8/1r1L4/8/8/7K w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d6"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black lance.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "l": "lance" }, "fen": "kn6/4l3/1K6/8/8/8/8/4L3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "e7" },
+          "moves": 1,
+          "line": ["e1e7"],
+          "hint": "The lance goes all the way up the file in one move."
+        },
+        {
+          "prompt": "Win the black rook in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "l": "lance" }, "fen": "4r3/8/8/4k3/8/4p3/8/K3L3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "e8" },
+          "moves": 2,
+          "line": ["e1e3", "e5d4", "e3e8"],
+          "hint": "The black king stands between your lance and the rook. Take the pawn with check, and the king must step out of the way."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "l": "lance" }, "fen": "k7/lL6/1K6/8/L7/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["a4a7"],
+          "hint": "Take the piece right in front of the king. Your king guards the square."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "l": "lance" }, "fen": "5K1k/5Ppp/6L1/8/8/8/7L/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["g6g7", "h7h6", "h2h6"],
+          "hint": "Leave Black with nothing to move but the h-pawn. Wherever it goes, your lance on h2 is waiting on that file."
+        }
+      ]
+    }
+  ]
+}

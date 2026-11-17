@@ -1,0 +1,84 @@
+{
+  "id": "spartan-hoplite",
+  "track": "fairy",
+  "order": 30,
+  "title": "The hoplite",
+  "cards": [{ "track": "fairy", "name": "Hoplite (Spartan)" }],
+  "teaches": [{ "variant": "spartan", "letter": "h" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The hoplite is the pawn of the Spartans in Spartan chess, and it is a pawn turned inside out. It moves one square diagonally forward, but only to an empty square, and it takes one square straight forward. From the rank it starts on, it may instead move two squares diagonally forward, jumping over the square between. The Spartans play Black, so in a game their hoplites move down the board; here, as in every lesson, you play White, so yours moves up. Here the hoplite stands on its starting rank, and the black hoplite on d3, straight in front of it, is one it can take. The marked squares are every square it can reach.",
+      "board": { "variant": "spartan", "fen": "4k3/8/8/8/8/3h4/3H4/4K3 w - - 0 1" },
+      "square": "d2"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the hoplite two squares diagonally to b4, as it may from its starting rank, then one more square diagonally to c5.",
+      "board": { "variant": "spartan", "fen": "7k/8/8/8/8/8/3H4/K7 w - - 0 1" },
+      "square": "d2",
+      "targets": ["b4", "c5"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "A chess pawn with a piece in front of it is stuck. A hoplite is the other way round: a piece straight in front of it is one it can take, and pieces diagonally in front are what stop it. Here the black lieutenant on d5 stands straight in front, so the hoplite takes it.",
+          "board": { "variant": "spartan", "fen": "7k/8/8/3l4/3H4/8/8/K7 w - - 0 1" },
+          "arrows": [["d4", "d5"]]
+        },
+        {
+          "text": "Its double step from the starting rank jumps over the square between, so a piece there can't stop it. Here the hoplite on c2 jumps over the black hoplite on d3 and lands on e4.",
+          "board": { "variant": "spartan", "fen": "7k/8/8/8/8/3h4/2H5/K7 w - - 0 1" },
+          "arrows": [["c2", "e4"]]
+        },
+        {
+          "text": "A hoplite guards only the square straight in front of it, so two hoplites side by side don't protect each other. To protect one, put a second hoplite right behind it. Here the black captain has just taken on d4, and the hoplite on d3 takes it back.",
+          "board": { "variant": "spartan", "fen": "7k/8/8/8/3c4/3H4/8/K7 w - - 0 1" },
+          "arrows": [["d3", "d4"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black hoplite.",
+          "board": { "variant": "spartan", "fen": "7k/7h/7H/8/8/8/7K/8 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "h7" },
+          "moves": 1,
+          "line": ["h6h7"],
+          "hint": "A hoplite takes one square straight forward."
+        },
+        {
+          "prompt": "Win the black lieutenant in two moves.",
+          "board": { "variant": "spartan", "fen": "7k/8/2l5/8/3H4/8/8/B5K1 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "c6" },
+          "moves": 2,
+          "line": ["d4c5", "h8g8", "c5c6"],
+          "hint": "Step off your bishop's diagonal to the square below the lieutenant. The check that uncovers leaves Black no time to save it."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "spartan", "fen": "kh6/8/KH6/8/8/8/8/8 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["b6a7"],
+          "hint": "A hoplite attacks the square straight in front of it. Step diagonally to the square right below the king."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "spartan", "fen": "k7/8/KHH5/8/4h3/8/8/8 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["c6b7", "e4d3", "b6a7"],
+          "hint": "No check yet. First move one hoplite to guard b8, then check from straight below the king with the other."
+        }
+      ]
+    }
+  ]
+}

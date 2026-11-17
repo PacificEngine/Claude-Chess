@@ -26,6 +26,8 @@ export interface EditorHandlers {
   close(): void;
   /** Opens the piece designer on a library piece, or a new piece (null). */
   openDesigner(piece: DesignedPiece | null): void;
+  /** Opens the tutorial on the lesson `lessonId`, from a palette piece's ?. */
+  learn(lessonId: string): void;
 }
 
 /** Both sides' clock times, in ms. */
@@ -42,6 +44,8 @@ export interface Editor {
   hide(): void;
   /** Open, even while the piece designer covers it: the game keeps waiting until the editor itself closes. */
   isOpen(): boolean;
+  /** Open on the game in progress (Edit current game), whose pending edits only Resume or Cancel may end. */
+  editingGame(): boolean;
   /** Hides the editor behind the piece designer, or shows it again, leaving the setup as it was. */
   cover(covered: boolean): void;
   /** The piece library, for the palette's "Your pieces". */
@@ -107,6 +111,7 @@ export function createEditor(host: HTMLElement, bases: BaseLookup, unguarded: Se
     },
     newPiece: () => handlers.openDesigner(null),
     editPiece: (piece) => handlers.openDesigner(piece),
+    learn: (lessonId) => handlers.learn(lessonId),
   });
 
   const current = (): EditorModel => gameModel ?? (model ??= EditorModel.fromBase('chess', bases));
@@ -220,6 +225,8 @@ export function createEditor(host: HTMLElement, bases: BaseLookup, unguarded: Se
     refusal = null;
     opened = true;
     section.hidden = false;
+    // Leaving for a lesson would lose the game's pending edits, so the palette's ? links are hidden meanwhile.
+    section.classList.toggle('editing-game', gameModel !== null);
     // Drawn once visible, so the board measures its real size.
     recheck();
   }
@@ -244,6 +251,7 @@ export function createEditor(host: HTMLElement, bases: BaseLookup, unguarded: Se
       view.disarm();
     },
     isOpen: () => opened,
+    editingGame: () => opened && gameModel !== null,
     cover(covered) {
       if (!opened) return;
       view.disarm();

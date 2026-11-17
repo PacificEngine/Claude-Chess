@@ -1,0 +1,11 @@
+{
+  "id": "variant-spartan",
+  "variant": "spartan",
+  "order": 7,
+  "differences": [
+    "White plays the usual chess army. Black plays the Spartans, whose pieces are all different.",
+    "The Spartans have two kings, and lose only when they can't keep one of them safe.",
+    "The Spartan pawns are hoplites: they move diagonally forward and capture straight ahead.",
+    "The Spartans' other pieces are the lieutenant, the general, the warlord and the captain, each with its own way of moving."
+  ]
+}

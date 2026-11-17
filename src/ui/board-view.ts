@@ -20,6 +20,10 @@ export interface BoardPosition {
   lastMove: [string, string] | null;
   check: boolean;
   showDests: boolean;
+  /** Squares to mark (a lesson's highlights), each with what it marks. */
+  marks?: { square: string; kind: 'move' | 'capture' | 'target' }[];
+  /** Arrows from one UCI square to another. */
+  arrows?: [string, string][];
 }
 
 export interface BoardView {
@@ -81,6 +85,29 @@ export function createBoardView(host: HTMLElement): BoardView {
   let api: Api | null = null;
   let builtFor: string | null = null;
   let moveListener: (from: string, to: string) => void = () => {};
+  // chessgroundx 10.7 has no custom square highlights, so marks are drawn in an overlay over the squares,
+  // styled like the designer's reach preview.
+  const markLayer = document.createElement('div');
+  markLayer.className = 'reach-layer board-marks';
+  markLayer.setAttribute('aria-hidden', 'true');
+
+  function drawMarks(pos: BoardPosition): void {
+    const flipped = pos.orientation === 'black';
+    markLayer.replaceChildren(
+      ...(pos.marks ?? []).map(({ square, kind }) => {
+        const mark = document.createElement('span');
+        mark.className = `reach-square board-mark ${kind}`;
+        mark.dataset.square = square;
+        const file = square.charCodeAt(0) - 97;
+        const rank = Number(square.slice(1)) - 1;
+        const col = flipped ? pos.variant.files - 1 - file : file;
+        const row = flipped ? rank : pos.variant.ranks - 1 - rank;
+        mark.style.left = `${(col * 100) / pos.variant.files}%`;
+        mark.style.top = `${(row * 100) / pos.variant.ranks}%`;
+        return mark;
+      }),
+    );
+  }
 
   function build(pos: BoardPosition): void {
     api?.destroy();
@@ -104,6 +131,7 @@ export function createBoardView(host: HTMLElement): BoardView {
       ...(roles && { pocketRoles: { white: roles, black: roles } }),
     };
     api = Chessground(wrap, config, pocketTop, pocketBottom);
+    wrap.append(markLayer);
     builtFor = `${pos.variant.engineName}:${pos.orientation}`;
   }
 
@@ -140,6 +168,8 @@ export function createBoardView(host: HTMLElement): BoardView {
         }
         board.set({ movable: { dests } });
       }
+      board.setAutoShapes((pos.arrows ?? []).map(([from, to]) => ({ orig: toKey(from), dest: toKey(to), brush: 'green' })));
+      drawMarks(pos);
       // Set last: tests and the app treat data-fen as "the board now shows this position".
       host.dataset.fen = pos.fen;
     },

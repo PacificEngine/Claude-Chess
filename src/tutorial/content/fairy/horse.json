@@ -1,0 +1,84 @@
+{
+  "id": "horse",
+  "track": "fairy",
+  "order": 11,
+  "title": "The horse",
+  "cards": [{ "track": "fairy", "name": "Horse" }],
+  "teaches": [{ "type": "horse" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The horse goes to the same squares as a chess knight, but it doesn't jump. It moves one square straight, then one square diagonally further out, and takes the same way. If the first square, the one right next to it, is taken, it can't go that way. It comes from xiangqi (Chinese chess) and janggi (Korean chess), which both play it like this. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "horse" }, "fen": "4k3/8/8/8/3H4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the horse to the marked square. Your own pawn on d5 blocks the short way, so go around: it takes three moves.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "horse" }, "fen": "7k/8/8/3P4/3H4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["c6"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The horse is worth a little less than a knight, because it can be blocked. Here the pawn on d5 is right next to it, so it can't reach c6 or e6. Its other six squares are still open.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "horse" }, "fen": "4k3/8/8/3p4/3H4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "b5"], ["d4", "f5"]]
+        },
+        {
+          "text": "A horse can attack a piece that can't attack it back. Your horse reaches e6 by way of d5, which is empty. The black horse would come back by way of e5, and your pawn stands there. So yours attacks it, and it can't take yours.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "horse" }, "fen": "4k3/8/4h3/4P3/3H4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "e6"]]
+        },
+        {
+          "text": "In a crowd, a horse loses its squares. Here, in the corner, your own pawn on a2 blocks its way to b3, and only c2 is left. Keep the squares next to your horse clear.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "horse" }, "fen": "4k3/8/8/8/8/8/P7/H3K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["a1", "c2"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black pawn.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "horse" }, "fen": "8/8/8/8/8/6K1/7p/5H1k w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "h2" },
+          "moves": 1,
+          "line": ["f1h2"],
+          "hint": "Step right, then diagonally up. The square on the way, g1, is empty."
+        },
+        {
+          "prompt": "Win the black pawn in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "horse" }, "fen": "4k1H1/2Kp4/8/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "d7" },
+          "moves": 2,
+          "line": ["g8f6", "e8e7", "f6d7"],
+          "hint": "Find a horse move that checks the king and attacks the pawn at the same time."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "horse" }, "fen": "8/8/8/7H/8/8/7p/5K1k w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["h5g3"],
+          "hint": "Your king already takes the king's squares away. Find the square from which the horse checks it with nothing in its way."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "h": "horse" }, "fen": "2H2K1k/7p/5H2/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["c8d6", "h7h6", "d6f7"],
+          "hint": "Your horse on f6 watches h7. Bring the other horse to a square where it can check the king next move."
+        }
+      ]
+    }
+  ]
+}

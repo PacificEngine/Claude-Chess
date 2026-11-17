@@ -1,0 +1,84 @@
+{
+  "id": "pawn",
+  "track": "basics",
+  "order": 3,
+  "title": "The pawn",
+  "cards": [{ "track": "basics", "name": "Pawn" }],
+  "teaches": [{ "type": "pawn" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The pawn moves straight forward, one square at a time, and never backward. It captures in a different way: one square diagonally forward. So this pawn can step to d5, or capture the knight on e5.",
+      "board": { "variant": "chess", "fen": "4k3/8/8/4n3/3P4/8/8/4K3 w - - 0 1" },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Capture the knight on e4, then walk the pawn on to e6.",
+      "board": { "variant": "chess", "fen": "7k/8/8/8/4n3/3P4/8/K7 w - - 0 1" },
+      "square": "d3",
+      "targets": ["e4", "e6"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "A pawn that has not moved yet, on its starting rank, may step two squares forward instead of one. This is called a double step. Many games start with a pawn's double step to the middle of the board.",
+          "board": { "variant": "chess", "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" },
+          "arrows": [["e2", "e4"]]
+        },
+        {
+          "text": "The pawn is worth the least of all the pieces, so it makes a fine attacker. When a pawn attacks a bigger piece, that piece must run. Here the pawn steps to d5 and attacks both knights at once. Black can save only one of them.",
+          "board": { "variant": "chess", "fen": "4k3/8/2n1n3/8/3P4/8/8/4K3 w - - 0 1" },
+          "arrows": [["d4", "d5"]]
+        },
+        {
+          "text": "A pawn that reaches the far side of the board becomes a stronger piece, almost always a queen. This is called promotion, and it has its own lesson later. Here the pawn on d7 is one step away.",
+          "board": { "variant": "chess", "fen": "7k/3P4/8/8/8/8/8/K7 w - - 0 1" },
+          "arrows": [["d7", "d8"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black rook.",
+          "board": { "variant": "chess", "fen": "7k/8/8/3r1n2/4P3/8/8/K7 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "d5" },
+          "moves": 1,
+          "line": ["e4d5"],
+          "hint": "A pawn captures one square diagonally forward. It can reach two pieces here: pick the rook."
+        },
+        {
+          "prompt": "Win the black bishop in two moves. A bishop moves diagonally, as far as it likes, and can't jump over pieces.",
+          "board": { "variant": "chess", "fen": "4k3/6p1/7b/8/5PP1/8/8/K7 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "h6" },
+          "moves": 2,
+          "line": ["g4g5", "h6g5", "f4g5"],
+          "hint": "The bishop has only one open diagonal. Block it with a pawn that another pawn protects."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "chess", "fen": "7k/5K1p/6P1/8/8/8/8/8 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["g6g7"],
+          "hint": "A pawn gives check too. Your king guards the squares around the black king."
+        },
+        {
+          "prompt": "Checkmate in two moves, with your pawns. Your knight on d7 guards f8, so the black king can't go there.",
+          "board": { "variant": "chess", "fen": "6k1/3N1pp1/4PPK1/8/8/8/8/8 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["e6f7", "g8h8", "f6g7"],
+          "hint": "Start with a pawn capture that gives check. The black king will have only one square left."
+        }
+      ]
+    }
+  ]
+}

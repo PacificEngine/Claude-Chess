@@ -1,0 +1,84 @@
+{
+  "id": "banner",
+  "track": "fairy",
+  "order": 29,
+  "title": "The banner",
+  "cards": [{ "track": "fairy", "name": "Banner" }],
+  "teaches": [{ "type": "banner" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The banner moves as a rook or as a horse, and takes the same way. It can also take like a cannon: by jumping over exactly one piece, of either side, called the screen, and take the first piece beyond it, if that piece is an enemy. Its horse move is the one from the horse lesson: one square straight, then one diagonally further out, and it can't go that way if the first square is taken. It comes from Manchu chess, a version of xiangqi in which one side has a single banner in place of its chariots (rooks), horses and cannons. Here it can take the pawn on d6 like a rook, and the rings beyond the pawn mark where it could take by jumping over it. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "m": "banner" }, "fen": "4k3/8/3p4/8/3M4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Go to e6 like a horse, by way of d5. Then take the black knight on e8 like a cannon, jumping over your pawn on e7.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "m": "banner" }, "fen": "4n3/4P3/8/8/3M4/8/8/K6k w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["e6", "e8"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The banner is worth more than a rook: it has every rook move, the horse's moves, and the cannon's capture too. Here it can take the rook on d7 by jumping over your pawn on d5, or move to f5 like a horse. The same pawn blocks its horse moves to c6 and e6.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "m": "banner" }, "fen": "4k3/3r4/8/3P4/3M4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d7"], ["d4", "f5"]]
+        },
+        {
+          "text": "Your own pieces work as its screens. Here the banner goes to e1 and checks the king on e8 by jumping over your knight on e5. If the knight steps away later, the banner still checks, as a rook.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "m": "banner" }, "fen": "4k3/8/8/4N3/8/8/8/M6K w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["a1", "e1"]]
+        },
+        {
+          "text": "It can't move diagonally, so a bishop can attack it from far away and it can't hit back. Here the black bishop on g7 attacks it, and the banner must step away, here to a4.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "m": "banner" }, "fen": "4k3/6b1/8/8/3M4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "a4"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black pawn on h7.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "m": "banner" }, "fen": "6k1/5Mmp/5K2/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "h7" },
+          "moves": 1,
+          "line": ["f7h7"],
+          "hint": "The black banner on g7 can be your screen."
+        },
+        {
+          "prompt": "Win the black knight in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "m": "banner" }, "fen": "6n1/8/8/8/3K4/8/7M/6k1 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "g8" },
+          "moves": 2,
+          "line": ["h2g4", "g1h1", "g4g8"],
+          "hint": "Find a square on the king's file, from which the banner checks the king and attacks the knight at once."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "m": "banner" }, "fen": "8/8/p7/8/2K5/8/k7/1mM5 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["c1c2"],
+          "hint": "Check along the king's rank. Your horse moves can cover the squares the king would run to."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "m": "banner" }, "fen": "5Knk/6mp/8/8/8/4M3/8/6M1 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["e3h3", "g8h6", "h3h6"],
+          "hint": "Black's pawn on h7 can be a screen for a check. See what Black can put in the way, and be ready to take it, or to use the line it leaves open."
+        }
+      ]
+    }
+  ]
+}

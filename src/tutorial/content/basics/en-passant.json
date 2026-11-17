@@ -1,0 +1,57 @@
+{
+  "id": "en-passant",
+  "track": "basics",
+  "order": 11,
+  "title": "En passant",
+  "cards": [{ "track": "basics", "name": "En passant" }],
+  "teaches": [],
+  "steps": [
+    {
+      "kind": "read",
+      "title": "Learn",
+      "pages": [
+        {
+          "text": "Remember the pawn's double step: on its first move, a pawn may move two squares forward. If that double step lands it right beside an enemy pawn, the enemy pawn may capture it as if it had moved only one square. This capture is called en passant, which is French for \"in passing\"."
+        },
+        {
+          "text": "Here Black has just moved the pawn from e7 to e5, skipping over e6. The white pawn on f5 captures it by moving to e6, the square it skipped, and the black pawn on e5 leaves the board.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/4pP2/8/8/8/4K3 w - e6 0 1" },
+          "arrows": [["f5", "e6"]]
+        },
+        {
+          "text": "En passant is allowed only on the very next move, right after the double step. If you play something else first, the chance is gone for good. Only pawns can capture en passant, and only pawns can be captured that way."
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Black has just moved the pawn from d7 to d5. Capture it en passant.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1" },
+          "goal": { "kind": "enPassant" },
+          "moves": 1,
+          "line": ["e5d6"],
+          "hint": "Your pawn moves diagonally to the square the black pawn skipped over."
+        },
+        {
+          "prompt": "Black has just moved the pawn from h7 to h5. Capture it en passant.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/1P4Pp/8/8/8/4K3 w - h6 0 1" },
+          "goal": { "kind": "enPassant" },
+          "moves": 1,
+          "line": ["g5h6"],
+          "hint": "Only one of your pawns stands right beside the pawn that just moved."
+        },
+        {
+          "prompt": "Black has just moved the pawn from c7 to c5. Capture en passant, not the other pawn.",
+          "board": { "variant": "chess", "fen": "4k3/8/p7/1Pp5/8/8/8/4K3 w - c6 0 1" },
+          "goal": { "kind": "enPassant" },
+          "moves": 1,
+          "line": ["b5c6"],
+          "hint": "En passant captures the pawn that just made its double step, by moving to the square behind it."
+        }
+      ]
+    }
+  ]
+}

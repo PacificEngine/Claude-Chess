@@ -1,4 +1,4 @@
-// FEN helpers shared by the piece-type mapper and the position checks. No DOM or UI imports.
+// FEN and square helpers shared by the piece-type mapper, the position checks, the reach probe and the tutorial. No DOM or UI imports.
 import type { Rules } from '../rules/types';
 
 export interface Position {
@@ -24,6 +24,26 @@ export function parseFen(fen: string): Position {
   const squares = new Map<number, string>();
   rows.forEach((row, rank) => row.forEach((c, file) => c && squares.set(file + rank * files, c)));
   return { files, ranks: rows.length, squares, pocket: [...(pocketMatch?.[1] ?? '')] };
+}
+
+/** A square's index in `Position.squares`, on a board `files` wide. */
+export const squareIndex = (square: string, files: number): number =>
+  square.charCodeAt(0) - 97 + (Number(square.slice(1)) - 1) * files;
+
+/** The square at an index in `Position.squares`, on a board `files` wide. */
+export const squareName = (index: number, files: number): string =>
+  `${String.fromCharCode(97 + (index % files))}${Math.floor(index / files) + 1}`;
+
+/** The FEN character on `square`, or undefined when it is empty. */
+export function pieceOn(fen: string, square: string): string | undefined {
+  const { files, squares } = parseFen(fen);
+  return squares.get(squareIndex(square, files));
+}
+
+/** A UCI move's from- and to-squares; any promotion or gating letter after them is dropped. */
+export function uciSquares(uci: string): { from: string; to: string } {
+  const [from = '', to = ''] = uci.match(/[a-z]\d+/g) ?? [];
+  return { from, to };
 }
 
 /** A FEN from its pieces; by default with no castling, en passant or gating rights, so only the pieces decide what's legal. */

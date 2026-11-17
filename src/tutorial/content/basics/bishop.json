@@ -1,0 +1,84 @@
+{
+  "id": "bishop",
+  "track": "basics",
+  "order": 5,
+  "title": "The bishop",
+  "cards": [{ "track": "basics", "name": "Bishop" }],
+  "teaches": [{ "type": "bishop" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The bishop moves diagonally, as far as it likes. It can't jump over pieces. Because it always moves diagonally, a bishop stays on squares of one colour for the whole game. The marked squares are every square it can reach.",
+      "board": { "variant": "chess", "fen": "4k3/8/8/8/3B4/8/8/4K3 w - - 0 1" },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the bishop to each marked square. Neither one can be reached in a single move.",
+      "board": { "variant": "chess", "fen": "6k1/8/8/8/3B4/8/8/K7 w - - 0 1" },
+      "square": "d4",
+      "targets": ["h4", "b8"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "A bishop is strongest on a long, open diagonal. From a1 this bishop looks all the way across the board to h8.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/8/8/8/8/B3K3 w - - 0 1" },
+          "arrows": [["a1", "h8"]]
+        },
+        {
+          "text": "A pin is an attack on a piece that can't move out of the way, because a more important piece stands behind it. Here the bishop goes to b5 and pins the knight to its king: if the knight moved, its king would be in check, and that is not allowed.",
+          "board": { "variant": "chess", "fen": "4k3/3n4/8/8/8/8/8/4KB2 w - - 0 1" },
+          "arrows": [["f1", "b5"]]
+        },
+        {
+          "text": "Your own pawns can block your bishop. This bishop on c1 can't move at all until a pawn gets out of its way. Move pawns early so your bishops can come out.",
+          "board": { "variant": "chess", "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" },
+          "arrows": [["d2", "d4"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black rook.",
+          "board": { "variant": "chess", "fen": "4k3/8/7r/8/8/8/8/2B1K3 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "h6" },
+          "moves": 1,
+          "line": ["c1h6"],
+          "hint": "Follow the diagonal up and to the right from the bishop."
+        },
+        {
+          "prompt": "Win the black queen in two moves.",
+          "board": { "variant": "chess", "fen": "6q1/8/8/3k4/8/8/8/1B5K w - - 0 1" },
+          "goal": { "kind": "capture", "square": "g8" },
+          "moves": 2,
+          "line": ["b1a2", "d5c5", "a2g8"],
+          "hint": "Check the king along a diagonal, and look at what stands behind it."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "chess", "fen": "7k/4N3/6K1/8/8/8/8/2B5 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["c1b2"],
+          "hint": "Your king and knight guard every square around the black king. All that is missing is a check."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "chess", "fen": "7k/p7/6K1/8/8/7B/8/2B5 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["h3e6", "a7a6", "c1b2"],
+          "hint": "The black king has one free square. Take it away with one bishop, and then check with the other."
+        }
+      ]
+    }
+  ]
+}

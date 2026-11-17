@@ -1,0 +1,84 @@
+{
+  "id": "bers",
+  "track": "fairy",
+  "order": 21,
+  "title": "The bers, also called General",
+  "cards": [{ "track": "fairy", "name": "Bers" }, { "track": "fairy", "name": "General (Spartan)" }],
+  "teaches": [{ "type": "bers" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The bers moves as a rook or one square diagonally, and takes the same way. It is named after the queen of shatar, Mongolian chess, which moves like this. In shogi (Japanese chess) a rook that promotes, the dragon king, moves the same way, and so does the general, one of the Spartans' pieces in Spartan chess. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "d": "bers" }, "fen": "4k3/8/8/8/3D4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the bers to the marked square. It is a knight's jump away, and the bers can't jump, so it takes two moves.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "d": "bers" }, "fen": "7k/8/8/8/3D4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["e6"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The bers is worth more than a rook and less than a queen. Its diagonal step lets it guard and take on the squares right beside it, which a rook can't. Here it can go up the file to d8, or step to e5.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "d": "bers" }, "fen": "4k3/8/8/8/3D4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d8"], ["d4", "e5"]]
+        },
+        {
+          "text": "With its king's help it checkmates up close, as a queen does. Here it goes along the rank to g7, where your king guards it. It checks the king with its diagonal step, and covers g8 and h7 in straight lines.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "d": "bers" }, "fen": "7k/3D4/5K2/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d7", "g7"]]
+        },
+        {
+          "text": "It can't jump, so a knight can attack it without being attacked back. Here the black knight on f5 attacks it, and the bers must step away, here to a4.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "d": "bers" }, "fen": "4k3/8/8/5n2/3D4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "a4"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black bers.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "d": "bers" }, "fen": "4k3/2D2d2/8/8/6K1/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "f7" },
+          "moves": 1,
+          "line": ["c7f7"],
+          "hint": "Look along the rank."
+        },
+        {
+          "prompt": "Win the black bers in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "d": "bers" }, "fen": "8/2dk4/5K2/4D3/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "c7" },
+          "moves": 2,
+          "line": ["e5e7", "d7c6", "e7c7"],
+          "hint": "The black king and its bers share a rank. Check the king from a square your king guards, so that it has to step off that rank."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "d": "bers" }, "fen": "8/8/8/8/8/2D5/n1K5/k7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["c3b2"],
+          "hint": "Check with a diagonal step, on a square your king guards."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "d": "bers" }, "fen": "8/8/1DK5/8/k7/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["b6b2", "a4a5", "b2a3"],
+          "hint": "No check yet. First leave the king only one square to go to. Then the bers can mate it there."
+        }
+      ]
+    }
+  ]
+}

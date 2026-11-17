@@ -1,0 +1,10 @@
+{
+  "id": "variant-grand",
+  "variant": "grand",
+  "order": 3,
+  "differences": [
+    "The board is 10 by 10. The rooks start in the corners, the other pieces on the rank in front of them, and the pawns in front of those.",
+    "Each side has an archbishop (a bishop or a knight) and a chancellor (a rook or a knight). There is no castling.",
+    "A pawn may promote on any of the last three ranks, and must on the last one. It can only become a piece its side has lost."
+  ]
+}

@@ -1,6 +1,7 @@
-// The top bar: Play, Tutorial, Editor and Settings. The tutorial arrives in a later plan, so it is disabled.
+// The top bar: Play, Tutorial, Editor and Settings. Tutorial opens the lesson list.
 export interface TopBarHandlers {
   play(): void;
+  tutorial(): void;
   editor(): void;
   settings(): void;
 }
@@ -12,20 +13,16 @@ export function createTopBar(host: HTMLElement, handlers: TopBarHandlers): void 
   title.className = 'title';
   title.textContent = 'Chess';
   const nav = document.createElement('nav');
-  const button = (id: string, text: string, onClick?: () => void) => {
+  const button = (id: string, text: string, onClick: () => void) => {
     const b = document.createElement('button');
     b.type = 'button';
     b.dataset.testid = `top-${id}`;
     b.textContent = text;
-    if (onClick) b.addEventListener('click', onClick);
-    else {
-      b.disabled = true;
-      b.title = 'Coming soon';
-    }
+    b.addEventListener('click', onClick);
     nav.append(b);
   };
   button('play', 'Play', handlers.play);
-  button('tutorial', 'Tutorial');
+  button('tutorial', 'Tutorial', handlers.tutorial);
   button('editor', 'Editor', handlers.editor);
   button('settings', 'Settings', handlers.settings);
   bar.append(title, nav);

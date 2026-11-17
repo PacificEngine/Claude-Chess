@@ -1,0 +1,84 @@
+{
+  "id": "silver-general",
+  "track": "fairy",
+  "order": 5,
+  "title": "The silver general",
+  "cards": [{ "track": "fairy", "name": "Silver General" }],
+  "teaches": [{ "type": "silver" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The silver general moves one square diagonally in any direction, or one square straight forward, and takes the same way. It can't move straight sideways or straight back. It comes from shogi, Japanese chess, where it promotes to move like a gold general once it reaches the far three ranks, and where a captured piece joins the side that took it and can be dropped back onto the board. This app plays neither rule. Thai chess (makruk) has the same piece. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "silver" }, "fen": "4k3/8/8/8/3S4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the silver general to each marked square, one after the other. The second one is behind it, so step back diagonally.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "silver" }, "fen": "7k/8/8/8/3S4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["d6", "f4"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The silver general is worth less than a knight or a bishop, but more than a fers. It is an attacker: three of its five squares are in front of it.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "silver" }, "fen": "4k3/8/8/8/3S4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d5"], ["d4", "e5"]]
+        },
+        {
+          "text": "A silver can go forward and step back again diagonally. So it can walk up to attack, as here against the pawn, and then step back to safety if it must.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "silver" }, "fen": "4k3/8/8/3p4/3S4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d5"], ["d4", "c3"]]
+        },
+        {
+          "text": "It can't move straight sideways or straight back, so a piece right beside it is out of its reach. Here the black rook attacks it from the side, and the silver must step away.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "silver" }, "fen": "4k3/8/8/8/2rS4/8/8/7K w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "e5"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black knight.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "silver" }, "fen": "K1S5/1n6/k7/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "b7" },
+          "moves": 1,
+          "line": ["c8b7"],
+          "hint": "The silver can take diagonally backwards."
+        },
+        {
+          "prompt": "Win the black pawn in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "silver" }, "fen": "8/8/8/8/6pk/8/6KS/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "g4" },
+          "moves": 2,
+          "line": ["h2g3", "h4h5", "g3g4"],
+          "hint": "Find a silver move that checks the king and attacks the pawn at the same time."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "silver" }, "fen": "3k4/4s3/2S1S3/8/8/3K4/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["e6d7"],
+          "hint": "Check the king from right in front of it, on a square your other silver guards."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "silver" }, "fen": "8/8/8/8/8/3K4/7N/3SkS2 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["d1d2", "e1d1", "f1e2"],
+          "hint": "Step one silver forward so the king has only one square left. Then the other silver checks it there."
+        }
+      ]
+    }
+  ]
+}

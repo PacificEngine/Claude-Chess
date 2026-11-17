@@ -2,11 +2,13 @@
 // can't be played). Clicking a palette piece arms it; each click on a square then places it, until the
 // piece (or Escape) disarms it. The eraser removes, and so does dragging a piece off the board. "Your pieces"
 // lists the piece library, each wearing the art the player chose, with New piece… and Edit… for the designer.
+// A built-in piece (or the base's own piece) with a lesson has a ? on its White entry, which opens that lesson.
 import { Chessground } from 'chessgroundx';
 import type { Api } from 'chessgroundx/api';
 import type * as cg from 'chessgroundx/types';
 import type { DesignedPiece } from '../../persistence/pieces';
 import type { Color } from '../../rules/types';
+import { lessonForLetter, lessonForType } from '../../tutorial/links';
 import { type ActiveVariant, customActive } from '../../variants/active';
 import { BUILTIN_PIECES, INHERITED } from '../../variants/piece-types';
 import { fromKey, observePieces } from '../board-view';
@@ -26,6 +28,8 @@ export interface EditorViewHandlers {
   newPiece(): void;
   /** Opens the piece designer on a library piece. */
   editPiece(piece: DesignedPiece): void;
+  /** Opens the tutorial on the lesson `lessonId` ("Learn this piece"). */
+  learn(lessonId: string): void;
 }
 
 export interface EditorView {
@@ -142,12 +146,13 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
       group.className = 'palette-group';
       group.setAttribute('role', 'group');
       group.setAttribute('aria-label', `${capital(color)} pieces`);
-      const entries: { tool: Tool; name: string; letter: string; url: string | null }[] = [
+      const entries: { tool: Tool; name: string; letter: string; url: string | null; lesson: string | null }[] = [
         ...own.map((letter) => ({
           tool: { kind: 'piece', color, type: INHERITED, letter } as Tool,
           name: `${m.base.label} piece ${letter.toUpperCase()}`,
           letter,
           url: artUrl(letter, color, m.base.id),
+          lesson: lessonForLetter(m.base.id, letter),
         })),
         ...BUILTIN_PIECES.map((p) => {
           const baseLetter = [...m.base.types].find(([, t]) => t === p.type)?.[0];
@@ -157,12 +162,17 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
             letter: baseLetter ?? p.letter,
             // A base letter keeps the base's art (as on the board); any other type looks like what it moves as.
             url: baseLetter ? artUrl(baseLetter, color, m.base.id) : artUrl(p.letter, color, m.base.id, p.type),
+            lesson: lessonForType(p.type),
           };
         }),
       ];
       for (const entry of entries) {
-        const id = entry.tool.kind === 'piece' && entry.tool.letter ? `own-${entry.letter}` : (entry.tool as { type: string }).type;
-        group.append(paletteButton(entry.tool as Tool & { color: Color }, `palette-${color}-${id}`, `${capital(color)} ${entry.name}`, entry.url, entry.letter));
+        const isOwn = entry.tool.kind === 'piece' && entry.tool.letter !== undefined;
+        const type = (entry.tool as { type: string }).type;
+        const id = isOwn ? `own-${entry.letter}` : type;
+        const button = paletteButton(entry.tool as Tool & { color: Color }, `palette-${color}-${id}`, `${capital(color)} ${entry.name}`, entry.url, entry.letter);
+        // One ? per piece, on its White entry. It sits beside the piece button, so it never arms the piece.
+        group.append(color === 'white' && entry.lesson ? withLearn(button, entry.lesson, isOwn ? entry.letter : type, entry.name) : button);
       }
       paletteHost.append(group);
     }
@@ -189,6 +199,22 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
     buttons.set(b, tool);
     b.addEventListener('click', () => arm(armed === tool ? null : tool));
     return b;
+  }
+
+  /** A palette cell: the piece button with a small ? in its corner that opens the piece's lesson. */
+  function withLearn(button: HTMLButtonElement, lessonId: string, id: string, name: string): HTMLElement {
+    const cell = document.createElement('div');
+    cell.className = 'palette-cell';
+    const learn = document.createElement('button');
+    learn.type = 'button';
+    learn.className = 'palette-learn';
+    learn.dataset.testid = `learn-${id}`;
+    learn.textContent = '?';
+    learn.title = `Learn the ${name}`;
+    learn.setAttribute('aria-label', `Learn the ${name}`);
+    learn.addEventListener('click', () => handlers.learn(lessonId));
+    cell.append(button, learn);
+    return cell;
   }
 
   /** The piece library: a White and a Black button per piece (its name tells same-art pieces apart), and Edit…. */

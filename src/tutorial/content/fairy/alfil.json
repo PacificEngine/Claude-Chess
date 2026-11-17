@@ -1,0 +1,83 @@
+{
+  "id": "alfil",
+  "track": "fairy",
+  "order": 3,
+  "title": "The alfil",
+  "cards": [{ "track": "fairy", "name": "Alfil" }],
+  "teaches": [{ "type": "alfil" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The alfil jumps exactly two squares diagonally, in any of the four directions, and takes the same way. It jumps over whatever stands in between. It comes from shatranj, the old Persian chess, where it stood where the bishop stands today; \"alfil\" is still the Spanish word for the bishop. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "alfil" }, "fen": "4k3/8/8/8/3E4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the alfil to the marked square. It takes two jumps.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "alfil" }, "fen": "4k3/8/8/8/3E4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["h8"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The alfil is one of the weakest pieces, worth about a pawn. However it moves, it can only ever reach eight squares of the whole board. From d4 these are b2, b6, d4, d8, f2, f6, h4 and h8.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "alfil" }, "fen": "4k3/8/8/8/3E4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "b6"], ["d4", "f6"]]
+        },
+        {
+          "text": "Nothing blocks an alfil. Here it jumps straight over its own pawns. A bishop in its place would be stuck.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "alfil" }, "fen": "4k3/8/8/2P1P3/3E4/2P1P3/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "b6"], ["d4", "f2"]]
+        },
+        {
+          "text": "A piece that stands on none of the alfil's eight squares is safe from it for good. So use the alfil as a helper: from two squares away it guards a piece or covers a square the enemy king wants, while your king and knights do the attacking. Here it guards the knight on b2.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "alfil" }, "fen": "4k3/8/8/8/3E4/8/1N6/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } }
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black pawn.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "alfil" }, "fen": "8/8/8/8/5K2/7p/6k1/5Ee1 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "h3" },
+          "moves": 1,
+          "line": ["f1h3"],
+          "hint": "The alfil jumps over anything, even the black king."
+        },
+        {
+          "prompt": "Win the black pawn in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "alfil" }, "fen": "8/8/8/8/8/7K/6p1/6Ek w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "g2" },
+          "moves": 2,
+          "line": ["g1e3", "g2g1n", "e3g1"],
+          "hint": "Your alfil can't take the pawn yet. Move it to where it watches the square the pawn wants to go to. The pawn will promote first, so you end up taking the new piece."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "alfil" }, "fen": "8/8/8/7E/8/8/7p/5K1k w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["h5f3"],
+          "hint": "Your king already takes the king's squares away. Check it from two squares away, over the top of g2."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "alfil" }, "fen": "8/8/8/8/8/8/4NKpE/7k w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["h2f4", "g2g1n", "e2g3"],
+          "hint": "The black king could take your alfil on h2. Move the alfil to a square where it still covers h2, then your knight gives the check."
+        }
+      ]
+    }
+  ]
+}
