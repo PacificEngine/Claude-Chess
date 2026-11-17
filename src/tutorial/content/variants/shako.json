@@ -1,0 +1,11 @@
+{
+  "id": "variant-shako",
+  "variant": "shako",
+  "order": 6,
+  "differences": [
+    "The board is 10 by 10. The usual pieces start on the second rank and the pawns on the third.",
+    "Each side adds two cannons, in the corners, and two elephants, beside the rooks.",
+    "The cannon moves like a rook, but captures only by jumping over exactly one piece, as in Chinese chess.",
+    "The elephant moves one or two squares diagonally, and can jump over the first square."
+  ]
+}

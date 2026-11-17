@@ -1,0 +1,80 @@
+{
+  "id": "check-and-checkmate",
+  "track": "basics",
+  "order": 9,
+  "title": "Check and checkmate",
+  "cards": [{ "track": "basics", "name": "Check and checkmate" }],
+  "teaches": [],
+  "steps": [
+    {
+      "kind": "read",
+      "title": "Learn",
+      "pages": [
+        {
+          "text": "A king is in check when an enemy piece attacks it. A king in check must get out of check on the very next move. There are three ways out: move the king, block the attack, or capture the attacker. Here the black rook checks the white king, and the king steps out of the line.",
+          "board": { "variant": "chess", "fen": "k3r3/8/8/8/8/8/8/4K3 w - - 0 1" },
+          "arrows": [["e1", "d1"]]
+        },
+        {
+          "text": "The second way is to block: put a piece between the attacker and the king. Here the white knight jumps into the line of the check.",
+          "board": { "variant": "chess", "fen": "k3r3/8/8/8/8/2N5/8/4K3 w - - 0 1" },
+          "arrows": [["c3", "e2"]]
+        },
+        {
+          "text": "The third way is to capture the piece that gives check. Here the white bishop takes the black rook.",
+          "board": { "variant": "chess", "fen": "k3r3/8/8/1B6/8/8/8/4K3 w - - 0 1" },
+          "arrows": [["b5", "e8"]]
+        },
+        {
+          "text": "You may never make a move that leaves your own king in check, or puts it there. A move like that is not allowed at all."
+        },
+        {
+          "text": "Checkmate is a check with no way out: the king can't move to a safe square, nothing can block, and nothing can capture the attacker. Checkmate ends the game. Here the rook gives checkmate on h8, because the white king guards the squares in front of the black king.",
+          "board": { "variant": "chess", "fen": "k7/8/1K6/8/8/8/8/7R w - - 0 1" },
+          "arrows": [["h1", "h8"]]
+        },
+        {
+          "text": "To find a checkmate, look at every square the enemy king could step to, and at every way it could escape the check. A move that gives no check but takes away an escape square can be as strong as a check."
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "chess", "fen": "4k3/8/4K3/8/8/8/8/7R w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["h1h8"],
+          "hint": "Your king guards the squares in front of the black king. Find a check it can't step away from."
+        },
+        {
+          "prompt": "Checkmate in one move with the queen.",
+          "board": { "variant": "chess", "fen": "8/8/8/8/7Q/8/2K5/k7 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["h4a4"],
+          "hint": "Your king guards the squares beside the black king. Which straight line leads to it?"
+        },
+        {
+          "prompt": "Checkmate in two moves. Your first move is not a check.",
+          "board": { "variant": "chess", "fen": "8/8/7R/8/8/6K1/8/5k2 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["h6e6", "f1g1", "e6e1"],
+          "hint": "Don't check yet. Use the rook as a fence, so the black king has only one square left to step to."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "chess", "fen": "2K5/8/k7/2Q5/8/8/8/8 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["c5b4", "a6a7", "b4a5"],
+          "hint": "Box the black king in at the edge of the board, but don't take away every square, or it's stalemate."
+        }
+      ]
+    }
+  ]
+}

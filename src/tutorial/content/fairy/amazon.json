@@ -1,0 +1,84 @@
+{
+  "id": "amazon",
+  "track": "fairy",
+  "order": 18,
+  "title": "The amazon",
+  "cards": [{ "track": "fairy", "name": "Amazon" }],
+  "teaches": [{ "type": "amazon" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The amazon moves as a queen or as a knight: in any straight line or diagonal as far as it likes, or with a knight's jump. It takes the same way. It is the strongest piece in this app. In Amazon chess each side has one in place of the queen. The marked squares are every square it can reach.",
+      "board": { "variant": "amazon", "fen": "4k3/8/8/8/3A4/8/8/4K3 w - - 0 1" },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the amazon to the marked square. It reaches most of the board in one move, but not this square, so it takes two.",
+      "board": { "variant": "amazon", "fen": "k7/8/8/8/3A4/8/8/7K w - - 0 1" },
+      "square": "d4",
+      "targets": ["e7"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The amazon is worth more than a queen, which is already the strongest chess piece. A queen can't reach the knight squares around her; the amazon can. Here it can go up the file to d8, or jump to e6.",
+          "board": { "variant": "amazon", "fen": "4k3/8/8/8/3A4/8/8/4K3 w - - 0 1" },
+          "arrows": [["d4", "d8"], ["d4", "e6"]]
+        },
+        {
+          "text": "The amazon can checkmate on its own, without help from its king. Here it goes up the file to f7. From there its knight move checks the king on h8, and its queen moves cover g8, g7 and h7. The king can't take it, because f7 isn't next to h8.",
+          "board": { "variant": "amazon", "fen": "7k/8/8/8/8/8/8/K4A2 w - - 0 1" },
+          "arrows": [["f1", "f7"]]
+        },
+        {
+          "text": "Its value is its weakness: every other piece is worth less, so when one attacks it, it must step away rather than be swapped for it. Here the black pawn on e5 attacks it, and the pawn on f6 guards that pawn, so taking it would lose the amazon for a pawn. It steps away, here to a4.",
+          "board": { "variant": "amazon", "fen": "4k3/8/5p2/4p3/3A4/8/8/4K3 w - - 0 1" },
+          "arrows": [["d4", "a4"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black amazon.",
+          "board": { "variant": "amazon", "fen": "kn6/4a3/1K6/8/8/8/8/4A3 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "e7" },
+          "moves": 1,
+          "line": ["e1e7"],
+          "hint": "It is on the same file as yours."
+        },
+        {
+          "prompt": "Win the black knight in two moves.",
+          "board": { "variant": "amazon", "fen": "8/1A6/8/8/8/5K2/5n2/5k2 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "f2" },
+          "moves": 2,
+          "line": ["b7b1", "f2d1", "b1d1"],
+          "hint": "Give check from far away. Black's only answer puts the knight where you can take it."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "amazon", "fen": "1k6/8/K7/8/8/8/4A3/8 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["e2e8"],
+          "hint": "Check along the back rank. The amazon's knight move covers the square a queen would leave open."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "amazon", "fen": "K7/3A4/8/8/8/8/7k/8 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["d7g4", "h2h1", "g4f2"],
+          "hint": "Your king is too far away to help, so the amazon must do it alone. Check first, so that the king has only one square to go to. Then find the check it can't escape."
+        }
+      ]
+    }
+  ]
+}

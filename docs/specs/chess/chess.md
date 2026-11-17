@@ -34,12 +34,12 @@ A static, browser-only chess site hosted on GitHub Pages. It covers standard che
   - Running out of time loses, except that it's a draw when the opponent's material can't deliver mate.
   - Clocks pause while the editor or a dialog is open.
   - The AI receives the real clock times when a timer is running, and a fixed movetime per level otherwise.
-- **Tutorial:** two tracks, chess basics and "meet the fairy pieces" (one lesson per piece in a curated variant), plus a page for each variant. Lessons are data (position, goal, hint), not code. Progress persists.
+- **Tutorial:** chess basics, a lesson for every fairy piece, and a page for each variant; see `./tutorial.md`.
 - **Persistence:** the game in progress (including its clocks), saved setups, the designed-piece library, tutorial progress, and settings all survive a reload or a closed tab.
 - **Layout A:**
   - The board on the left.
   - A right panel with the Black clock, the move list, the White clock, the Undo, Edit and Settings buttons, and a line showing the variant and opponent.
-  - A top bar with Play, Tutorial, Editor and Settings.
+  - A top bar with Play, Tutorial (which opens the lesson list), Editor and Settings.
 - **Piece art:** Merida for the standard pieces and the Capablanca, Grand, Seirawan and Shako pieces; Spartan's own set for its black pieces; Alfaerie for every other built-in piece type, matched to the piece by its name; the shogi pieces as their Alfaerie piece on a shogi tile, Black's tile pointing down; Black's Alfaerie pieces recolored from pychess-variants' blue to Merida's near-black body with light inner lines, so every Black piece matches (owner decisions, 2026-11-13). Only a letter with no known type (designed pieces, until Plan 3 decides) is drawn as a lettered token.
   - *Trap:* Alfaerie has no formal licence, only David Howe's "you may download and use" permission; see ATTRIBUTION.md. The owner chose to rely on it.
   - *Trap:* chessgroundx draws pieces as CSS background images, and an SVG used as an image can't load other files, so each shogi tile embeds its piece (`yarn art:pieces` rebuilds them).
@@ -77,7 +77,7 @@ The areas are:
 - **Current game:** variant reference or generated definition, start FEN, move list, snapshots, opponent, clock config, and remaining times.
 - **Saved setups:** name, base variant, generated definition, FEN, and game settings.
 - **Piece library:** for each designed piece, its id, name, token letter, and Betza string.
-- **Tutorial progress:** completed lesson ids.
+- **Tutorial progress:** finished lessons and opened variant pages, and the solved puzzles of each lesson.
 - **Settings.**
 
 Trap: saved setups and saved games refer to designed pieces by id. If a piece changes, the player is asked whether to update those references or save the change as a new piece, so a saved game never quietly changes its rules.
@@ -120,6 +120,6 @@ User text is always rendered as text, never as HTML. Stored data is validated be
 
 ## Feature Breakdown
 - Game session, undo, clocks, persistence: covered in this spec.
-- Tutorial: covered in this spec.
+- Tutorial → `./tutorial.md`
 - Engine integration → `./engine.md`
 - Board editor, custom variants, piece designer → `./editor.md`

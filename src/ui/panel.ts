@@ -1,7 +1,15 @@
-// The right panel (layout A): Black clock, move list, White clock, Undo / Edit / Settings, the status line
-// and the variant-and-opponent line. It renders what app.ts tells it; it holds no game state.
+// The right panel (layout A): Black clock, move list, White clock, Undo / Edit / Settings, the status line,
+// the variant-and-opponent line and the Pieces line. It renders what app.ts tells it; it holds no game state.
 import type { Color } from '../rules/types';
 import type { ActiveVariant } from '../variants/active';
+
+/** One piece of the game's start position, for the Pieces line. */
+export interface PanelPiece {
+  letter: string;
+  name: string;
+  /** The lesson its name links to ("Learn this piece"), or null: none yet, or a designed piece. */
+  lessonId: string | null;
+}
 
 export interface PanelState {
   /** The game's variant; its label starts the game line, e.g. "Grand Chess · AI: Expert". */
@@ -19,6 +27,8 @@ export interface PanelState {
   /** Show the Retry button: the AI's last attempt failed but the engine still runs. */
   retry: boolean;
   over: boolean;
+  /** Each piece letter of the start position once, in board order. */
+  pieces: PanelPiece[];
 }
 
 export interface PanelHandlers {
@@ -26,6 +36,8 @@ export interface PanelHandlers {
   edit(): void;
   settings(): void;
   retry(): void;
+  /** Opens the tutorial on the lesson `lessonId`, from the Pieces line. */
+  learn(lessonId: string): void;
 }
 
 export interface Panel {
@@ -95,15 +107,46 @@ export function createPanel(host: HTMLElement, handlers: PanelHandlers): Panel {
   gameLine.className = 'game-line';
   gameLine.dataset.testid = 'game-line';
 
-  panel.append(blackClock, moveList, whiteClock, status, retry, buttons, gameLine);
+  const piecesLine = document.createElement('p');
+  piecesLine.className = 'pieces-line';
+  piecesLine.dataset.testid = 'game-pieces';
+
+  panel.append(blackClock, moveList, whiteClock, status, retry, buttons, gameLine, piecesLine);
   host.append(panel);
 
   let renderedSans: string[] = [];
+  let renderedPieces = '';
   let shown: [string, string, Color | null] = ['', '', null];
+
+  /** "Pieces: Rook, Knight, …", each name with a lesson a link; rebuilt only when it changed, keeping focus. */
+  function renderPieces(pieces: PanelPiece[]): void {
+    const key = JSON.stringify(pieces);
+    if (key === renderedPieces) return;
+    renderedPieces = key;
+    const label = document.createElement('span');
+    label.className = 'pieces-label';
+    label.textContent = 'Pieces: ';
+    const items = pieces.flatMap(({ letter, name, lessonId }, i) => {
+      let item: HTMLElement;
+      if (lessonId) {
+        const link = document.createElement('button');
+        link.type = 'button';
+        link.className = 'link';
+        link.title = `Learn the ${name}`;
+        link.addEventListener('click', () => handlers.learn(lessonId));
+        item = link;
+      } else item = document.createElement('span');
+      item.dataset.letter = letter;
+      item.textContent = name;
+      return i < pieces.length - 1 ? [item, document.createTextNode(', ')] : [item];
+    });
+    piecesLine.replaceChildren(label, ...items);
+  }
 
   return {
     render(s) {
       gameLine.textContent = `${s.variant.label} · ${s.opponent}`;
+      renderPieces(s.pieces);
       status.textContent = s.status;
       retry.hidden = !s.retry;
       status.classList.toggle('over', s.over);

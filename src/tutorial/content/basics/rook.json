@@ -1,0 +1,79 @@
+{
+  "id": "rook",
+  "track": "basics",
+  "order": 6,
+  "title": "The rook",
+  "cards": [{ "track": "basics", "name": "Rook" }],
+  "teaches": [{ "type": "rook" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The rook moves in a straight line: up, down, left or right, as far as it likes. It can't jump over pieces. The marked squares are every square it can reach.",
+      "board": { "variant": "chess", "fen": "4k3/8/8/8/3R4/8/8/4K3 w - - 0 1" },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the rook to each marked square. It takes two moves to reach each one.",
+      "board": { "variant": "chess", "fen": "7k/8/8/8/3R4/8/8/K7 w - - 0 1" },
+      "square": "d4",
+      "targets": ["b6", "g2"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "A rook is strongest on an open line, with nothing in its way. From a1 this rook can cross the whole board in one move.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/8/8/8/8/R3K3 w - - 0 1" },
+          "arrows": [["a1", "a8"]]
+        },
+        {
+          "text": "Two rooks work well together. One rook guards a row so the king can't cross it, and the other gives check on the next row. Here the rook goes to a7 to shut the king in, and next the other rook mates on b8.",
+          "board": { "variant": "chess", "fen": "6k1/8/8/8/8/8/R7/1R4K1 w - - 0 1" },
+          "arrows": [["a2", "a7"], ["b1", "b8"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black knight.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/1n6/8/8/8/1R2K3 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "b5" },
+          "moves": 1,
+          "line": ["b1b5"],
+          "hint": "The knight is on the same file as your rook."
+        },
+        {
+          "prompt": "Win the black knight in two moves.",
+          "board": { "variant": "chess", "fen": "8/8/1k5n/8/8/8/8/K2R4 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "h6" },
+          "moves": 2,
+          "line": ["d1d6", "b6c7", "d6h6"],
+          "hint": "Check the king along the row it shares with the knight."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "chess", "fen": "6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["a1a8"],
+          "hint": "The king is stuck behind its own pawns."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "chess", "fen": "2r3k1/5ppp/8/8/8/8/4RPPP/4R1K1 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["e2e8", "c8e8", "e1e8"],
+          "hint": "Give up one rook so the other can mate on the back row."
+        }
+      ]
+    }
+  ]
+}

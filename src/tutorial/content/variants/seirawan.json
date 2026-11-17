@@ -1,0 +1,10 @@
+{
+  "id": "variant-seirawan",
+  "variant": "seirawan",
+  "order": 4,
+  "differences": [
+    "The board and the starting position are the same as in chess.",
+    "Each side also holds two pieces in reserve: the hawk, which moves as a bishop or a knight, and the elephant, which moves as a rook or a knight.",
+    "When a piece leaves its starting square on the back rank for the first time, you may place a reserve piece on the square it left, as part of the same move."
+  ]
+}

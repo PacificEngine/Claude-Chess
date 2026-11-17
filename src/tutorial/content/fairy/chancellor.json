@@ -1,0 +1,84 @@
+{
+  "id": "chancellor",
+  "track": "fairy",
+  "order": 17,
+  "title": "The chancellor, also called Elephant",
+  "cards": [{ "track": "fairy", "name": "Chancellor" }, { "track": "fairy", "name": "Elephant (Seirawan)" }],
+  "teaches": [{ "type": "chancellor" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The chancellor moves as a rook or as a knight: in a straight line as far as it likes, or with a knight's jump. It takes the same way. It comes from Capablanca chess, played on a board ten squares wide, where each side has one and a pawn may promote to it. Seirawan chess has the same piece under the name elephant (not the elephant of xiangqi or Shako, which have their own lessons), and there players bring it into the game from hand, onto the square a back-rank piece has just left. The marked squares are every square it can reach.",
+      "board": { "variant": "capablanca", "fen": "4k5/10/10/10/3C6/10/10/4K5 w - - 0 1" },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the chancellor to the marked square, one step diagonally away. It can't move diagonally, so it takes two moves.",
+      "board": { "variant": "capablanca", "fen": "9k/10/10/10/3C6/10/10/K9 w - - 0 1" },
+      "square": "d4",
+      "targets": ["e5"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The chancellor is worth about as much as the archbishop, and nearly as much as a queen. It has all of a rook's reach, and its knight jump gets over anything in the way. Here it can go up the file to d8, or jump to e6.",
+          "board": { "variant": "capablanca", "fen": "4k5/10/10/10/3C6/10/10/4K5 w - - 0 1" },
+          "arrows": [["d4", "d8"], ["d4", "e6"]]
+        },
+        {
+          "text": "Its two moves work together in a fork. (A fork is a move that attacks two pieces at once.) Here the chancellor goes along the rank to e6. It checks the king along the file, and its knight move attacks the rook on g5. The king must get out of check, and then the chancellor takes the rook.",
+          "board": { "variant": "capablanca", "fen": "4k5/10/1C8/6r3/10/10/10/9K w - - 0 1" },
+          "arrows": [["b6", "e6"]]
+        },
+        {
+          "text": "It can't move diagonally, so a bishop can attack it from far away and it can't hit back. Here the black bishop on g7 attacks it. The chancellor must step off the bishop's diagonal, here to a4.",
+          "board": { "variant": "capablanca", "fen": "4k5/6b3/10/10/3C6/10/10/4K5 w - - 0 1" },
+          "arrows": [["d4", "a4"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black knight.",
+          "board": { "variant": "capablanca", "fen": "10/10/9n/9k/8C1/10/10/5K4 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "j6" },
+          "moves": 1,
+          "line": ["i4j6"],
+          "hint": "The knight isn't on any of the chancellor's lines. Use its other move."
+        },
+        {
+          "prompt": "Win the black knight in two moves.",
+          "board": { "variant": "capablanca", "fen": "10/10/10/4n5/10/2K6C/10/3k6 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "e5" },
+          "moves": 2,
+          "line": ["j3e3", "d1c1", "e3e5"],
+          "hint": "Look for a move that checks the king and attacks the knight at the same time."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "capablanca", "fen": "10/10/10/10/9P/7K2/5C4/6k3 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["f2d1"],
+          "hint": "Check the king along its rank, from a square where the knight jump also guards the square it would run to."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "capablanca", "fen": "10/10/10/10/10/4K5/P3C5/3k6 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["e2c3", "d1e1", "c3b1"],
+          "hint": "Check with a knight jump first, and the king has one square left. Then find the move whose rook line and knight jump together leave it nowhere to go."
+        }
+      ]
+    }
+  ]
+}

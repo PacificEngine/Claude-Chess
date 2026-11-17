@@ -1,0 +1,84 @@
+{
+  "id": "aiwok",
+  "track": "fairy",
+  "order": 20,
+  "title": "The aiwok",
+  "cards": [{ "track": "fairy", "name": "Aiwok" }],
+  "teaches": [{ "type": "aiwok" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The aiwok moves as a rook, as a knight, or one square diagonally, and takes the same way. So it has the chancellor's moves plus a single diagonal step. It comes from Ai-wok, a version of makruk (Thai chess) in which it takes the place of makruk's queen. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "a": "aiwok" }, "fen": "4k3/8/8/8/3A4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the aiwok to the marked square, two squares diagonally away. Its diagonal step goes only one square, so it takes two moves.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "a": "aiwok" }, "fen": "7k/8/8/8/3A4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["f6"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The aiwok is worth nearly as much as a queen. It reaches as far as a rook, jumps like a knight, and steps diagonally. Here it can go up the file to d8, jump to e6, or step to e5.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "a": "aiwok" }, "fen": "4k3/8/8/8/3A4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d8"], ["d4", "e6"], ["d4", "e5"]]
+        },
+        {
+          "text": "Its diagonal step lets it checkmate up close, where a chancellor on g7 could not. Here it goes up the file to g7, where your king guards it. It checks the king with its diagonal step, and covers g8 and h7 in straight lines.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "a": "aiwok" }, "fen": "7k/8/5K2/8/8/8/8/6A1 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["g1", "g7"]]
+        },
+        {
+          "text": "Past one square it can't move diagonally, so a bishop can attack it from far away. Here the black bishop on g7 attacks it from three squares off, and the aiwok can't hit back. It steps off the diagonal, here to a4.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "a": "aiwok" }, "fen": "4k3/6b1/8/8/3A4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "a4"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black knight.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "a": "aiwok" }, "fen": "8/8/8/8/8/1K1A4/8/1k1n4 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "d1" },
+          "moves": 1,
+          "line": ["d3d1"],
+          "hint": "It's on the same file as your aiwok."
+        },
+        {
+          "prompt": "Win the black knight in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "a": "aiwok" }, "fen": "8/8/8/6n1/6k1/3A4/6K1/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "g5" },
+          "moves": 2,
+          "line": ["d3e5", "g4h5", "e5g5"],
+          "hint": "Jump to a square that checks the king and lines up with the knight."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "a": "aiwok" }, "fen": "7k/8/7K/8/7A/1n6/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["h4g6"],
+          "hint": "Your king covers g7 and h7. Check in a way that also covers g8."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "a": "aiwok" }, "fen": "6k1/4Kp2/7P/3p4/8/8/8/A7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["a1g1", "g8h8", "g1g7"],
+          "hint": "Check first. Wherever the king goes, your pawn on h6 can then guard the aiwok right next to it."
+        }
+      ]
+    }
+  ]
+}

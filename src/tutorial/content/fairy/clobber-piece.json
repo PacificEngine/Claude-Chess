@@ -1,0 +1,82 @@
+{
+  "id": "clobber-piece",
+  "track": "fairy",
+  "order": 14,
+  "title": "The clobber piece",
+  "cards": [{ "track": "fairy", "name": "Clobber Piece" }],
+  "teaches": [{ "type": "clobber" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The clobber piece can only take. It takes an enemy piece one square up, down, left or right, and lands on its square. It can never move to an empty square, so with no enemy next to it, it can't move at all. It comes from Clobber, a game played on a board full of these pieces, where every move is a capture and a player who can't move loses. Here the usual chess rules decide the game. The marked squares are where it could take an enemy piece.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "clobber" }, "fen": "4k3/8/8/8/3C4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Take both black knights, one after the other.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "clobber" }, "fen": "7k/8/8/3nn3/3C4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["d5", "e5"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The clobber piece is weak, worth less than a pawn. It can't go looking for a fight: it waits until an enemy piece comes next to it. So put it where the enemy wants to go, and it guards the four squares around it.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "clobber" }, "fen": "4k3/8/8/8/3C4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } }
+        },
+        {
+          "text": "Each capture can set up the next. Here the clobber piece takes on d5, and from there it can take the knight on e5 too. A row of enemy pieces is a road for it.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "clobber" }, "fen": "4k3/8/8/3nn3/3C4/8/8/7K w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d5"]]
+        },
+        {
+          "text": "A clobber piece can't run away. Here the black bishop attacks it from e5, diagonally, where the clobber piece can't reach it, and it has no move at all. Keep it protected, or keep it out of the way.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "clobber" }, "fen": "4k3/8/8/4b3/3C4/8/8/7K w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } }
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Your king is in check from the black clobber piece. Take it.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "clobber" }, "fen": "8/8/8/8/8/K2P4/cC6/k7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "a2" },
+          "moves": 1,
+          "line": ["b2a2"],
+          "hint": "It takes the piece right beside it."
+        },
+        {
+          "prompt": "Win the black pawn on f7 in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "clobber" }, "fen": "6k1/5pp1/6CK/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "f7" },
+          "moves": 2,
+          "line": ["g6g7", "g8h8", "g7f7"],
+          "hint": "A clobber piece moves only by taking. Look for a capture that also gives check, and see what it lands next to."
+        },
+        {
+          "prompt": "Your king is in check from the black knight. Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "clobber" }, "fen": "8/8/8/8/8/5N2/6Cn/5K1k w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["g2h2"],
+          "hint": "Take the knight next to the king. Your own knight guards that square."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "clobber" }, "fen": "kn6/1CK5/1C6/N7/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["b7b8", "a8a7", "a5c6"],
+          "hint": "Take with check, so the king has only one square. Your clobber pieces guard the squares next to them, so your knight can finish."
+        }
+      ]
+    }
+  ]
+}

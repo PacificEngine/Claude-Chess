@@ -1,0 +1,70 @@
+{
+  "id": "promotion",
+  "track": "basics",
+  "order": 12,
+  "title": "Promotion",
+  "cards": [{ "track": "basics", "name": "Promotion" }],
+  "teaches": [],
+  "steps": [
+    {
+      "kind": "read",
+      "title": "Learn",
+      "pages": [
+        {
+          "text": "A pawn that reaches the far side of the board is promoted: it becomes a queen, rook, bishop or knight, whichever you choose. Most players choose a queen.",
+          "board": { "variant": "chess", "fen": "7k/P7/8/8/8/8/8/K7 w - - 0 1" },
+          "arrows": [["a7", "a8"]]
+        },
+        {
+          "text": "The pawn can't stay a pawn on the last rank, and it can't become a king. You may promote even if you still have your queen, so you can have two queens or more."
+        },
+        {
+          "text": "A pawn can promote by capturing too. Here the pawn on b7 is blocked, but it can take the rook on a8 and become a queen there.",
+          "board": { "variant": "chess", "fen": "rn5k/1P6/8/8/8/8/8/K7 w - - 0 1" },
+          "arrows": [["b7", "a8"]]
+        },
+        {
+          "text": "Push a pawn that no enemy pawn can stop. Each step forward makes it more dangerous, and a new queen often wins the game."
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Promote your pawn.",
+          "board": { "variant": "chess", "fen": "7k/P7/8/8/8/8/8/K7 w - - 0 1" },
+          "goal": { "kind": "promote" },
+          "moves": 1,
+          "line": ["a7a8q"],
+          "hint": "A pawn is promoted when it reaches the last rank. How far is this one from it?"
+        },
+        {
+          "prompt": "Promote a pawn. One of them is blocked.",
+          "board": { "variant": "chess", "fen": "1n2k3/1P4P1/8/8/8/8/8/K7 w - - 0 1" },
+          "goal": { "kind": "promote" },
+          "moves": 1,
+          "line": ["g7g8q"],
+          "hint": "A pawn can't move forward onto a square where a piece stands."
+        },
+        {
+          "prompt": "Promote your pawn. It can't move straight ahead.",
+          "board": { "variant": "chess", "fen": "2rn3k/2P5/8/8/8/8/8/K7 w - - 0 1" },
+          "goal": { "kind": "promote" },
+          "moves": 1,
+          "line": ["c7d8q"],
+          "hint": "A pawn captures diagonally forward, and that works on the last rank too."
+        },
+        {
+          "prompt": "Checkmate in one move, by promoting.",
+          "board": { "variant": "chess", "fen": "6k1/P4ppp/8/8/8/8/8/K7 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["a7a8q"],
+          "hint": "The black king is stuck behind its own pawns. A new queen on the top rank would check it."
+        }
+      ]
+    }
+  ]
+}

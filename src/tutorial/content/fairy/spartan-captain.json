@@ -1,0 +1,84 @@
+{
+  "id": "spartan-captain",
+  "track": "fairy",
+  "order": 32,
+  "title": "The captain",
+  "cards": [{ "track": "fairy", "name": "Captain (Spartan)" }],
+  "teaches": [{ "variant": "spartan", "letter": "c" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The captain is one of the Spartans' pieces in Spartan chess. It moves one square straight in any direction, or jumps exactly two squares straight over whatever stands between, and it takes either way. It never moves diagonally. The Spartans play Black, but here, as in every lesson, you play White. The marked squares are every square it can reach.",
+      "board": { "variant": "spartan", "fen": "4k3/8/8/8/3C4/8/8/4K3 w - - 0 1" },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the captain to the marked square, one square diagonally ahead. It can't move diagonally, so go one square straight ahead and then one square sideways.",
+      "board": { "variant": "spartan", "fen": "7k/8/8/8/3C4/8/8/K7 w - - 0 1" },
+      "square": "d4",
+      "targets": ["e5"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "Its two-square jump goes over a piece in between, so it can't be blocked. Here the captain jumps over the black hoplite on d5 and takes the black lieutenant on d6.",
+          "board": { "variant": "spartan", "fen": "7k/8/3l4/3h4/3C4/8/8/K7 w - - 0 1" },
+          "arrows": [["d4", "d6"]]
+        },
+        {
+          "text": "It reaches at most eight squares, all close by, so it is slow to cross the board: here its jump to d6 is as far as one move can take it.",
+          "board": { "variant": "spartan", "fen": "7k/8/8/8/3C4/8/8/K7 w - - 0 1" },
+          "arrows": [["d4", "d6"]]
+        },
+        {
+          "text": "It can't move diagonally, so a piece diagonally next to it is safe from it. Here the black lieutenant on e5 attacks the captain, and the captain can't take it back. It steps away, here to d2.",
+          "board": { "variant": "spartan", "fen": "7k/8/8/4l3/3C4/8/8/K7 w - - 0 1" },
+          "arrows": [["d4", "d2"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black captain.",
+          "board": { "variant": "spartan", "fen": "8/8/8/8/8/8/1C1cK3/2k5 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "d2" },
+          "moves": 1,
+          "line": ["b2d2"],
+          "hint": "Your king guards d2. Jump two squares along the rank."
+        },
+        {
+          "prompt": "Win the black captain in two moves.",
+          "board": { "variant": "spartan", "fen": "8/8/8/2hk4/4c3/2CK4/8/8 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "e4" },
+          "moves": 2,
+          "line": ["c3c5", "d5e6", "d3e4"],
+          "hint": "Jump up the file to take the hoplite with check. Wherever the king goes, it can no longer guard its captain."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "spartan", "fen": "k1K5/8/1C6/8/8/8/8/8 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["b6a6"],
+          "hint": "Your king covers b7 and b8. Check from a square that also covers a7."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "spartan", "fen": "8/8/8/8/8/8/k1K5/1C6 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["b1b3", "a2a1", "b3a3"],
+          "hint": "No check yet. Jump to a square that leaves the king only a1, then check it along the file."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "id": "janggi-cannon",
+  "track": "fairy",
+  "order": 28,
+  "title": "The janggi cannon",
+  "cards": [{ "track": "fairy", "name": "Janggi Cannon" }],
+  "teaches": [{ "type": "janggiCannon" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The janggi cannon moves and takes only by jumping. Along a rank or a file it must jump over exactly one piece, of either side, called the screen. It then lands on any empty square beyond the screen, up to the next piece, which it takes if it is an enemy. With nothing to jump over, it can't move that way at all. Here your pawn on d6 and the black knight on f4 are its screens. It comes from janggi (Korean chess), and as there, it may not jump over another janggi cannon or take one. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "janggiCannon" }, "fen": "4k3/8/3P4/8/3C1n2/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Jump over your knight to f1, then over your pawn to f8.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "janggiCannon" }, "fen": "7k/8/8/8/5P2/8/8/C2N3K w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "a1",
+      "targets": ["f1", "f8"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The janggi cannon is strong while the board is full and there are screens everywhere, and weak near the end, when few pieces are left. With no screen in a direction, it can't even move that way. Here it can jump over the pawn on d5 to d6, d7 or d8, but it can't move left, right or down at all.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "janggiCannon" }, "fen": "4k3/8/8/3P4/3C4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d6"], ["d4", "d8"]]
+        },
+        {
+          "text": "Your own pieces make its screens. Here the cannon jumps over your pawn on c2 to e2, and from there it checks the king on e8 through your knight on e4.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "janggiCannon" }, "fen": "4k3/8/8/8/4N3/8/C1P5/7K w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["a2", "e2"]]
+        },
+        {
+          "text": "With no screen between them, it can't take. Here the black rook on d8 attacks it down the file, and the cannon can't take back. It can't even step away up or down the file, so it needs a screen to the side: your knight on f4 lets it jump to g4.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "janggiCannon" }, "fen": "3rk3/8/8/8/3C1N2/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "g4"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black knight on c8.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "janggiCannon" }, "fen": "2nk4/2n5/3K4/8/8/8/2C5/3n4 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "c8" },
+          "moves": 1,
+          "line": ["c2c8"],
+          "hint": "The knight on c7 can be your screen."
+        },
+        {
+          "prompt": "Win the black pawn on a4 in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "janggiCannon" }, "fen": "8/p7/8/Ck6/p7/2PK4/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "a4" },
+          "moves": 2,
+          "line": ["a5a8", "a4a3", "a8a3"],
+          "hint": "Right next to the cannon, the pawn has no screen in front of it. Jump to the far side of the other pawn, so that it becomes your screen."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "janggiCannon" }, "fen": "1N1Ck1K1/4pp2/1P6/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["d8a8"],
+          "hint": "Jump over your knight. From the far side, the knight is the screen for a check."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "janggiCannon" }, "fen": "6Ck/6pp/8/8/8/8/2C3K1/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["g8g3", "g7g6", "c2h2"],
+          "hint": "Black's pawns can be your screens. First bring one cannon down the g-file, below them, to guard the king's way out. Your own king can be a screen too."
+        }
+      ]
+    }
+  ]
+}

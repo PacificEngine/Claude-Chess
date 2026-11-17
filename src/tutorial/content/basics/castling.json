@@ -1,0 +1,67 @@
+{
+  "id": "castling",
+  "track": "basics",
+  "order": 10,
+  "title": "Castling",
+  "cards": [{ "track": "basics", "name": "Castling" }],
+  "teaches": [],
+  "steps": [
+    {
+      "kind": "read",
+      "title": "Learn",
+      "pages": [
+        {
+          "text": "Castling is a special move of the king and a rook together, and it counts as one move. The king moves two squares toward the rook, and the rook moves to the king's other side, right beside it. Castling tucks the king away near a corner, behind its pawns, and brings the rook toward the middle.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/8/8/8/5PPP/4K2R w K - 0 1" },
+          "arrows": [["e1", "g1"]]
+        },
+        {
+          "text": "You can castle on either side. On the queen's side, the long side, the king goes to c1 and the rook from a1 goes to d1.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/8/8/8/PPP5/R3K3 w Q - 0 1" },
+          "arrows": [["e1", "c1"]]
+        },
+        {
+          "text": "You may castle only when all of these are true: neither the king nor that rook has moved yet in the game; no pieces stand between them; your king is not in check; and the king does not cross or land on a square that an enemy piece attacks. Only the king's path matters: on the long side the rook may pass b1 even if an enemy piece attacks it."
+        },
+        {
+          "text": "Here the black rook attacks f1, so the king may not cross it, and White can't castle on the king's side. Castling on the queen's side is still allowed.",
+          "board": { "variant": "chess", "fen": "4kr2/8/8/8/8/8/PPP3PP/R3K2R w KQ - 0 1" },
+          "arrows": [["e1", "c1"]]
+        },
+        {
+          "text": "To castle in these lessons, move the king two squares toward the rook. The rook follows by itself."
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Castle on the king's side.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/8/8/8/PPPPPPPP/RNBQK2R w K - 0 1" },
+          "goal": { "kind": "castle" },
+          "moves": 1,
+          "line": ["e1g1"],
+          "hint": "Move the king two squares toward the rook."
+        },
+        {
+          "prompt": "Castle. Only one side is allowed.",
+          "board": { "variant": "chess", "fen": "4k3/8/8/8/2b5/8/PPP2PPP/R3K2R w KQ - 0 1" },
+          "goal": { "kind": "castle" },
+          "moves": 1,
+          "line": ["e1c1"],
+          "hint": "Look at the squares the black bishop attacks. The king may not cross one of them."
+        },
+        {
+          "prompt": "Castle. Only one side is allowed.",
+          "board": { "variant": "chess", "fen": "3rk3/8/8/8/8/8/PPP2PPP/R3K2R w KQ - 0 1" },
+          "goal": { "kind": "castle" },
+          "moves": 1,
+          "line": ["e1g1"],
+          "hint": "The black rook looks straight down its file. Which square does the king have to cross on that side?"
+        }
+      ]
+    }
+  ]
+}

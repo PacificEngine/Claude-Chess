@@ -1,0 +1,84 @@
+{
+  "id": "spartan-lieutenant",
+  "track": "fairy",
+  "order": 31,
+  "title": "The lieutenant",
+  "cards": [{ "track": "fairy", "name": "Lieutenant (Spartan)" }],
+  "teaches": [{ "variant": "spartan", "letter": "l" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The lieutenant is one of the Spartans' pieces in Spartan chess. It moves one square diagonally, or jumps two squares diagonally over whatever stands between, and it takes either way. It may also step one square sideways, but only to an empty square: it can't take sideways. It can't move straight forward or straight back. The Spartans play Black, but here, as in every lesson, you play White. The marked squares are every square it can reach.",
+      "board": { "variant": "spartan", "fen": "4k3/8/8/8/3L4/8/8/4K3 w - - 0 1" },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the lieutenant to the marked square, one square straight ahead. It can't step straight forward, so go one square diagonally and then one square sideways.",
+      "board": { "variant": "spartan", "fen": "7k/8/8/8/3L4/8/8/K7 w - - 0 1" },
+      "square": "d4",
+      "targets": ["d5"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "Its diagonal steps and jumps keep it on squares of one colour, like a bishop. Only the sideways step takes it to the other colour, and that step can't take a piece. Here it steps sideways to e4, a square of the other colour.",
+          "board": { "variant": "spartan", "fen": "7k/8/8/8/3L4/8/8/K7 w - - 0 1" },
+          "arrows": [["d4", "e4"]]
+        },
+        {
+          "text": "The two-square diagonal jump goes over a piece in between. Here the lieutenant jumps over the black hoplite on e5 and takes the black captain on f6.",
+          "board": { "variant": "spartan", "fen": "7k/8/5c2/4h3/3L4/8/8/K7 w - - 0 1" },
+          "arrows": [["d4", "f6"]]
+        },
+        {
+          "text": "It can't take sideways or straight, so a rook beside it can attack it without being attacked back. Here the black rook on c4 attacks it along the rank. The lieutenant steps off the rook's lines, here to e5.",
+          "board": { "variant": "spartan", "fen": "7k/8/8/8/2rL4/8/8/K7 w - - 0 1" },
+          "arrows": [["d4", "e5"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black lieutenant.",
+          "board": { "variant": "spartan", "fen": "8/8/8/8/8/3L4/8/4klK1 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "f1" },
+          "moves": 1,
+          "line": ["d3f1"],
+          "hint": "Jump two squares diagonally."
+        },
+        {
+          "prompt": "Win the black captain in two moves.",
+          "board": { "variant": "spartan", "fen": "7k/6c1/7K/8/7L/8/8/8 w - - 0 1" },
+          "goal": { "kind": "capture", "square": "g7" },
+          "moves": 2,
+          "line": ["h4f6", "h8g8", "f6g7"],
+          "hint": "Jump to a square that checks the king and attacks the captain at once. The captain can't attack diagonally, so it can't take your lieutenant."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "variant": "spartan", "fen": "8/8/8/8/8/8/l1K5/k1L5 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["c1b2"],
+          "hint": "Your king covers b1. Check from a square your king also guards."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "variant": "spartan", "fen": "8/8/8/8/8/K7/1LlL4/1k6 w - - 0 1" },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["b2a2", "b1a1", "d2c3"],
+          "hint": "Step sideways to a2, which checks the king and leaves it only a1. Then check it there with the other lieutenant's two-square jump."
+        }
+      ]
+    }
+  ]
+}

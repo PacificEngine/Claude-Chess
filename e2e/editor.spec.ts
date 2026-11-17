@@ -145,9 +145,11 @@ test('tells the player how many pieces were removed when the board shrinks', asy
 test('names the castling control "Castling and gating" for Seirawan, where it also holds the gating rights', async ({ page }) => {
   await openApp(page);
   await openEditor(page);
-  await expect(page.getByText('Castling', { exact: true })).toBeVisible();
+  // Within the editor: the tutorial's lesson list has a Castling card of its own.
+  const editor = page.getByTestId('editor');
+  await expect(editor.getByText('Castling', { exact: true })).toBeVisible();
   await page.locator('#editor-base').selectOption('seirawan');
-  await expect(page.getByText('Castling and gating', { exact: true })).toBeVisible();
+  await expect(editor.getByText('Castling and gating', { exact: true })).toBeVisible();
   await page.locator('#editor-castling').uncheck();
   await expect(editorBoard(page)).toHaveAttribute('data-fen', /\[[A-Za-z]*\] w - /);
 });

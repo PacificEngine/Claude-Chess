@@ -1,0 +1,84 @@
+{
+  "id": "soldier",
+  "track": "fairy",
+  "order": 10,
+  "title": "The soldier",
+  "cards": [{ "track": "fairy", "name": "Soldier" }],
+  "teaches": [{ "type": "soldier" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The soldier moves one square straight forward or one square straight sideways, and takes the same way. It never moves back. It comes from xiangqi (Chinese chess) and janggi (Korean chess). In xiangqi it may move sideways only once it has crossed the river in the middle of the board; this app plays it as janggi does outside the palace (the squares around each king where janggi adds diagonal steps), so it may always move sideways. It never promotes. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "soldier" }, "fen": "4k3/8/8/8/3S4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the soldier to each marked square, one after the other. The first one is beside it.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "soldier" }, "fen": "7k/8/8/8/3S4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["c4", "c6"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The soldier is worth a little more than a chess pawn. It grows stronger as it nears the enemy king, where its sideways steps attack the squares around the king. It can't retreat, so don't push it forward alone.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "soldier" }, "fen": "4k3/8/8/8/3S4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d5"], ["d4", "e4"]]
+        },
+        {
+          "text": "Soldiers side by side guard each other, which chess pawns can't do. A line of soldiers marching up the board together is hard to break.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "soldier" }, "fen": "4k3/8/8/8/3SS3/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d5"]]
+        },
+        {
+          "text": "A soldier can't move diagonally. Here the black bishop attacks it from e5, and the soldier can't take it back, so it steps sideways out of the attack.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "soldier" }, "fen": "4k3/8/8/4b3/3S4/8/8/7K w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "c4"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Your king is in check from the black pawn. Take it.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "soldier" }, "fen": "8/8/8/8/8/8/Sp6/k1K5 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "b2" },
+          "moves": 1,
+          "line": ["a2b2"],
+          "hint": "A soldier takes sideways as well as forward."
+        },
+        {
+          "prompt": "Win the black pawn in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "soldier" }, "fen": "1k6/2p5/2KS4/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "c7" },
+          "moves": 2,
+          "line": ["d6d7", "b8c8", "d7c7"],
+          "hint": "Your king can't take the pawn, because the black king guards it. Remember that a soldier also takes sideways."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "soldier" }, "fen": "7k/6S1/5K1S/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["h6h7"],
+          "hint": "Check the king from right in front of it. Your other soldier guards that square from the side."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "s": "soldier" }, "fen": "7k/5SS1/7K/7S/8/7s/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["f7f8", "h3h2", "g7h7"],
+          "hint": "Your soldier on g7 is busy guarding g8. Guard g8 a second time, so that soldier is free to step sideways with check."
+        }
+      ]
+    }
+  ]
+}

@@ -5,23 +5,27 @@ import { levelById } from '../engine/levels';
 import { type DesignedPiece, loadPieces } from '../persistence/pieces';
 import { loadSetups, rewritePieceCopies, usesPiece } from '../persistence/setups';
 import { createStore, DEFAULT_SETTINGS, isSettings, SETTINGS_VERSION, type Settings } from '../persistence/store';
+import { loadTutorialProgress } from '../persistence/tutorial';
 import { loadRules, type Rules } from '../rules/rules';
 import type { Color, GameResult } from '../rules/types';
 import { remaining } from '../session/clock';
 import { checkWithoutEngine, type PendingRestore, type Restored, restoreInBackground } from '../session/restore';
 import { GameSession, isSessionState, type Opponent, type SessionState } from '../session/session';
-import { type ActiveVariant, curatedActive, customActive, variantTypes } from '../variants/active';
+import { lessonFor } from '../tutorial/links';
+import { createTutorial } from '../tutorial/ui/tutorial';
+import { type ActiveVariant, artTypeOf, curatedActive, customActive, variantTypes } from '../variants/active';
 import { CURATED_VARIANTS, type VariantInfo, variantById } from '../variants/catalog';
 import { positionProblems } from '../variants/legality';
+import { pieceTypeByName } from '../variants/piece-types';
 import { registerSetup } from '../variants/registry';
 import type { SetupSpec } from '../variants/setup';
 import { createBoardView, parseUci } from './board-view';
-import { createChoiceDialog } from './choice-dialog';
+import { createChoiceDialog, pieceName } from './choice-dialog';
 import { createDesigner } from './designer/designer';
 import { type ClockTimes, createEditor, type StartVerdict } from './editor/editor';
 import { createSetupChecker, guardChecker, type SetupVerdict } from './editor/editor-check';
 import { editorBases } from './editor/editor-model';
-import { createPanel } from './panel';
+import { createPanel, type PanelPiece } from './panel';
 import { createPlayDialog, EDITOR_SETUP_ID, type PlayChoice } from './play-dialog';
 import { createSettingsDialog } from './settings-dialog';
 import { createSetupsController } from './setups-controller';
@@ -56,6 +60,7 @@ const MSG_GAME_REPLACED = 'The game changed meanwhile and was not updated.';
 const MSG_SETUPS_NOT_UPDATED = "The saved setups that use the piece couldn't be updated: the browser refused to store them.";
 const MSG_CORRUPT_PIECES =
   "Your designed pieces couldn't be read, so the library starts empty. The damaged data was kept under chess.pieces.corrupt.";
+const MSG_CORRUPT_TUTORIAL = 'Your tutorial progress could not be read and was reset.';
 
 const other = (c: Color): Color => (c === 'white' ? 'black' : 'white');
 const capital = (c: Color) => (c === 'white' ? 'White' : 'Black');
@@ -130,6 +135,10 @@ export async function startApp(root: HTMLElement): Promise<void> {
   if (loadedSetups.problem) warn(MSG_CORRUPT_SETUPS);
   const loadedPieces = loadPieces(store);
   if (loadedPieces.problem) warn(MSG_CORRUPT_PIECES);
+  const loadedTutorial = loadTutorialProgress(store, () => {
+    if (store.available) warn(MSG_SAVE_FAILED);
+  });
+  if (loadedTutorial.problem) warn(MSG_CORRUPT_TUTORIAL);
   const loaded = store.load('chess.game', GAME_VERSION, {}, isSessionState);
   if (loaded.problem) warn(MSG_CORRUPT_GAME);
   let saved: SessionState | null = null;
@@ -158,7 +167,12 @@ export async function startApp(root: HTMLElement): Promise<void> {
   main.dataset.testid = 'game';
   const boardHost = document.createElement('div');
   main.append(boardHost);
-  createTopBar(root, { play: () => openPlay(), editor: () => openEditor(), settings: () => openSettings() });
+  createTopBar(root, {
+    play: () => openPlay(),
+    tutorial: () => openTutorial(),
+    editor: () => openEditor(),
+    settings: () => openSettings(),
+  });
   root.append(banner, main);
   const bases = editorBases(rules);
   // Guarded: the Play dialog's setup check and Start must never wait on a check that throws.
@@ -173,6 +187,8 @@ export async function startApp(root: HTMLElement): Promise<void> {
       editor.cover(true);
       designer.open(piece);
     },
+    // As the top bar's Tutorial does from the editor: the tutorial takes over the editor's screen.
+    learn: (lessonId) => openTutorial(lessonId),
   });
   const designer = createDesigner(root, {
     rules,
@@ -192,10 +208,20 @@ export async function startApp(root: HTMLElement): Promise<void> {
     edit: () => openEditorForCurrentGame(),
     settings: () => openSettings(),
     retry: () => retryAi(),
+    learn: (lessonId) => openTutorial(lessonId),
   });
   const playDialog = createPlayDialog(root);
   const settingsDialog = createSettingsDialog(root);
   const choiceDialog = createChoiceDialog(root);
+  const tutorial = createTutorial(root, {
+    rules,
+    engine,
+    choiceDialog,
+    progress: loadedTutorial.progress,
+    // The dialog opens over the tutorial, so Cancel returns to the variant page; Start closes the tutorial.
+    playVariant: (id) => openPlay({ kind: 'curated', id }),
+    close: () => closeTutorial(),
+  });
   const setupsCtl = createSetupsController({
     store,
     initial: loadedSetups.setups,
@@ -225,6 +251,36 @@ export async function startApp(root: HTMLElement): Promise<void> {
     }
     return active;
   };
+
+  /**
+   * A piece's name in the game: a designed piece's library name, the built-in type a custom letter moves as, or
+   * the variant's own name for it (Seirawan's Hawk).
+   */
+  const pieceLabel = (v: ActiveVariant, letter: string): string => {
+    const designed = v.setup?.designed?.[letter];
+    if (designed) return designer.pieces().find((p) => p.id === designed.id)?.name ?? `Piece ${letter.toUpperCase()}`;
+    const type = artTypeOf(v, letter);
+    return type ? pieceTypeByName(type).name : pieceName(v.artBase, letter);
+  };
+  /** Each start-position letter's lesson (or null), by variant name, once its types are known. */
+  const pieceLinks = new Map<string, Map<string, string | null>>();
+  let pieceLinksTimer: ReturnType<typeof setTimeout> | undefined;
+  /**
+   * The panel's Pieces line for `v`. Its links need the letters' types, which a curated variant probes the first
+   * time (typesOfVariant, a moment's work), so the names show at once and the links follow off the first paint.
+   */
+  function piecesOf(v: ActiveVariant): PanelPiece[] {
+    const links = pieceLinks.get(v.engineName);
+    if (!links) {
+      pieceLinksTimer ??= setTimeout(() => {
+        pieceLinksTimer = undefined;
+        const now = activeVariant();
+        pieceLinks.set(now.engineName, new Map(now.letters.map((l) => [l, lessonFor(now, l, now.types)])));
+        render();
+      }, 0);
+    }
+    return v.letters.map((letter) => ({ letter, name: pieceLabel(v, letter), lessonId: links?.get(letter) ?? null }));
+  }
 
   /** Request id of the AI search in flight, or null. */
   let pending: number | null = null;
@@ -322,6 +378,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
       status: statusText(),
       retry: aiFailed && !st.result && !session.isHumanTurn() && engine.status() !== 'unavailable',
       over: st.result !== null,
+      pieces: piecesOf(variant),
     });
     drawClocks(Date.now());
     root.dataset.theme = settings.boardTheme;
@@ -332,8 +389,8 @@ export async function startApp(root: HTMLElement): Promise<void> {
     st = session.state();
     save();
     render();
-    // The AI waits while the editor covers the game; closing the editor calls changed() again.
-    if (editor.isOpen()) return;
+    // The AI waits while the editor or the tutorial covers the game; closing it calls changed() again.
+    if (editor.isOpen() || tutorial.isOpen()) return;
     if (st.opponent.kind === 'ai' && !st.result && !session.isHumanTurn() && pending === null && !aiFailed) void runAi();
   }
 
@@ -498,8 +555,8 @@ export async function startApp(root: HTMLElement): Promise<void> {
   }
 
   // ---- Dialogs (clocks pause while one is open) ---------------------------------------------------
-  /** The editor or a dialog covers the board: the game's clock waits for it to close. */
-  const covered = (): boolean => editor.isOpen() || root.querySelector('dialog[open]') !== null;
+  /** The editor, the tutorial or a dialog covers the board: the game's clock waits for it to close. */
+  const covered = (): boolean => editor.isOpen() || tutorial.isOpen() || root.querySelector('dialog[open]') !== null;
   /** Starts the game's clock now, or as the editor or dialog covering the board closes. */
   function resumeClockWhenUncovered(): void {
     if (covered()) pausedForDialog = true;
@@ -512,8 +569,8 @@ export async function startApp(root: HTMLElement): Promise<void> {
     changed();
   }
   function resumeAfterDialog(): void {
-    // The editor keeps the game paused until it closes, even when a dialog opened over it closes first.
-    if (!pausedForDialog || editor.isOpen()) return;
+    // The editor and the tutorial keep the game paused until they close, even when a dialog opened over them closes first.
+    if (!pausedForDialog || editor.isOpen() || tutorial.isOpen()) return;
     pausedForDialog = false;
     session.resumeClock(Date.now());
     changed();
@@ -555,12 +612,14 @@ export async function startApp(root: HTMLElement): Promise<void> {
     }
     startGame(game, opponent, choice.clockConfig);
     if (editor.isOpen()) closeEditor();
+    if (tutorial.isOpen()) closeTutorial();
   }
 
   // ---- The editor ------------------------------------------------------------------------------
   /** The editor is its own screen: the game stays as it was, its clock paused until the editor closes. */
   function openEditor(): void {
     if (editor.isOpen()) return;
+    tutorial.hide(); // the editor takes over the tutorial's screen; the game stays paused until it closes
     // A search left running would answer behind the editor and press the clock; it restarts on close.
     cancelAi();
     main.hidden = true;
@@ -570,6 +629,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
   /** Edit current game: the same editor, on the game's position and variant, with Resume and Cancel. A finished game can be edited too. */
   function openEditorForCurrentGame(): void {
     if (editor.isOpen() || restoring) return;
+    tutorial.hide(); // as in openEditor: the editor takes over the tutorial's screen
     cancelAi();
     main.hidden = true;
     const now = Date.now();
@@ -675,6 +735,30 @@ export async function startApp(root: HTMLElement): Promise<void> {
     main.hidden = false;
     resumeAfterDialog();
     changed(); // restarts the AI's search if it is the AI's turn (also when no clock was paused)
+  }
+
+  // ---- The tutorial ----------------------------------------------------------------------------
+  /**
+   * The tutorial is its own screen, like the editor: the game stays as it was, its clock paused until it closes.
+   * It opens on the lesson or variant page `id`, or, without one, on the lesson list.
+   */
+  function openTutorial(id?: string): void {
+    // Unsaved work is never thrown away: a half-designed piece, or the game's pending edits, keeps the screen,
+    // as openEditor ignores a second open. (In Edit current game the palette shows no ? links either.)
+    if (designer.isOpen() || editor.editingGame()) return;
+    // It takes over the editor's screen (building a setup for Play, which is kept); the game stays paused.
+    if (editor.isOpen()) editor.hide();
+    cancelAi();
+    main.hidden = true;
+    tutorial.open(id);
+    pauseForDialog(); // after open, so its changed() doesn't start a new search
+  }
+  function closeTutorial(): void {
+    if (!tutorial.isOpen()) return;
+    tutorial.hide();
+    main.hidden = false;
+    resumeAfterDialog();
+    changed();
   }
 
   function openSettings(): void {

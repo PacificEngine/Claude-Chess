@@ -1,0 +1,10 @@
+{
+  "id": "variant-antichess",
+  "variant": "antichess",
+  "order": 8,
+  "differences": [
+    "Captures are compulsory: if you can take a piece you must, though you may choose which.",
+    "The king is an ordinary piece: there is no check, no checkmate and no castling, and the king can be captured.",
+    "You win by losing all your pieces, or by having no legal move."
+  ]
+}

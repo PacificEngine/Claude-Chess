@@ -1,0 +1,84 @@
+{
+  "id": "wazir",
+  "track": "fairy",
+  "order": 2,
+  "title": "The wazir",
+  "cards": [{ "track": "fairy", "name": "Wazir" }],
+  "teaches": [{ "type": "wazir" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The wazir moves one square up, down, left or right, and takes the same way. It is one of the oldest fairy pieces: old large forms of chess, such as Tamerlane chess, had it, and many newer pieces are built from it. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "w": "wazir" }, "fen": "4k3/8/8/8/3W4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the wazir to the marked square. It takes two moves.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "w": "wazir" }, "fen": "7k/8/8/8/3W4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["e5"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The wazir is a weak piece, worth a little more than a pawn. It is slow, so bring it close to the action early. Unlike the fers, it changes square colour with every move, so in time it can reach any square.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "w": "wazir" }, "fen": "4k3/8/8/8/3W4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d5"]]
+        },
+        {
+          "text": "A wazir protects the pieces next to it up, down, left and right. Two wazirs side by side guard each other, so neither can be taken for free, and they can walk up the board together.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "w": "wazir" }, "fen": "4k3/8/8/8/3WW3/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d5"]]
+        },
+        {
+          "text": "A wazir can't attack diagonally. Here the black fers attacks the wazir from e5, and the wazir can't take it back, so it must step away.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "w": "wazir", "f": "fers" }, "fen": "4k3/8/8/4f3/3W4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d3"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black knight.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "w": "wazir" }, "fen": "7k/8/8/3n4/3W4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "d5" },
+          "moves": 1,
+          "line": ["d4d5"],
+          "hint": "The knight is right next to your wazir."
+        },
+        {
+          "prompt": "Win the black pawn in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "w": "wazir" }, "fen": "8/8/8/8/8/8/5Kp1/5W1k w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "g2" },
+          "moves": 2,
+          "line": ["f1g1", "h1h2", "g1g2"],
+          "hint": "Find a wazir move that checks the king and attacks the pawn at the same time."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "w": "wazir" }, "fen": "8/8/8/8/8/8/w1K5/k1W5 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["c1b1"],
+          "hint": "Black's own wazir blocks the king. Check it from a square your king guards."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "w": "wazir" }, "fen": "8/8/8/3N4/4p3/2K5/1WW5/k7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["c2c1", "e4e3", "c1b1"],
+          "hint": "The black king can't move, but it isn't in check. Get a wazir ready to check it from a square that is guarded."
+        }
+      ]
+    }
+  ]
+}

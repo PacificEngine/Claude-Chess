@@ -1,0 +1,84 @@
+{
+  "id": "janggi-elephant",
+  "track": "fairy",
+  "order": 13,
+  "title": "The janggi elephant",
+  "cards": [{ "track": "fairy", "name": "Janggi Elephant" }],
+  "teaches": [{ "type": "janggiElephant" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "This is the elephant of janggi, Korean chess. (Xiangqi and Shako have elephants that move differently; they have their own lessons.) It moves one square straight, then two squares diagonally further out, and takes the same way. It doesn't jump: if either square on the way is taken, it can't go that way. Janggi has no river, so it may go anywhere there too. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "j": "janggiElephant" }, "fen": "4k3/8/8/8/3J4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the elephant to each marked square, one after the other.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "j": "janggiElephant" }, "fen": "7k/8/8/8/3J4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["f7", "c5"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The janggi elephant is worth less than a knight or a horse. It is easy to block, because two squares on each path must be empty. Here the pawn on d5 is on the way to both b7 and f7, so the elephant can't reach them.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "j": "janggiElephant" }, "fen": "4k3/8/8/3p4/3J4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "a6"], ["d4", "g6"]]
+        },
+        {
+          "text": "Its long reach lets it attack from a distance, where the enemy may not expect it. Here it attacks the black rook on g6 from three files away.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "j": "janggiElephant" }, "fen": "4k3/8/6r1/8/3J4/8/8/7K w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "g6"]]
+        },
+        {
+          "text": "Your own pieces can block it too. Here the pawn on e4 shuts it off from g6 and g2. In a crowded position, look for the paths that are still open.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "j": "janggiElephant" }, "fen": "4k3/8/8/8/3JP3/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "a6"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black knight.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "j": "janggiElephant" }, "fen": "8/8/n7/k7/8/K1J5/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "a6" },
+          "moves": 1,
+          "line": ["c3a6"],
+          "hint": "One step up, then two diagonally to the left. Both squares on the way are empty."
+        },
+        {
+          "prompt": "Win the black knight in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "j": "janggiElephant" }, "fen": "6k1/1n6/8/8/8/8/2J5/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "b7" },
+          "moves": 2,
+          "line": ["c2e5", "g8h8", "e5b7"],
+          "hint": "Find an elephant move that checks the king and attacks the knight at the same time."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "j": "janggiElephant" }, "fen": "8/8/8/7J/8/8/7p/5K1k w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["h5e3"],
+          "hint": "Your king already takes the king's squares away. Find the square from which the elephant checks it with nothing in its way."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "j": "janggiElephant" }, "fen": "8/8/8/7J/8/7K/4NJJj/7k w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["g2e5", "h2e4", "h5e3"],
+          "hint": "An elephant on e3 would check the king, but only if f3 and g2 are empty. Clear the way first."
+        }
+      ]
+    }
+  ]
+}

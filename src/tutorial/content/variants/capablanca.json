@@ -1,0 +1,11 @@
+{
+  "id": "variant-capablanca",
+  "variant": "capablanca",
+  "order": 2,
+  "differences": [
+    "The board is 10 squares wide and 8 deep.",
+    "Each side has two extra pieces: the archbishop, which moves as a bishop or a knight, and the chancellor, which moves as a rook or a knight.",
+    "When castling, the king moves three squares instead of two.",
+    "A pawn can also promote to an archbishop or a chancellor."
+  ]
+}

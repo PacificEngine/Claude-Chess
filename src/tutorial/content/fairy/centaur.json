@@ -1,0 +1,84 @@
+{
+  "id": "centaur",
+  "track": "fairy",
+  "order": 19,
+  "title": "The centaur",
+  "cards": [{ "track": "fairy", "name": "Centaur" }],
+  "teaches": [{ "type": "centaur" }],
+  "steps": [
+    {
+      "kind": "see",
+      "title": "See it",
+      "text": "The centaur moves as a king or as a knight: one square in any direction, or with a knight's jump. It takes the same way. Unlike the king, it can be taken like any other piece, and it may go to squares the enemy attacks. The marked squares are every square it can reach.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "centaur" }, "fen": "4k3/8/8/8/3C4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4"
+    },
+    {
+      "kind": "try",
+      "title": "Try it",
+      "text": "Move the centaur to the marked square, two squares straight ahead. That takes two moves.",
+      "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "centaur" }, "fen": "7k/8/8/8/3C4/8/8/K7 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+      "square": "d4",
+      "targets": ["d6"]
+    },
+    {
+      "kind": "read",
+      "title": "Strategy",
+      "pages": [
+        {
+          "text": "The centaur is worth about as much as a rook, more than a knight or a bishop. It covers sixteen squares around it: the eight next to it and the eight knight squares. Here it can step to d5, or jump to e6.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "centaur" }, "fen": "4k3/8/8/8/3C4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "d5"], ["d4", "e6"]]
+        },
+        {
+          "text": "With its king close by, the centaur checkmates up close the way a queen does. Here it jumps to g7, next to the black king, where your king guards it. The king can't take it, and every square it could go to is covered.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "centaur" }, "fen": "7k/8/4CK2/8/8/8/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["e6", "g7"]]
+        },
+        {
+          "text": "It is slow: a step or a jump at a time. So a long-range piece can attack it from far away. Here the black rook on d8 attacks it, and the centaur can't hit back. It must step aside, here to e4.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "centaur" }, "fen": "3rk3/8/8/8/3C4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "arrows": [["d4", "e4"]]
+        }
+      ]
+    },
+    {
+      "kind": "puzzles",
+      "title": "Puzzles",
+      "puzzles": [
+        {
+          "prompt": "Take the black centaur.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "centaur" }, "fen": "8/8/8/4K3/k7/1c6/C7/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "b3" },
+          "moves": 1,
+          "line": ["a2b3"],
+          "hint": "A single step is enough."
+        },
+        {
+          "prompt": "Win the black pawn in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "centaur" }, "fen": "8/6p1/K2P3k/8/7C/4P3/8/8 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "capture", "square": "g7" },
+          "moves": 2,
+          "line": ["h4f5", "h6h7", "f5g7"],
+          "hint": "Jump to a square from which the centaur checks the king and attacks the pawn."
+        },
+        {
+          "prompt": "Checkmate in one move.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "centaur" }, "fen": "8/8/8/8/8/5K2/8/5C1k w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 1,
+          "line": ["f1g2"],
+          "hint": "Check from right beside the king, on a square your king guards."
+        },
+        {
+          "prompt": "Checkmate in two moves.",
+          "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "c": "centaur" }, "fen": "7k/6p1/6K1/8/8/7C/8/3n4 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
+          "goal": { "kind": "mate" },
+          "moves": 2,
+          "line": ["h3g5", "d1b2", "g5f7"],
+          "hint": "No check yet. Bring the centaur to a square from which a jump will check the king, while your king covers the rest."
+        }
+      ]
+    }
+  ]
+}
