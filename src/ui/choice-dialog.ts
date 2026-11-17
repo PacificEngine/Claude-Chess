@@ -1,5 +1,5 @@
 // Asks which of several legal moves between the same two squares the player means: a promotion piece,
-// or (Seirawan) which piece in hand to gate in. The caller supplies the candidates; nothing is auto-picked.
+// whether to promote (Shogi), or (Seirawan) which piece in hand to gate in. The caller supplies the candidates; nothing is auto-picked.
 import type { VariantId } from '../variants/catalog';
 
 const NAMES: Record<string, string> = {
@@ -19,12 +19,22 @@ const VARIANT_NAMES: Partial<Record<VariantId, Record<string, string>>> = {
   amazon: { a: 'Amazon' },
   shako: { c: 'Cannon', e: 'Elephant' },
   spartan: { h: 'Hoplite', l: 'Lieutenant', g: 'General', w: 'Warlord', c: 'Captain' },
+  // Shogi's own names where they differ from the chess fallback; its pawn and knight are just Pawn and Knight.
+  // Promoted forms are `+` and the letter; the rook and bishop have their own names, the rest are "Promoted …".
+  shogi: { g: 'Gold General', s: 'Silver General', l: 'Lance', '+r': 'Dragon King', '+b': 'Dragon Horse' },
+  xiangqi: { k: 'General', a: 'Advisor', b: 'Elephant', n: 'Horse', r: 'Chariot', c: 'Cannon', p: 'Soldier' },
 };
 
-/** Human name for a piece letter in a variant; unknown letters fall back to the letter itself. */
+/**
+ * Human name for a piece letter in a variant, or a promoted one (`+r`, Shogi's dragon king); unknown letters
+ * fall back to the letter itself.
+ */
 export function pieceName(variant: VariantId, letter: string): string {
   const l = letter.toLowerCase();
-  return VARIANT_NAMES[variant]?.[l] ?? NAMES[l] ?? letter.toUpperCase();
+  const own = VARIANT_NAMES[variant]?.[l];
+  if (own) return own;
+  if (l.startsWith('+')) return `Promoted ${pieceName(variant, l.slice(1))}`;
+  return NAMES[l] ?? letter.toUpperCase();
 }
 
 export interface Choice {
@@ -33,9 +43,13 @@ export interface Choice {
   suffix: string;
 }
 
-/** Label for one candidate: the piece's name, or "Nothing"/"No promotion" for the plain move. */
+/**
+ * Label for one candidate: the piece's name, "Promote" for Shogi's `+`, or "Nothing", "Don't promote" (Shogi)
+ * or "No promotion" for the plain move.
+ */
 export function choiceLabel(variant: VariantId, suffix: string): string {
-  if (suffix === '') return variant === 'seirawan' ? 'Nothing' : 'No promotion';
+  if (suffix === '+') return 'Promote';
+  if (suffix === '') return variant === 'seirawan' ? 'Nothing' : variant === 'shogi' ? "Don't promote" : 'No promotion';
   return pieceName(variant, suffix);
 }
 

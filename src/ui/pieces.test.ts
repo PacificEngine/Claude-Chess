@@ -7,7 +7,7 @@ import { CURATED_VARIANTS } from '../variants/catalog';
 import { artTypeOf, curatedActive, customActive, designedArt } from '../variants/active';
 import { BUILTIN_PIECES, typesOfVariant } from '../variants/piece-types';
 import type { SetupSpec } from '../variants/setup';
-import { artUrl, hasArt, pieceClass, pieceLettersOf, pocketRoles, tokenClass } from './pieces';
+import { artUrl, facingUrl, hasArt, parsePieceClass, pieceClass, pieceLettersOf, pocketRoles, promotedArtUrl, promotedMark, tokenClass } from './pieces';
 
 let rules: Rules;
 beforeAll(async () => {
@@ -31,6 +31,10 @@ describe('pieceLettersOf', () => {
   });
 });
 
+const WITH_ART = CURATED_VARIANTS;
+
+const STANDARD = 'pnbrqk';
+
 describe('piece art and lettered tokens', () => {
   // Pieces drawn as lettered tokens, by variant. Every other piece of every curated variant must have art.
   const EXPECTED_TOKENS: Record<string, string[]> = {};
@@ -48,14 +52,61 @@ describe('piece art and lettered tokens', () => {
   };
 
   it('draws exactly the expected pieces as lettered tokens, and gives every other piece art', () => {
-    for (const v of CURATED_VARIANTS) {
+    for (const v of WITH_ART) {
       const tokens = [...new Set(piecesOf(v.id).filter((p) => artUrl(p.letter, p.color, v.id) === null).map((p) => p.letter))];
       expect(tokens.sort(), v.id).toEqual(EXPECTED_TOKENS[v.id] ?? []);
     }
   });
 
-  it('has art for the standard pieces everywhere', () => {
-    for (const v of CURATED_VARIANTS) for (const l of 'pnbrqk') expect(hasArt(l, v.id)).toBe(true);
+  // A standard letter is drawn as the standard piece only where the game's piece is that piece, so a Shogi
+  // pawn or a Xiangqi horse never wears the chess pawn's or knight's art just because it shares the letter.
+  it('draws a standard letter as the standard piece only where the piece is the standard one', () => {
+    const STANDARD_TYPE: Record<string, string> = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' };
+    // Pieces that move differently but are drawn as the standard piece on purpose (owner decisions).
+    const DRAWN_AS_STANDARD = [
+      'antichess k white', 'antichess k black', // moves as a commoner, still the king
+      'spartan k white', // a commoner there too; Black's king has Spartan art
+      'xiangqi k white', 'xiangqi k black', // the general, drawn as the king in the chosen set (spec, 2026-11-17)
+    ];
+    for (const v of CURATED_VARIANTS) {
+      const types = typesOfVariant(rules, v.engineName);
+      for (const { letter, color } of piecesOf(v.id)) {
+        if (!STANDARD.includes(letter)) continue;
+        const url = artUrl(letter, color, v.id, undefined, undefined, 'cburnett');
+        const asStandard = url === `pieces/cburnett/${color[0]}${letter.toUpperCase()}.svg`;
+        const expected = types.get(letter) === STANDARD_TYPE[letter] || DRAWN_AS_STANDARD.includes(`${v.id} ${letter} ${color}`);
+        expect(asStandard, `${v.id} ${letter} ${color}: ${url} (moves as ${types.get(letter)})`).toBe(expected);
+      }
+    }
+  });
+
+  it("draws Shogi's pieces with their own art, and its king, rook and bishop in the chosen set", () => {
+    const set = 'cburnett';
+    for (const [color, side] of [['white', 'w'], ['black', 'b']] as const) {
+      const at = (letter: string) => artUrl(letter, color, 'shogi', undefined, undefined, set);
+      expect(at('p')).toBe(`pieces/shogi-tile/${side}shogiPawn.svg`);
+      expect(at('l')).toBe(`pieces/shogi-tile/${side}lance.svg`);
+      expect(at('n')).toBe(`pieces/shogi-tile/${side}shogiKnight.svg`);
+      expect(at('s')).toBe(`pieces/shogi-tile/${side}silver.svg`);
+      expect(at('g')).toBe(`pieces/shogi-tile/${side}gold.svg`);
+      expect(at('k')).toBe(`pieces/${set}/${side}K.svg`);
+      expect(at('r')).toBe(`pieces/${set}/${side}R.svg`);
+      expect(at('b')).toBe(`pieces/${set}/${side}B.svg`);
+    }
+  });
+
+  it("draws Xiangqi's pieces with their own art, and its chariot and general in the chosen set", () => {
+    const set = 'cburnett';
+    for (const [color, side] of [['white', 'w'], ['black', 'b']] as const) {
+      const at = (letter: string) => artUrl(letter, color, 'xiangqi', undefined, undefined, set);
+      expect(at('r')).toBe(`pieces/${set}/${side}R.svg`); // chariot
+      expect(at('k')).toBe(`pieces/${set}/${side}K.svg`); // general
+      expect(at('a')).toBe(`pieces/alfaerie/${side}ferz.svg`); // advisor
+      expect(at('b')).toBe(`pieces/alfaerie/${side}elephantwazir.svg`); // elephant
+      expect(at('n')).toBe(`pieces/alfaerie/${side}horse.svg`);
+      expect(at('c')).toBe(`pieces/merida/shako/${side}C.svg`); // cannon
+      expect(at('p')).toBe(`pieces/alfaerie/${side}chinesepawn.svg`); // soldier
+    }
   });
 
   it('draws the same letter as different pieces in different variants', () => {
@@ -65,7 +116,7 @@ describe('piece art and lettered tokens', () => {
   });
 
   it('points every piece that has art at a real file', () => {
-    for (const v of CURATED_VARIANTS) {
+    for (const v of WITH_ART) {
       for (const { letter, color } of piecesOf(v.id)) {
         if ((EXPECTED_TOKENS[v.id] ?? []).includes(letter)) continue;
         const url = artUrl(letter, color, v.id);
@@ -141,7 +192,7 @@ describe('piece art and lettered tokens', () => {
   });
 
   it('gives a type the art a curated variant gives a letter of that type, so a palette piece matches the game', () => {
-    const curated = CURATED_VARIANTS.flatMap((v) =>
+    const curated = WITH_ART.flatMap((v) =>
       [...typesOfVariant(rules, v.engineName)].map(([letter, type]) => ({ type, url: artUrl(letter, 'white', v.id) })),
     );
     // Antichess's and Spartan's king moves as a commoner but keeps the king's art there; in the palette the
@@ -181,6 +232,35 @@ describe('piece art and lettered tokens', () => {
     }
   });
 
+  it('has each shogi tile turned the other way too: White pointing down, Black up, the piece still upright', () => {
+    const turn = 'transform="rotate(180 25 25)"';
+    const tile = (url: string) => /<path[^>]*>/.exec(readFileSync(resolve('public', url), 'utf8'))![0];
+    for (const type of ['shogiPawn', 'shogiKnight', 'lance', 'silver', 'gold', 'dragonHorse']) {
+      for (const color of ['white', 'black'] as const) {
+        const own = artUrl('z', color, 'chess', type)!;
+        const turned = own.replace('shogi-tile/', 'shogi-tile/turned/');
+        // Black's own tile points down (turned), White's up; the turned files are the other way round.
+        expect(tile(own).includes(turn), own).toBe(color === 'black');
+        expect(tile(turned).includes(turn), turned).toBe(color === 'white');
+        // Only the tile turns: the piece on it is not rotated.
+        expect(readFileSync(resolve('public', turned), 'utf8').split('rotate(').length, turned).toBe(color === 'white' ? 2 : 1);
+      }
+    }
+  });
+
+  it('points each shogi tile toward the opponent: the side at the bottom up, the side at the top down', () => {
+    const w = 'pieces/shogi-tile/wshogiPawn.svg';
+    const b = 'pieces/shogi-tile/bgold.svg';
+    expect(facingUrl(w, 'white', 'ally')).toBe(w);
+    expect(facingUrl(b, 'black', 'enemy')).toBe(b);
+    expect(facingUrl(w, 'white', 'enemy')).toBe('pieces/shogi-tile/turned/wshogiPawn.svg');
+    expect(facingUrl(b, 'black', 'ally')).toBe('pieces/shogi-tile/turned/bgold.svg');
+    // Off a board (no side), a tile keeps its own direction; art that is not a tile never turns.
+    expect(facingUrl(b, 'black', null)).toBe(b);
+    expect(facingUrl('pieces/merida/wK.svg', 'white', 'enemy')).toBe('pieces/merida/wK.svg');
+    expect(facingUrl('pieces/alfaerie/bkingrook.svg', 'black', 'ally')).toBe('pieces/alfaerie/bkingrook.svg');
+  });
+
   describe('in a custom variant', () => {
     const custom = (spec: Omit<SetupSpec, 'files' | 'ranks' | 'castling' | 'promotion'>) => {
       const setup: SetupSpec = { files: 8, ranks: 8, castling: false, promotion: { rank: 'last', pieceTypes: [] }, ...spec };
@@ -213,9 +293,73 @@ describe('piece art and lettered tokens', () => {
   });
 });
 
+describe('promoted pieces', () => {
+  // Shogi's promotable pieces; the gold and the king never promote.
+  const SHOGI_PROMOTABLE = 'plnsbr';
+
+  it('reads a promoted role from the class chessgroundx gives it', () => {
+    expect(parsePieceClass('white ally promoted pp-piece')).toEqual({ letter: 'p', color: 'white', promoted: true });
+    expect(parsePieceClass('black enemy  promoted pr-piece')).toEqual({ letter: 'r', color: 'black', promoted: true });
+    expect(parsePieceClass('white ally  p-piece')).toEqual({ letter: 'p', color: 'white', promoted: false });
+    expect(parsePieceClass('n-piece black')).toEqual({ letter: 'n', color: 'black', promoted: false });
+    expect(parsePieceClass('white ally')).toBeNull();
+  });
+
+  it('gives every promoted Shogi piece art for both sides, from a real file', () => {
+    for (const letter of SHOGI_PROMOTABLE) {
+      for (const color of ['white', 'black'] as const) {
+        const url = promotedArtUrl(letter, color, 'shogi');
+        expect(url, `+${letter} ${color}`).not.toBeNull();
+        expect(existsSync(resolve('public', url!)), `+${letter} ${color}: ${url}`).toBe(true);
+      }
+    }
+  });
+
+  it('draws the promoted forms as the spec says', () => {
+    for (const [color, side] of [['white', 'w'], ['black', 'b']] as const) {
+      for (const letter of 'plns') expect(promotedArtUrl(letter, color, 'shogi')).toBe(`pieces/shogi-tile/${side}gold.svg`);
+      expect(promotedArtUrl('b', color, 'shogi')).toBe(`pieces/shogi-tile/${side}dragonHorse.svg`);
+      expect(promotedArtUrl('r', color, 'shogi')).toBe(`pieces/alfaerie/${side}kingrook.svg`);
+    }
+  });
+
+  it('never draws a promoted piece with the image of its unpromoted form, whatever the set', () => {
+    for (const set of ['merida', 'cburnett']) {
+      for (const letter of SHOGI_PROMOTABLE) {
+        for (const color of ['white', 'black'] as const) {
+          expect(promotedArtUrl(letter, color, 'shogi'), `+${letter}`).not.toBe(artUrl(letter, color, 'shogi', undefined, undefined, set));
+        }
+      }
+    }
+  });
+
+  it('marks exactly the promoted pieces that share an unpromoted piece\'s image, so +P never passes for a gold', () => {
+    const unpromoted = new Set([...'plnsgbrk'].map((l) => artUrl(l, 'white', 'shogi')));
+    for (const letter of SHOGI_PROMOTABLE) {
+      expect(promotedMark(letter, 'shogi'), `+${letter}`).toBe(unpromoted.has(promotedArtUrl(letter, 'white', 'shogi')));
+    }
+    expect([...SHOGI_PROMOTABLE].filter((l) => promotedMark(l, 'shogi'))).toEqual(['p', 'l', 'n', 's']);
+  });
+
+  it('has no promoted art outside Shogi, so an unknown promoted piece is a token', () => {
+    expect(promotedArtUrl('p', 'white', 'chess')).toBeNull();
+    expect(promotedMark('p', 'chess')).toBe(false);
+  });
+
+  it('draws the promoted marker from the stylesheet, without taking clicks', () => {
+    const css = readFileSync(resolve('src/ui/pieces.css'), 'utf8');
+    expect(css).toMatch(/\.promoted-mark::before\s*\{[^}]*pointer-events:\s*none/);
+  });
+});
+
 describe('pocketRoles', () => {
   it('gives a curated drop variant its pocket pieces', () =>
     expect(pocketRoles(curatedActive('seirawan', rules))).toEqual(['h-piece', 'e-piece']));
+
+  it("gives Shogi a slot for every piece that can be captured, from the start, while the hands are empty", () =>
+    expect(pocketRoles(curatedActive('shogi', rules))).toEqual(['r-piece', 'b-piece', 'g-piece', 's-piece', 'n-piece', 'l-piece', 'p-piece']));
+
+  it('has no pockets for Xiangqi', () => expect(pocketRoles(curatedActive('xiangqi', rules))).toBeUndefined());
 
   it('has no pockets for a variant without pieces in hand', () => expect(pocketRoles(curatedActive('chess', rules))).toBeUndefined());
 

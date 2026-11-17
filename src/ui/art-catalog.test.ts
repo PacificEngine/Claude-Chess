@@ -16,7 +16,8 @@ describe('art catalog', () => {
     const ids = new Set(ART_CHOICES.map((c) => c.id));
     const walk = (dir: string): string[] =>
       readdirSync(resolve('public/pieces', dir), { withFileTypes: true }).flatMap((e) => {
-        if (e.isDirectory()) return e.name === 'spartan' ? [] : walk(`${dir}/${e.name}`);
+        // A shogi tile's turned/ copy is the same art pointing the other way (facingUrl), not another choice.
+        if (e.isDirectory()) return e.name === 'spartan' || e.name === 'turned' ? [] : walk(`${dir}/${e.name}`);
         const m = /^w(.+)\.svg$/.exec(e.name);
         return m && existsSync(resolve('public/pieces', dir, `b${m[1]}.svg`)) ? [`${dir}/${m[1]}`] : [];
       });

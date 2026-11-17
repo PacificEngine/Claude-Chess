@@ -5,11 +5,21 @@ import type { Color, Rules } from '../../rules/types';
 import { type ActiveVariant, curatedActive } from '../../variants/active';
 import { type VariantId } from '../../variants/catalog';
 import { buildFen, parseFen } from '../../variants/fen';
-import type { ActiveVariantShape } from '../../variants/generator';
-import { pieceTypeByName } from '../../variants/piece-types';
+import { type ActiveVariantShape, POSITION_ONLY_BASES } from '../../variants/generator';
+import { INHERITED, pieceTypeByName } from '../../variants/piece-types';
 import { type DesignedCopy, MAX_FILES, MAX_RANKS, MIN_FILES, MIN_RANKS, type SetupSpec } from '../../variants/setup';
 
 export const TOO_MANY_TYPES = 'Too many different piece types for one setup.';
+/** Why a position-only base's size controls are disabled. */
+export const FIXED_SIZE = 'Shogi and Xiangqi keep their own board size.';
+
+/**
+ * A position-only base's pieces in hand (every Shogi piece but the king, in the pockets' order) and the letters
+ * that have a promoted form (`+P`). Shogi's hand is offered whole, even when it starts empty.
+ */
+const POSITION_ONLY_PIECES: Partial<Record<VariantId, { hand: string[]; promotable: string[] }>> = {
+  shogi: { hand: ['r', 'b', 'g', 's', 'n', 'l', 'p'], promotable: ['p', 'l', 'n', 's', 'b', 'r'] },
+};
 
 /** A curated variant as the editor uses it: the base of every setup. */
 export interface EditorBase extends ActiveVariantShape {
@@ -19,8 +29,15 @@ export interface EditorBase extends ActiveVariantShape {
   startFen: string;
   /** Whether the base has pieces in hand (Seirawan), and so a pocket editor. */
   pockets: boolean;
-  /** Lowercase letters the base holds in hand at the start: the pocket editor's rows. */
+  /** Lowercase letters the base holds in hand at the start (Shogi: every piece but the king): the pocket editor's rows. */
   pocketLetters: string[];
+  /**
+   * Only the position can change (Shogi, Xiangqi): the board size is fixed, the palette offers the base's own
+   * pieces only, and the setup always plays as the curated game (POSITION_ONLY_BASES).
+   */
+  positionOnly: boolean;
+  /** Lowercase letters with a promoted form the editor places (`+p`, written `+P` in the FEN); Shogi's only. */
+  promotable: string[];
 }
 
 export type BaseLookup = (id: VariantId) => EditorBase;
@@ -46,7 +63,9 @@ export function editorBases(rules: Rules): BaseLookup {
         types: active.types,
         startFen,
         pockets: active.pockets,
-        pocketLetters: [...new Set(parseFen(startFen).pocket.map((c) => c.toLowerCase()))],
+        pocketLetters: POSITION_ONLY_PIECES[id]?.hand ?? [...new Set(parseFen(startFen).pocket.map((c) => c.toLowerCase()))],
+        positionOnly: POSITION_ONLY_BASES.has(id),
+        promotable: POSITION_ONLY_PIECES[id]?.promotable ?? [],
       };
       cache.set(id, base);
     }
@@ -60,6 +79,7 @@ export interface PlaceableDesign extends DesignedCopy {
 }
 
 export interface EditorPiece {
+  /** A lowercase letter, or `+` and one for a promoted piece (`+p`). */
   letter: string;
   color: Color;
 }
@@ -101,6 +121,11 @@ export class EditorModel {
     this.castling = base.castling;
   }
 
+  /** Whether only the position can change: the base's size and pieces, played as the curated game. */
+  get positionOnly(): boolean {
+    return this.base.positionOnly;
+  }
+
   /** The base variant's start position. */
   static fromBase(id: VariantId, bases: BaseLookup): EditorModel {
     const m = new EditorModel(bases, bases(id));
@@ -140,11 +165,12 @@ export class EditorModel {
   }
 
   private load(fen: string): void {
-    const { files, squares, pocket } = parseFen(fen);
+    const { files, squares, pocket, promoted } = parseFen(fen);
     this.board.clear();
     this.hand = { white: new Map(), black: new Map() };
     for (const [index, c] of squares) {
-      this.board.set(squareAt(index % files, Math.floor(index / files)), { letter: c.toLowerCase(), color: c === c.toLowerCase() ? 'black' : 'white' });
+      const letter = `${promoted.has(index) ? '+' : ''}${c.toLowerCase()}`;
+      this.board.set(squareAt(index % files, Math.floor(index / files)), { letter, color: c === c.toLowerCase() ? 'black' : 'white' });
     }
     for (const c of pocket) {
       const color: Color = c === c.toLowerCase() ? 'black' : 'white';
@@ -158,8 +184,9 @@ export class EditorModel {
     return this.base.types.get(letter) ?? this.added.get(letter);
   }
 
-  /** Whether the setup has a piece for this letter: built-in, the base's own, or designed. */
+  /** Whether the setup has a piece for this letter: built-in, the base's own, designed, or a base's promoted form. */
   private knows(letter: string): boolean {
+    if (letter.startsWith('+')) return this.base.promotable.includes(letter.slice(1));
     return this.typeOf(letter) !== undefined || this.designed.has(letter);
   }
 
@@ -262,6 +289,7 @@ export class EditorModel {
 
   /** Keeps the pieces from a1 up and to the right; the rest fall off. A size other than the base's turns castling off. */
   resize(files: number, ranks: number): { removed: number } {
+    if (this.positionOnly) throw new Error(FIXED_SIZE);
     if (!Number.isInteger(files) || files < MIN_FILES || files > MAX_FILES) throw new Error(`Files must be ${MIN_FILES} to ${MAX_FILES}`);
     if (!Number.isInteger(ranks) || ranks < MIN_RANKS || ranks > MAX_RANKS) throw new Error(`Ranks must be ${MIN_RANKS} to ${MAX_RANKS}`);
     let removed = 0;
@@ -306,7 +334,14 @@ export class EditorModel {
 
   setPocket(color: Color, letter: string, count: number): void {
     if (!this.base.pockets) throw new Error('This base variant has no pieces in hand');
-    if (!this.knows(letter)) throw new Error(`No piece type for the letter ${letter}`);
+    // A promoted piece goes back to hand unpromoted, so a hand never holds one; nor is a king ever captured into
+    // it. A position-only base's hand holds only the pieces its game can capture (its pocket letters).
+    const type = this.typeOf(letter);
+    const royal = letter === 'k' || (type !== undefined && type !== INHERITED && pieceTypeByName(type).royal);
+    if (royal || (this.positionOnly && !this.base.pocketLetters.includes(letter))) {
+      throw new Error(`The piece ${letter} can't be held in hand`);
+    }
+    if (letter.startsWith('+') || !this.knows(letter)) throw new Error(`No piece type for the letter ${letter}`);
     const n = Math.max(0, Math.floor(count));
     if (n) this.hand[color].set(letter, n);
     else this.hand[color].delete(letter);

@@ -27,3 +27,18 @@
   color: #fafafa;
   border-color: #ddd;
 }
+
+/* A promoted piece that wears another piece's image (Shogi's promoted pawn, lance, knight and silver on the
+   gold tile) gets a small red dot, the colour promoted shogi pieces are written in, so it reads as promoted. */
+.promoted-mark::before {
+  content: '';
+  position: absolute;
+  top: 6%;
+  right: 6%;
+  width: 22%;
+  height: 22%;
+  border-radius: 50%;
+  background: #c62f25;
+  box-shadow: 0 0 0 1.5px #fff;
+  pointer-events: none;
+}

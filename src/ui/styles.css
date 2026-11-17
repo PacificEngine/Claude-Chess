@@ -142,6 +142,22 @@ button:disabled {
     calc(200% / var(--files)) calc(200% / var(--ranks));
 }
 
+/* Xiangqi's river (between ranks 5 and 6) and its two palaces (files d-f, ranks 1-3 and 8-10), as tints
+   layered over the checker. They are background layers, so they take no clicks, and the board is symmetric
+   under a half turn, so they fall on the same squares in either orientation. */
+.board-host[data-variant='xiangqi'] cg-board {
+  background:
+    linear-gradient(var(--palace-tint), var(--palace-tint)) center top / calc(300% / var(--files)) calc(300% / var(--ranks)) no-repeat,
+    linear-gradient(var(--palace-tint), var(--palace-tint)) center bottom / calc(300% / var(--files)) calc(300% / var(--ranks)) no-repeat,
+    linear-gradient(var(--river-tint), var(--river-tint)) center / 100% calc(50% / var(--ranks)) no-repeat,
+    repeating-conic-gradient(var(--dark-sq) 0 25%, var(--light-sq) 0 50%) 0 100% /
+      calc(200% / var(--files)) calc(200% / var(--ranks));
+}
+.board-host[data-variant='xiangqi'] {
+  --river-tint: rgba(40, 110, 200, 0.45);
+  --palace-tint: rgba(200, 60, 40, 0.22);
+}
+
 /* chessgroundx's base CSS assumes 8x8; size squares and pieces from the variant instead. */
 .board-host cg-board square,
 .board-host .cg-wrap piece {
@@ -436,6 +452,11 @@ dialog h2 {
 }
 .editor-clocks input {
   width: 6rem;
+}
+.editor-size-reason {
+  margin: -0.5rem 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--muted);
 }
 .editor-status {
   margin: 0.25rem 0;

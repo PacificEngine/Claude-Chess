@@ -2,14 +2,14 @@
   "id": "elephant",
   "track": "fairy",
   "order": 12,
-  "title": "The xiangqi elephant",
-  "cards": [{ "track": "fairy", "name": "Elephant (Xiangqi)" }],
+  "title": "The elephant, as the editor plays it",
+  "cards": [{ "track": "fairy", "name": "Elephant (editor)" }],
   "teaches": [{ "type": "elephant" }],
   "steps": [
     {
       "kind": "see",
       "title": "See it",
-      "text": "This is the elephant of xiangqi, Chinese chess. (Shako and janggi have elephants that move differently; they have their own lessons.) It moves exactly two squares diagonally, and takes the same way, but it doesn't jump: if the square in between is taken, it can't go that way. In xiangqi it may never cross the river in the middle of the board, so it stays on its own half. This app has no river, so here it may go anywhere. The marked squares are every square it can reach.",
+      "text": "This is the elephant of xiangqi, Chinese chess, as the editor plays it. (Shako and janggi have elephants that move differently; they have their own lessons.) It moves exactly two squares diagonally, and takes the same way, but it doesn't jump: if the square in between is taken, it can't go that way. The editor's elephant moves freely, anywhere on the board. In the Xiangqi game the river in the middle of the board confines it: it may never cross, so it stays on its own half. The Elephant (Xiangqi) lesson teaches it as the game plays it. The marked squares are every square it can reach.",
       "board": { "setup": { "base": "chess", "files": 8, "ranks": 8, "pieces": { "k": "king", "p": "pawn", "n": "knight", "e": "elephant" }, "fen": "4k3/8/8/8/3E4/8/8/4K3 w - - 0 1", "castling": false, "promotion": { "rank": "last", "pieceTypes": ["n"] } } },
       "square": "d4"
     },

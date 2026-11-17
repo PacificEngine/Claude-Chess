@@ -17,6 +17,20 @@ const FEN_KR_V_K = '8/8/8/8/8/2k5/8/K6R w - - 0 1';
 const FEN_FIFTY_MOVES = '8/8/8/8/8/2k5/8/K6R w - - 100 80';
 // White king on a10 and rook on a1, so moves from both squares start with "a1".
 const FEN_GRAND_A1_AND_A10 = 'K8k/10/10/10/10/10/10/10/10/R9 w - - 0 1';
+// White's rook on a5 can take Black's bishop on e5.
+const FEN_SHOGI_ROOK_TAKES_BISHOP = '4k4/9/9/9/R3b4/9/9/9/4K4[] w - - 0 1';
+// White has a bishop in hand and an otherwise bare board.
+const FEN_SHOGI_BISHOP_IN_HAND = '4k4/9/9/9/9/9/9/9/4K4[B] w - - 0 1';
+// White has a pawn on e3 and another in hand, so a second pawn can't go on the e-file.
+const FEN_SHOGI_PAWN_IN_HAND = '4k4/9/9/9/9/9/4P4/9/4K4[P] w - - 0 1';
+// White's pawns on e7 (one step from the 8th rank) and c8 (one step from the last rank).
+const FEN_SHOGI_PAWNS_NEAR_THE_END = 'k8/2P6/4P4/9/9/9/9/9/4K4[] w - - 0 1';
+// Black's general on d10 and White's on e1: the d-file is open between d1 and d10.
+const FEN_XIANGQI_GENERALS = '3k5/9/9/9/9/9/9/9/9/4K4 w - - 0 1';
+// White's cannon on a1 looks up an open a-file at Black's chariot on a5; in the second, a soldier on its start
+// square a4 screens it (a soldier can never stand behind its start rank).
+const FEN_XIANGQI_CANNON_NO_SCREEN = '5k3/9/9/9/9/r8/9/9/9/C2K5 w - - 0 1';
+const FEN_XIANGQI_CANNON_SCREENED = '5k3/9/9/9/9/r8/P8/9/9/C2K5 w - - 0 1';
 
 const FENS: [string, string][] = [
   ['antichess', FEN_ANTI_FORCED_CAPTURE],
@@ -29,6 +43,13 @@ const FENS: [string, string][] = [
   ['chess', FEN_KR_V_K],
   ['chess', FEN_FIFTY_MOVES],
   ['grand', FEN_GRAND_A1_AND_A10],
+  ['shogi', FEN_SHOGI_ROOK_TAKES_BISHOP],
+  ['shogi', FEN_SHOGI_BISHOP_IN_HAND],
+  ['shogi', FEN_SHOGI_PAWN_IN_HAND],
+  ['shogi', FEN_SHOGI_PAWNS_NEAR_THE_END],
+  ['xiangqi', FEN_XIANGQI_GENERALS],
+  ['xiangqi', FEN_XIANGQI_CANNON_NO_SCREEN],
+  ['xiangqi', FEN_XIANGQI_CANNON_SCREENED],
 ];
 
 let rules: Rules;
@@ -128,6 +149,58 @@ describe('a game', () => {
     const start = g.fen();
     expect(() => g.push('e2e5')).toThrow(/illegal/i);
     expect(g.fen()).toBe(start);
+  });
+});
+
+// The rules come from ffish; these check the app reads them as the spec describes.
+describe('shogi', () => {
+  it('puts a captured piece in the capturer\'s hand', () => {
+    const g = rules.newGame('shogi', FEN_SHOGI_ROOK_TAKES_BISHOP);
+    g.push('a5e5');
+    expect(g.fen().split(' ')[0]).toMatch(/\[B\]$/);
+    g.dispose();
+  });
+
+  it('lets a piece in hand be dropped on an empty square', () => {
+    const g = rules.newGame('shogi', FEN_SHOGI_BISHOP_IN_HAND);
+    expect(g.legalMoves()).toContain('B@e5');
+    expect(g.san('B@e5')).toBe('B@e5');
+    g.push('B@e5');
+    expect(g.fen().split(' ')[0]).toBe('4k4/9/9/9/4B4/9/9/9/4K4[]');
+    g.dispose();
+  });
+
+  it('refuses a second pawn on a file that already has one', () => {
+    const g = rules.newGame('shogi', FEN_SHOGI_PAWN_IN_HAND);
+    expect(g.legalMoves()).toContain('P@d5');
+    expect(g.legalMoves()).not.toContain('P@e5');
+    g.dispose();
+  });
+
+  it('offers a choice when promotion is optional, and only the promotion when it is forced', () => {
+    const g = rules.newGame('shogi', FEN_SHOGI_PAWNS_NEAR_THE_END);
+    expect(g.legalMovesFrom('e7').sort()).toEqual(['e7e8', 'e7e8+']);
+    expect(g.legalMovesFrom('c8')).toEqual(['c8c9+']);
+    g.dispose();
+  });
+});
+
+describe('xiangqi', () => {
+  it('never lets the generals face each other on an open file', () => {
+    const g = rules.newGame('xiangqi', FEN_XIANGQI_GENERALS);
+    expect(g.legalMovesFrom('e1')).toContain('e1f1');
+    expect(g.legalMovesFrom('e1')).not.toContain('e1d1');
+    g.dispose();
+  });
+
+  it('lets a cannon capture only over a screen', () => {
+    const open = rules.newGame('xiangqi', FEN_XIANGQI_CANNON_NO_SCREEN);
+    expect(open.legalMovesFrom('a1')).toContain('a1a4');
+    expect(open.legalMovesFrom('a1')).not.toContain('a1a5');
+    open.dispose();
+    const screened = rules.newGame('xiangqi', FEN_XIANGQI_CANNON_SCREENED);
+    expect(screened.legalMovesFrom('a1')).toContain('a1a5');
+    screened.dispose();
   });
 });
 

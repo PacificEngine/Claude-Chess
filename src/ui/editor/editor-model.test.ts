@@ -4,6 +4,7 @@ import type { Rules } from '../../rules/types';
 import { curatedActive, customActive } from '../../variants/active';
 import { CURATED_VARIANTS } from '../../variants/catalog';
 import { generateVariant, needsCustomVariant } from '../../variants/generator';
+import { positionProblems } from '../../variants/legality';
 import { BUILTIN_PIECES } from '../../variants/piece-types';
 import { type BaseLookup, EditorModel, editorBases } from './editor-model';
 
@@ -346,5 +347,105 @@ describe('EditorModel with designed pieces', () => {
     expect(m.toSpec()).toEqual(s);
     m.setBase('chess');
     expect(m.toSpec().designed).toBeUndefined();
+  });
+});
+
+describe('EditorModel on a position-only base (Shogi, Xiangqi)', () => {
+  // A Shogi position from the middle of a game: a promoted pawn and a dragon on the board, pieces in both hands.
+  const SHOGI_MIDGAME = 'lnsgkgsnl/1r5b1/pppp1pppp/9/4+P4/9/PPPP1PPPP/1B5+R1/LNSGKGSNL[Pp] w - - 0 1';
+
+  it('keeps the board size of the game itself', () => {
+    for (const id of ['shogi', 'xiangqi'] as const) {
+      const m = EditorModel.fromBase(id, bases);
+      expect(m.positionOnly, id).toBe(true);
+      expect(() => m.resize(8, 8), id).toThrow('Shogi and Xiangqi keep their own board size.');
+      expect([m.files, m.ranks], id).toEqual([bases(id).files, bases(id).ranks]);
+    }
+    expect(EditorModel.fromBase('chess', bases).positionOnly).toBe(false);
+  });
+
+  it("offers Shogi's promoted forms, which place the promoted piece, and Xiangqi none", () => {
+    const m = EditorModel.fromBase('shogi', bases);
+    expect(m.base.promotable).toEqual(['p', 'l', 'n', 's', 'b', 'r']);
+    m.clear();
+    m.place('e9', 'k', 'black');
+    m.place('e1', 'k', 'white');
+    m.place('e5', '+p', 'white');
+    m.place('b2', '+r', 'black');
+    expect(m.pieceAt('e5')).toEqual({ letter: '+p', color: 'white' });
+    expect(m.toSpec().fen).toBe('4k4/9/9/9/4+P4/9/9/1+r7/4K4[] w - - 0 1');
+    // The gold and the king have no promoted form.
+    expect(() => m.place('a1', '+g', 'white')).toThrow();
+    expect(() => m.place('a1', '+k', 'white')).toThrow();
+    const x = EditorModel.fromBase('xiangqi', bases);
+    expect(x.base.promotable).toEqual([]);
+    expect(() => x.place('e5', '+p', 'white')).toThrow();
+  });
+
+  it("edits every Shogi piece that can be in hand, even from an empty hand, and Xiangqi has no hand", () => {
+    const m = EditorModel.fromBase('shogi', bases);
+    expect(m.base.pockets).toBe(true);
+    expect(m.base.pocketLetters).toEqual(['r', 'b', 'g', 's', 'n', 'l', 'p']);
+    m.setPocket('white', 'g', 2);
+    m.setPocket('black', 'p', 1);
+    expect(m.toSpec().fen.split(' ')[0]).toMatch(/\[GGp\]$/);
+    expect(positionProblems(rules, 'shogi', m.toSpec().fen)).toEqual([]);
+    const x = EditorModel.fromBase('xiangqi', bases);
+    expect(x.base.pockets).toBe(false);
+    expect(x.base.pocketLetters).toEqual([]);
+  });
+
+  it('never puts a promoted piece or a king in hand', () => {
+    const m = EditorModel.fromBase('shogi', bases);
+    expect(() => m.setPocket('white', '+p', 1)).toThrow();
+    expect(() => m.setPocket('black', 'k', 1)).toThrow();
+    expect(m.pocketCount('black', 'k')).toBe(0);
+    expect(m.toSpec().fen.split(' ')[0]).toMatch(/\[\]$/);
+  });
+
+  it('switches from a Chess setup with pieces added to Shogi, leaving nothing of the Chess setup behind', () => {
+    const m = EditorModel.fromBase('chess', bases);
+    m.place('d4', m.letterFor('archbishop')!, 'white');
+    m.place('e4', m.letterForDesigned({ id: 'ox', letter: 'x', betza: 'NN', art: null })!, 'black');
+    m.resize(10, 8);
+    m.setBase('shogi');
+    expect(m.positionOnly).toBe(true);
+    expect([m.files, m.ranks]).toEqual([9, 9]);
+    const spec = m.toSpec();
+    expect(spec.fen).toBe(startFen('shogi'));
+    expect(spec.pieces).toEqual(Object.fromEntries(bases('shogi').types));
+    expect(spec.designed).toBeUndefined();
+    expect(needsCustomVariant(spec, bases('shogi'))).toBe(false);
+    m.setBase('chess');
+    expect(m.positionOnly).toBe(false);
+    expect(() => m.resize(10, 8)).not.toThrow();
+  });
+
+  it('keeps the hands and the promoted pieces when editing a Shogi game, and writes back the same FEN', () => {
+    expect(positionProblems(rules, 'shogi', SHOGI_MIDGAME)).toEqual([]);
+    const m = EditorModel.fromGame(curated('shogi'), SHOGI_MIDGAME, bases);
+    expect(m.pieceAt('e5')).toEqual({ letter: '+p', color: 'white' });
+    expect(m.pieceAt('h2')).toEqual({ letter: '+r', color: 'white' });
+    expect(m.pocketCount('white', 'p')).toBe(1);
+    expect(m.pocketCount('black', 'p')).toBe(1);
+    expect(m.toSpec().fen).toBe(SHOGI_MIDGAME);
+    m.move('e5', 'e6');
+    expect(m.toSpec().fen.split(' ')[0]).toContain('4+P4/9/9/PPPP1PPPP');
+  });
+
+  it('never needs a custom variant, so a setup always plays as the curated game from its FEN', () => {
+    for (const id of ['shogi', 'xiangqi'] as const) {
+      const m = EditorModel.fromBase(id, bases);
+      m.remove('a1');
+      if (id === 'shogi') {
+        m.place('e5', '+s', 'white');
+        m.setPocket('black', 'r', 1);
+      }
+      const spec = m.toSpec();
+      expect(needsCustomVariant(spec, bases(id)), id).toBe(false);
+      // Whatever the spec says: these bases are never generated (their zones, palaces and river are fixed squares).
+      expect(needsCustomVariant({ ...spec, files: 8, castling: true, promotion: { rank: 'last', pieceTypes: ['q'] } }, bases(id)), id).toBe(false);
+      expect(positionProblems(rules, bases(id).engineName, spec.fen), id).toEqual([]);
+    }
   });
 });

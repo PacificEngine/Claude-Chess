@@ -2,9 +2,16 @@
 // Option names follow src/parser.cpp at upstream commit 84e305ff (2023-08-26), the engine ffish-es6@0.7.10
 // reports as "Fairy-Stockfish 230826".
 import { betzaProblem, UNSAFE_BETZA } from './betza';
-import { variantById } from './catalog';
+import { type VariantId, variantById } from './catalog';
 import { INHERITED, pieceTypeByName } from './piece-types';
 import { type DesignedCopy, MAX_FILES, MAX_RANKS, MIN_FILES, MIN_RANKS, type SetupSpec } from './setup';
+
+/**
+ * Bases a setup only ever changes the position of: Fairy-Stockfish ties Shogi's promotion zone and Xiangqi's
+ * palaces and river to fixed squares, and this generator writes chess-style promotion, so a generated variant
+ * of either would quietly break the game. Their setups always play as the curated game from the setup's FEN.
+ */
+export const POSITION_ONLY_BASES: ReadonlySet<VariantId> = new Set<VariantId>(['shogi', 'xiangqi']);
 
 /** What needsCustomVariant needs to know about the variant the setup started from. */
 export interface ActiveVariantShape {
@@ -165,8 +172,10 @@ function checkBaseLetter(letter: string, type: string, baseTypes: Map<string, st
  * False when only the position differs from the base variant, so the curated variant can be played from
  * the setup's FEN. The shape carries no promotion rules, so the setup's promotion counts as the base's when
  * it is to every base letter that isn't a king, a pawn or 'k': what the custom-setup default gives for the base.
+ * Always false for a position-only base (POSITION_ONLY_BASES).
  */
 export function needsCustomVariant(spec: SetupSpec, base: ActiveVariantShape): boolean {
+  if (POSITION_ONLY_BASES.has(spec.base)) return false;
   const letters = Object.keys(spec.pieces);
   const baseLetters = new Set(base.letters.map((l) => l.toLowerCase()));
   // A letter the setup doesn't map, or maps to 'inherited', has the base's own type.

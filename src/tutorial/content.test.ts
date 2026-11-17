@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { loadTestRules } from '../rules/test-rules';
 import type { Rules } from '../rules/types';
 import { curatedActive, variantTypes } from '../variants/active';
-import { CURATED_VARIANTS } from '../variants/catalog';
+import { CURATED_VARIANTS, type VariantId } from '../variants/catalog';
 import { generateVariant } from '../variants/generator';
 import { BUILTIN_PIECES, INHERITED } from '../variants/piece-types';
 import type { SetupSpec } from '../variants/setup';
@@ -42,12 +42,49 @@ describe('the content check', () => {
 
   it('points beginners from the chess page to the Chess basics lessons', () =>
     expect(VARIANT_PAGES.find((p) => p.variant === 'chess')?.differences.join(' ')).toMatch(/Chess basics/));
+
+  const pageText = (variant: VariantId): string => VARIANT_PAGES.find((p) => p.variant === variant)?.differences.join(' ') ?? '';
+
+  it('explains Shogi drops and promotion, what each piece becomes, and that Black traditionally moves first', () => {
+    const text = pageText('shogi');
+    for (const word of [/dropped/, /three ranks nearest your opponent/, /gold/, /dragon horse/, /dragon king/, /Black/]) expect(text).toMatch(word);
+  });
+
+  it("explains Xiangqi's river, palaces and flying general, and that Red traditionally moves first", () => {
+    const text = pageText('xiangqi');
+    for (const word of [/river/, /palace/, /flying general rule/, /face each other/, /middle three files of its back three ranks/, /Red/]) expect(text).toMatch(word);
+  });
 });
 
 // Every piece the player can meet opens a lesson, and no piece is taught twice.
 describe('coverage', () => {
   const key = (t: Teaches): string => ('type' in t ? `type ${t.type}` : `${t.variant} ${t.letter}`);
   const teachers = (t: Teaches): string[] => LESSONS.filter((l) => l.teaches.some((x) => key(x) === key(t))).map((l) => l.id);
+
+  it("gives Shogi's dragon king a card on the Bers lesson, named in its title, which says the promoted rook moves this way", () => {
+    const bers = lessonById('bers')!;
+    expect(bers.cards).toContainEqual({ track: 'fairy', name: 'Dragon King (Shogi)' });
+    expect(bers.title).toMatch(/Dragon King/);
+    expect((bers.steps[0] as Extract<Step, { kind: 'see' }>).text).toMatch(/[Ss]hogi.*promoted rook/);
+  });
+
+  it('names the Xiangqi game\'s own pieces "(Xiangqi)", and the editor\'s elephant and soldier "(editor)"', () => {
+    const cards = (id: string) => lessonById(id)!.cards.map((c) => c.name);
+    for (const piece of ['General', 'Advisor', 'Elephant', 'Soldier'])
+      expect(cards(`xiangqi-${piece.toLowerCase()}`)).toEqual([`${piece} (Xiangqi)`]);
+    expect(cards('elephant')).toEqual(['Elephant (editor)']);
+    expect(cards('soldier')).toEqual(['Soldier (editor)']);
+  });
+
+  it('says the editor elephant and soldier move freely, and points to their Xiangqi lessons for the river', () => {
+    for (const [id, piece] of [['elephant', 'Elephant'], ['soldier', 'Soldier']]) {
+      const text = (lessonById(id)!.steps[0] as Extract<Step, { kind: 'see' }>).text;
+      expect(text, id).not.toMatch(/no river|may always move sideways/);
+      expect(text, id).toMatch(/editor/);
+      expect(text, id).toMatch(/Xiangqi game/);
+      expect(text, id).toMatch(`${piece} (Xiangqi) lesson`);
+    }
+  });
 
   it('teaches each type, and each variant letter, in one lesson only', () => {
     const keys = LESSONS.flatMap((l) => l.teaches.map(key));
@@ -142,6 +179,15 @@ describe('checkLesson', () => {
     const see = (board: typeof KINGS | typeof boxedIn, square: string): Step => ({ kind: 'see', title: 'See it', text: '', board, square });
     expect(problems(withStep(0, see(KINGS, 'h8')))).toEqual([expect.stringMatching(/no White piece on h8/)]);
     expect(problems(withStep(0, see(boxedIn, 'b1')))).toEqual([expect.stringMatching(/piece on b1 has no move/)]);
+  });
+
+  it('reports a Xiangqi board the game forbids, though the engine accepts it', () => {
+    // The general on d4 has left its palace, and the soldier on e2 stands behind its starting rank.
+    const board = { variant: 'xiangqi', fen: '4k4/9/9/9/9/9/3K5/9/4P4/9 w - - 0 1' } as const;
+    expect(problems(withStep(0, { kind: 'see', title: 'See it', text: '', board, square: 'e2' }))).toEqual([
+      expect.stringMatching(/step 1 .*general must stay inside its palace/),
+      expect.stringMatching(/step 1 .*soldiers can't stand behind/),
+    ]);
   });
 
   it('reports an arrow that is not a legal move', () => {

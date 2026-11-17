@@ -2,7 +2,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { loadTestRules } from '../rules/test-rules';
 import type { Rules } from '../rules/types';
 import { CURATED_VARIANTS } from './catalog';
-import { BUILTIN_PIECES, type PieceType, pieceTypeByName, typesOfVariant } from './piece-types';
+import { squareIndex, squareName } from './fen';
+import { BUILTIN_PIECES, type PieceType, pieceTypeByName, probeGeometry, typesOfVariant } from './piece-types';
 
 let rules: Rules;
 beforeAll(async () => {
@@ -55,6 +56,23 @@ describe('built-in piece catalog', () => {
   });
 });
 
+describe('probeGeometry', () => {
+  const squares = (files: number, ranks: number) => probeGeometry(files, ranks).probes.map((p) => squareName(p.center, files));
+
+  it('keeps the first probe square at d5, e4 and e6 on the 8x8, 10x8 and 10x10 boards', () => {
+    expect(probeGeometry(8, 8).probes[0].center).toBe(squareIndex('d5', 8));
+    expect(probeGeometry(10, 8).probes[0].center).toBe(squareIndex('e4', 10));
+    expect(probeGeometry(10, 10).probes[0].center).toBe(squareIndex('e6', 10));
+  });
+
+  it('finds two mirror-image probe squares on the Shogi and Xiangqi boards', () => {
+    expect(squares(8, 8)).toEqual(['d5', 'e4']);
+    expect(squares(9, 9)).toEqual(['d5', 'f5']);
+    // One on each side of the river.
+    expect(squares(9, 10)).toEqual(['d6', 'f5']);
+  });
+});
+
 describe('typesOfVariant', () => {
   it('knows which piece type each curated variant uses for each letter', () => {
     expect(typesOfVariant(rules, 'capablanca').get('a')).toBe('archbishop');
@@ -78,6 +96,18 @@ describe('typesOfVariant', () => {
     expect(spartan.get('w')).toBe('archbishop'); // warlord
     expect(spartan.get('g')).toBe('bers'); // general
     expect(spartan.get('k')).toBe('commoner'); // Spartan kings are pseudo-royal commoners, two may stand
+  });
+
+  // The probe measures each letter at two squares, one on each side of the board's middle, and maps it to a
+  // type only when it moves like that type at both. Xiangqi's general and advisor have no moves outside the
+  // palace and its elephant and soldier move differently on each side of the river, so they match no type.
+  it('typesOfVariant maps Shogi\'s gold, silver, lance and knight, and Xiangqi\'s chariot, horse and cannon, and leaves the general, advisor, elephant and soldier inherited', () => {
+    expect(Object.fromEntries(typesOfVariant(rules, 'shogi'))).toEqual({
+      p: 'shogiPawn', l: 'lance', n: 'shogiKnight', s: 'silver', g: 'gold', k: 'king', r: 'rook', b: 'bishop',
+    });
+    expect(Object.fromEntries(typesOfVariant(rules, 'xiangqi'))).toEqual({
+      r: 'rook', n: 'horse', c: 'cannon', k: 'inherited', a: 'inherited', b: 'inherited', p: 'inherited',
+    });
   });
 
   it('tells a non-royal king-mover from the king', () =>

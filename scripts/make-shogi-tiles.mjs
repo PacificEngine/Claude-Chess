@@ -1,6 +1,7 @@
 // Builds public/pieces/shogi-tile/*.svg: each shogi piece's Alfaerie art set on a wooden shogi tile.
 // The piece is copied into the tile, not linked: chessgroundx draws pieces as CSS background images, and an
-// SVG used as an image may not load anything else. Black's tile points down, towards White, as in real shogi.
+// SVG used as an image may not load anything else. A tile points toward the opponent, as in real shogi: White's
+// file points up and Black's down, and turned/ holds each the other way, for the board seen from Black's side.
 // Run with `yarn art:pieces` (it recolors Black's Alfaerie pieces first) after changing a source file or the tile shape.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -31,16 +32,19 @@ function pieceSvg(file) {
   return { namespaces, viewBox, inner };
 }
 
-mkdirSync(OUT, { recursive: true });
+mkdirSync(resolve(OUT, 'turned'), { recursive: true });
 for (const [type, name] of Object.entries(SHOGI)) {
   for (const side of ['w', 'b']) {
     const { namespaces, viewBox, inner } = pieceSvg(`${side}${name}.svg`);
-    const turn = side === 'b' ? ' transform="rotate(180 25 25)"' : '';
-    const out = `<svg xmlns="http://www.w3.org/2000/svg"${namespaces.join('')} viewBox="0 0 50 50">
+    for (const [dir, down] of [['', side === 'b'], ['turned', side === 'w']]) {
+      // Only the tile turns; the piece on it stays upright.
+      const turn = down ? ' transform="rotate(180 25 25)"' : '';
+      const out = `<svg xmlns="http://www.w3.org/2000/svg"${namespaces.join('')} viewBox="0 0 50 50">
 <path d="${TILE}" fill="${WOOD}" stroke="${EDGE}" stroke-width="1.4" stroke-linejoin="round"${turn}/>
 <svg x="9" y="12" width="32" height="32" viewBox="${viewBox}">${inner}</svg>
 </svg>
 `;
-    writeFileSync(resolve(OUT, `${side}${type}.svg`), out);
+      writeFileSync(resolve(OUT, dir, `${side}${type}.svg`), out);
+    }
   }
 }

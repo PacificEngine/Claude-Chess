@@ -4,7 +4,8 @@
 import type { Color } from '../../rules/types';
 import { CURATED_VARIANTS, type VariantId } from '../../variants/catalog';
 import { MAX_FILES, MAX_RANKS, MIN_FILES, MIN_RANKS } from '../../variants/setup';
-import type { EditorModel } from './editor-model';
+import { pieceName } from '../choice-dialog';
+import { type EditorModel, FIXED_SIZE } from './editor-model';
 
 export interface EditorControlsHandlers {
   base(id: VariantId): void;
@@ -86,6 +87,9 @@ export function createEditorControls(host: HTMLElement, handlers: EditorControls
   ranks.addEventListener('change', resize);
   const size = el('div', { className: 'editor-size' });
   size.append(field('Files', files), field('Ranks', ranks));
+  // Why the size can't change, on a position-only base (Shogi, Xiangqi).
+  const sizeReason = el('p', { className: 'editor-size-reason', textContent: FIXED_SIZE });
+  sizeReason.dataset.testid = 'editor-size-reason';
 
   const turn = el('select', { id: 'editor-turn' });
   turn.append(el('option', { value: 'white', textContent: 'White' }), el('option', { value: 'black', textContent: 'Black' }));
@@ -150,6 +154,7 @@ export function createEditorControls(host: HTMLElement, handlers: EditorControls
     heading,
     field('Base variant', base),
     size,
+    sizeReason,
     field('Side to move', turn),
     castlingLabel,
     rights,
@@ -197,8 +202,8 @@ export function createEditorControls(host: HTMLElement, handlers: EditorControls
         for (const letter of m.base.pocketLetters) {
           const input = el('input', { id: `editor-pocket-${color}-${letter}`, type: 'number', min: '0', max: '9' });
           input.addEventListener('change', () => handlers.pocket(color, letter, Math.min(9, Math.max(0, Number(input.value) || 0))));
-          const type = m.typeOf(letter) ?? letter;
-          pockets.append(field(`${color === 'white' ? 'White' : 'Black'} ${type === 'inherited' ? letter.toUpperCase() : type}`, input));
+          // The base's own name for it, as the rest of the app says it (Seirawan's Hawk, Shogi's Lance).
+          pockets.append(field(`${color === 'white' ? 'White' : 'Black'} ${pieceName(m.base.id, letter)}`, input));
         }
       }
       pocketsFor = key;
@@ -216,6 +221,11 @@ export function createEditorControls(host: HTMLElement, handlers: EditorControls
       base.value = m.base.id;
       files.value = String(m.files);
       ranks.value = String(m.ranks);
+      // A position-only base keeps its own size, and neither of its games castles.
+      files.disabled = m.positionOnly;
+      ranks.disabled = m.positionOnly;
+      sizeReason.hidden = !m.positionOnly;
+      castlingLabel.hidden = m.positionOnly;
       turn.value = m.turn;
       castling.checked = m.castling;
       // Seirawan keeps its gating rights in the same FEN field, so turning castling off ends gating too.

@@ -3,6 +3,8 @@
 // piece (or Escape) disarms it. The eraser removes, and so does dragging a piece off the board. "Your pieces"
 // lists the piece library, each wearing the art the player chose, with New piece… and Edit… for the designer.
 // A built-in piece (or the base's own piece) with a lesson has a ? on its White entry, which opens that lesson.
+// A position-only base (Shogi, Xiangqi) offers only its own pieces, and Shogi's promoted forms, which place `+P`:
+// any other piece would need a generated variant, which these games never get.
 import { Chessground } from 'chessgroundx';
 import type { Api } from 'chessgroundx/api';
 import type * as cg from 'chessgroundx/types';
@@ -11,12 +13,13 @@ import type { Color } from '../../rules/types';
 import { lessonForLetter, lessonForType } from '../../tutorial/links';
 import { type ActiveVariant, customActive } from '../../variants/active';
 import { BUILTIN_PIECES, INHERITED } from '../../variants/piece-types';
+import { pieceName } from '../choice-dialog';
 import { fromKey, observePieces } from '../board-view';
-import { artUrl, tokenClass } from '../pieces';
+import { artUrl, promotedArtUrl, promotedMark, promotedMarkClass, tokenClass } from '../pieces';
 import { type EditorModel, TOO_MANY_TYPES } from './editor-model';
 import { currentPieceSet, onPieceSetChange } from '../piece-sets';
 
-/** A palette entry: a built-in type, a base variant's own piece (by its letter), or a library piece. */
+/** A palette entry: a built-in type, a base variant's own piece (by its letter, `+p` promoted), or a library piece. */
 type Tool =
   | { kind: 'piece'; color: Color; type: string; letter?: string }
   | { kind: 'designed'; color: Color; piece: DesignedPiece }
@@ -43,6 +46,18 @@ export interface EditorView {
 }
 
 const COLORS: Color[] = ['white', 'black'];
+
+/** One palette button's worth: what it places, its name, art and lesson. */
+interface Entry {
+  tool: Tool & { kind: 'piece' };
+  /** The part of its test id after the colour: a built-in type, `own-<letter>` or `promoted-<letter>`. */
+  id: string;
+  name: string;
+  letter: string;
+  url: string | null;
+  lesson: string | null;
+  mark?: boolean;
+}
 const capital = (c: Color) => (c === 'white' ? 'White' : 'Black');
 
 export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElement, handlers: EditorViewHandlers): EditorView {
@@ -95,14 +110,22 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
     if (e.key === 'Escape' && armed) arm(null);
   });
 
-  /** After a free drag, chessground's board is the truth: hand it to the model. */
+  /**
+   * After a free drag, chessground's board is the truth: hand it to the model. chessgroundx calls this a moment
+   * after the drag (a timeout), so an api.set from the model before then puts the board back and loses the drag.
+   */
   const onBoardChange = () => {
     if (!api || !model) return;
+    const m = model;
     const pieces: [string, { letter: string; color: Color }][] = [];
     for (const [key, piece] of api.state.boardState.pieces) {
-      pieces.push([fromKey(key), { letter: piece.role.split('-')[0]!, color: piece.color }]);
+      const role = piece.role.split('-')[0]!;
+      // chessgroundx gives a '+P' from the FEN the role 'pp-piece'. Only a base with promoted forms (Shogi) has
+      // them, so only there is a two-letter role a promoted piece: '+p' to the model.
+      const promoted = role.length === 2 && role[0] === 'p' && m.base.promotable.includes(role[1]!);
+      pieces.push([fromKey(key), { letter: promoted ? `+${role[1]}` : role, color: piece.color }]);
     }
-    model.replaceBoard(pieces);
+    m.replaceBoard(pieces);
     handlers.changed();
   };
 
@@ -140,51 +163,90 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
     eraser.addEventListener('click', () => arm(armed === eraserTool ? null : eraserTool));
     paletteHost.append(eraser);
 
-    // The base's own pieces that match no built-in type (Spartan's hoplite), then every built-in type.
-    const own = [...m.base.types].filter(([, t]) => t === INHERITED).map(([letter]) => letter);
     for (const color of COLORS) {
       const group = document.createElement('div');
       group.className = 'palette-group';
       group.setAttribute('role', 'group');
       group.setAttribute('aria-label', `${capital(color)} pieces`);
-      const entries: { tool: Tool; name: string; letter: string; url: string | null; lesson: string | null }[] = [
-        ...own.map((letter) => ({
-          tool: { kind: 'piece', color, type: INHERITED, letter } as Tool,
-          name: `${m.base.label} piece ${letter.toUpperCase()}`,
-          letter,
-          url: artUrl(letter, color, m.base.id, undefined, undefined, currentPieceSet()),
-          lesson: lessonForLetter(m.base.id, letter),
-        })),
-        ...BUILTIN_PIECES.map((p) => {
-          const baseLetter = [...m.base.types].find(([, t]) => t === p.type)?.[0];
-          return {
-            tool: { kind: 'piece', color, type: p.type } as Tool,
-            name: p.name,
-            letter: baseLetter ?? p.letter,
-            // A base letter keeps the base's art (as on the board); any other type looks like what it moves as.
-            url: baseLetter
-              ? artUrl(baseLetter, color, m.base.id, undefined, undefined, currentPieceSet())
-              : artUrl(p.letter, color, m.base.id, p.type, undefined, currentPieceSet()),
-            lesson: lessonForType(p.type),
-          };
-        }),
-      ];
-      for (const entry of entries) {
-        const isOwn = entry.tool.kind === 'piece' && entry.tool.letter !== undefined;
-        const type = (entry.tool as { type: string }).type;
-        const id = isOwn ? `own-${entry.letter}` : type;
-        const button = paletteButton(entry.tool as Tool & { color: Color }, `palette-${color}-${id}`, `${capital(color)} ${entry.name}`, entry.url, entry.letter);
+      for (const entry of m.positionOnly ? positionOnlyEntries(m, color) : entries(m, color)) {
+        const button = paletteButton(entry.tool, `palette-${color}-${entry.id}`, `${capital(color)} ${entry.name}`, entry.url, entry.letter, entry.mark);
         // One ? per piece, on its White entry. It sits beside the piece button, so it never arms the piece.
-        group.append(color === 'white' && entry.lesson ? withLearn(button, entry.lesson, isOwn ? entry.letter : type, entry.name) : button);
+        group.append(color === 'white' && entry.lesson ? withLearn(button, entry.lesson, entry.id.replace(/^own-/, ''), entry.name) : button);
       }
       paletteHost.append(group);
     }
-    paletteHost.append(yourPieces(m));
+    // A designed piece would need a generated variant, so a position-only base has no "Your pieces".
+    if (!m.positionOnly) paletteHost.append(yourPieces(m));
     paletteFor = m.base.id;
     arm(null);
   }
 
-  function paletteButton(tool: Tool & { color: Color }, testid: string, label: string, url: string | null, letter: string): HTMLButtonElement {
+  /** The base's own pieces that match no built-in type (Spartan's hoplite), then every built-in type. */
+  function entries(m: EditorModel, color: Color): Entry[] {
+    const own = [...m.base.types].filter(([, t]) => t === INHERITED).map(([letter]) => letter);
+    return [
+      ...own.map((letter) => ({
+        tool: { kind: 'piece' as const, color, type: INHERITED, letter },
+        id: `own-${letter}`,
+        name: `${m.base.label} piece ${letter.toUpperCase()}`,
+        letter,
+        url: artUrl(letter, color, m.base.id, undefined, undefined, currentPieceSet()),
+        lesson: lessonForLetter(m.base.id, letter),
+      })),
+      ...BUILTIN_PIECES.map((p) => {
+        const baseLetter = [...m.base.types].find(([, t]) => t === p.type)?.[0];
+        return {
+          tool: { kind: 'piece' as const, color, type: p.type },
+          id: p.type,
+          name: p.name,
+          letter: baseLetter ?? p.letter,
+          // A base letter keeps the base's art (as on the board); any other type looks like what it moves as.
+          url: baseLetter
+            ? artUrl(baseLetter, color, m.base.id, undefined, undefined, currentPieceSet())
+            : artUrl(p.letter, color, m.base.id, p.type, undefined, currentPieceSet()),
+          lesson: lessonForType(p.type),
+        };
+      }),
+    ];
+  }
+
+  /** A position-only base's own pieces, each in the base's art, then its promoted forms (Shogi's `+P`). */
+  function positionOnlyEntries(m: EditorModel, color: Color): Entry[] {
+    // The game's own names, as the tutorial and the game's panel use them (Chariot, Lance).
+    const nameOf = (letter: string) => pieceName(m.base.id, letter);
+    return [
+      ...[...m.base.types.keys()].map((letter) => ({
+        tool: { kind: 'piece' as const, color, type: m.base.types.get(letter)!, letter },
+        id: `own-${letter}`,
+        name: nameOf(letter),
+        letter,
+        url: artUrl(letter, color, m.base.id, undefined, undefined, currentPieceSet()),
+        lesson: lessonForLetter(m.base.id, letter),
+      })),
+      ...m.base.promotable.map((letter) => {
+        const url = promotedArtUrl(letter, color, m.base.id);
+        return {
+          tool: { kind: 'piece' as const, color, type: m.base.types.get(letter)!, letter: `+${letter}` },
+          id: `promoted-${letter}`,
+          name: nameOf(`+${letter}`), // Dragon King, Dragon Horse, Promoted Pawn
+          letter: `+${letter}`,
+          url,
+          lesson: null,
+          // As on the board: a promoted piece sharing another's image (the gold tile) wears the marker.
+          mark: url !== null && promotedMark(letter, m.base.id),
+        };
+      }),
+    ];
+  }
+
+  function paletteButton(
+    tool: Tool & { color: Color },
+    testid: string,
+    label: string,
+    url: string | null,
+    letter: string,
+    mark = false,
+  ): HTMLButtonElement {
     const b = document.createElement('button');
     b.type = 'button';
     b.className = `palette-piece ${tool.color}`;
@@ -194,7 +256,8 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
     const icon = document.createElement('span');
     icon.className = 'palette-icon';
     if (url) icon.style.backgroundImage = `url("${import.meta.env.BASE_URL}${url}")`;
-    else {
+    if (mark) icon.classList.add(promotedMarkClass);
+    if (!url) {
       icon.classList.add(...tokenClass(letter).split(' '), tool.color);
       icon.dataset.letter = letter.toUpperCase();
     }
@@ -271,6 +334,8 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
       boardHost.style.setProperty('--ranks', String(m.ranks));
       boardHost.dataset.files = String(m.files);
       boardHost.dataset.ranks = String(m.ranks);
+      // The base's engine name, as the game's board sets it, so the board CSS (Xiangqi's river and palaces) matches.
+      boardHost.dataset.variant = m.base.engineName;
       if (paletteFor !== m.base.id) buildPalette(m);
       if (builtFor !== `${m.files}x${m.ranks}`) build(m);
       else api!.set({ fen: placement(m) });

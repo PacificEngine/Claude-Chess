@@ -2,6 +2,7 @@ import { expect, type Page, test } from '@playwright/test';
 import type { ChessTestHooks } from '../src/ui/app';
 import { generateVariant } from '../src/variants/generator';
 import type { SetupSpec } from '../src/variants/setup';
+import { boardColours, differ, expectRiverAndPalaces } from './board-colours';
 
 declare global {
   interface Window {
@@ -115,4 +116,97 @@ test('a piece set chosen in Settings draws the standard pieces everywhere, keeps
   await expect.poll(() => bg(page, '[data-testid=board] piece.n-piece.white')).toContain('pieces/cburnett/wN.svg');
   await page.getByTestId('top-settings').click();
   await expect(page.getByTestId('settings-pieces')).toHaveValue('cburnett');
+});
+
+const SHOGI_START = 'lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL[] w - - 0 1';
+// Every promoted form of White's, and Black's promoted pawn and bishop.
+const SHOGI_PROMOTED = '4k4/9/1+p3+b3/9/+L1+S1+N1+B1+R/9/4+P4/9/4K4[] w - - 0 1';
+const XIANGQI_START = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1';
+
+test('Shogi pieces show their own art, the king, rook and bishop in the set, with no lettered token', async ({ page }) => {
+  await openApp(page);
+  await load(page, 'shogi', SHOGI_START);
+  const art: Record<string, string> = {
+    p: 'shogi-tile/?shogiPawn', l: 'shogi-tile/?lance', n: 'shogi-tile/?shogiKnight', s: 'shogi-tile/?silver',
+    g: 'shogi-tile/?gold', k: 'merida/?K', r: 'merida/?R', b: 'merida/?B',
+  };
+  for (const [l, file] of Object.entries(art)) {
+    for (const [color, side] of [['white', 'w'], ['black', 'b']]) {
+      expect(await bg(page, `[data-testid=board] piece.${l}-piece.${color}`), `${l} ${color}`).toContain(`pieces/${file.replace('?', side!)}.svg`);
+    }
+  }
+  await expect(page.locator('[data-testid=board] piece.token')).toHaveCount(0);
+});
+
+test('promoted Shogi pieces show their promoted art, and the gold-movers a marker, with no lettered token', async ({ page }) => {
+  await openApp(page);
+  await load(page, 'shogi', SHOGI_PROMOTED);
+  const piece = (role: string, color: string) => `[data-testid=board] piece.${role}-piece.${color}`;
+  const mark = (selector: string) => page.locator(selector).first().evaluate(el => getComputedStyle(el, '::before').content);
+  for (const role of ['pp', 'pl', 'pn', 'ps']) {
+    expect(await bg(page, piece(role, 'white')), role).toContain('pieces/shogi-tile/wgold.svg');
+    await expect(page.locator(piece(role, 'white')), role).toHaveClass(/promoted-mark/);
+    expect(await mark(piece(role, 'white')), role).not.toBe('none');
+  }
+  expect(await bg(page, piece('pp', 'black'))).toContain('pieces/shogi-tile/bgold.svg');
+  await expect(page.locator(piece('pp', 'black'))).toHaveClass(/promoted-mark/);
+  expect(await bg(page, piece('pb', 'white'))).toContain('pieces/shogi-tile/wdragonHorse.svg');
+  expect(await bg(page, piece('pb', 'black'))).toContain('pieces/shogi-tile/bdragonHorse.svg');
+  expect(await bg(page, piece('pr', 'white'))).toContain('pieces/alfaerie/wkingrook.svg');
+  // The dragon horse and the bers art differ from every unpromoted piece, so they need no marker.
+  expect(await mark(piece('pb', 'white'))).toBe('none');
+  expect(await mark(piece('pr', 'white'))).toBe('none');
+  await expect(page.locator('[data-testid=board] piece.token')).toHaveCount(0);
+  // A promoted piece that is captured and gone leaves no marker behind on the piece reused for another.
+  await load(page, 'shogi', SHOGI_START);
+  await expect(page.locator('[data-testid=board] piece.promoted-mark')).toHaveCount(0);
+});
+
+test('Xiangqi pieces show their own art, the chariot and general in the set, with no lettered token', async ({ page }) => {
+  await openApp(page);
+  await load(page, 'xiangqi', XIANGQI_START);
+  const art: Record<string, string> = {
+    r: 'merida/?R', k: 'merida/?K', a: 'alfaerie/?ferz', b: 'alfaerie/?elephantwazir', n: 'alfaerie/?horse',
+    c: 'merida/shako/?C', p: 'alfaerie/?chinesepawn',
+  };
+  for (const [l, file] of Object.entries(art)) {
+    for (const [color, side] of [['white', 'w'], ['black', 'b']]) {
+      expect(await bg(page, `[data-testid=board] piece.${l}-piece.${color}`), `${l} ${color}`).toContain(`pieces/${file.replace('?', side!)}.svg`);
+    }
+  }
+  await expect(page.locator('[data-testid=board] piece.token')).toHaveCount(0);
+});
+
+test('the Xiangqi board shades its river and palaces in both orientations, and they take no clicks', async ({ page }) => {
+  await openApp(page);
+  await load(page, 'xiangqi', XIANGQI_START);
+  await expect(page.getByTestId('board')).toHaveAttribute('data-variant', 'xiangqi');
+  await expectRiverAndPalaces(page, true);
+  // A move into the palace: the shading lets the clicks through to the board.
+  const box = (await page.locator('[data-testid=board] cg-board').boundingBox())!;
+  const at = (file: number, rank: number) => page.mouse.click(box.x + ((file + 0.5) * box.width) / 9, box.y + ((9 - rank + 0.5) * box.height) / 10);
+  await at(3, 0); // d1, the advisor
+  await at(4, 1); // e2
+  await expect(page.getByTestId('board')).toHaveAttribute('data-fen', /^rnbakabnr\/9\/1c5c1\/p1p1p1p1p\/9\/9\/P1P1P1P1P\/1C5C1\/4A4\/RNB1KABNR b/);
+  // Black at the bottom: the same squares are shaded.
+  await page.getByTestId('top-play').click();
+  const dialog = page.getByTestId('play-dialog');
+  await dialog.locator('#play-variant').selectOption('xiangqi');
+  await dialog.locator('#play-opponent').selectOption('beginner');
+  await dialog.locator('#play-color').selectOption('black');
+  await dialog.locator('#play-clock').selectOption('None');
+  await dialog.getByRole('button', { name: 'Start' }).click();
+  await expect(page.getByTestId('board')).toHaveAttribute('data-orientation', 'black');
+  // Wait for the AI's first move: it redraws the board, and could land in the middle of the screenshot.
+  await expect(page.getByTestId('status')).toHaveText('Black to move', { timeout: 20000 });
+  await expectRiverAndPalaces(page, true);
+});
+
+test('a board that is not Xiangqi has no river or palaces', async ({ page }) => {
+  await openApp(page);
+  // Shogi's board is the same width, so the same spots would be shaded if the shading leaked to it.
+  await load(page, 'shogi', SHOGI_START);
+  const [a5, a3, e2, e4] = await boardColours(page, [['a5', 0.5, 0.9], ['a3', 0.5, 0.9], ['e2', 0.5, 0.5], ['e4', 0.5, 0.5]]);
+  expect(differ(a5!, a3!)).toBe(false);
+  expect(differ(e2!, e4!)).toBe(false);
 });

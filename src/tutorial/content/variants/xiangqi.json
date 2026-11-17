@@ -1,0 +1,11 @@
+{
+  "id": "variant-xiangqi",
+  "variant": "xiangqi",
+  "order": 10,
+  "differences": [
+    "A river runs across the middle of the board. The elephants may never cross it, and a soldier may step sideways only once it has crossed it.",
+    "Each side has a palace: the nine squares on the middle three files of its back three ranks. The general and its two advisors may never leave it.",
+    "Under the flying general rule, the two generals may never face each other on an open file, with nothing between them. So a piece standing alone between them may not leave their file.",
+    "Red traditionally moves first in Xiangqi, against Black. This app calls Red White, as in chess."
+  ]
+}

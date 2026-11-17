@@ -3,7 +3,7 @@
 import type { Rules } from '../rules/types';
 import { variantTypes } from '../variants/active';
 import { type VariantId, variantById } from '../variants/catalog';
-import { pieceOn, uciSquares } from '../variants/fen';
+import { parseUci, pieceOn, uciSquares } from '../variants/fen';
 import { positionProblems } from '../variants/legality';
 import { INHERITED } from '../variants/piece-types';
 import { reachFrom } from '../variants/reach';
@@ -184,6 +184,9 @@ function checkPuzzle(cx: Context, puzzle: Puzzle, where: string): void {
 
   const wins = forcedWins(cx.rules, board.variant, board.fen, goal, moves);
   if (!wins.includes(line[0])) problem(`the first move ${line[0]} does not force the goal`);
+  // A key is judged by its squares, so promotion suffixes of one move count as one key. Two drops of different
+  // pieces to one square would count as one too; no lesson puzzle drops (Shogi's are taught on the variant
+  // page, and Xiangqi has none), so a second answer of that kind can't hide.
   const key = uciSquares(line[0]);
   const others = wins.filter((uci) => uciSquares(uci).from !== key.from || uciSquares(uci).to !== key.to);
   if (others.length) problem(`another first move also forces the goal: ${others.join(', ')}`);
@@ -192,7 +195,7 @@ function checkPuzzle(cx: Context, puzzle: Puzzle, where: string): void {
     for (const sibling of wins.filter((uci) => uci !== line[0] && !others.includes(uci)))
       if (!replyIsLegal(cx, board, sibling, line[1])) problem(`the reply ${line[1]} is not legal after ${sibling}`);
 
-  if (cx.lesson.teaches.length > 0 && !isTaught(cx, board, key.from))
+  if (cx.lesson.teaches.length > 0 && !isTaught(cx, board, line[0]))
     problem(`the first move ${line[0]} is not made by the taught piece`);
   goalPiece(cx, board, puzzle, problem);
 }
@@ -249,8 +252,10 @@ function teachesLetter(cx: Context, board: Board, letter: string, teaches: Teach
   return board.base === teaches.variant && letter === teaches.letter && (own === undefined || own === INHERITED);
 }
 
-function isTaught(cx: Context, board: Board, square: string): boolean {
-  const letter = pieceOn(board.fen, square)?.toLowerCase();
+/** Whether the taught piece makes `uci`: the piece on its from-square, or the piece it drops. */
+function isTaught(cx: Context, board: Board, uci: string): boolean {
+  const { from, drop } = parseUci(uci) ?? { from: null, drop: null };
+  const letter = (from ? pieceOn(board.fen, from) : drop ?? undefined)?.toLowerCase();
   return letter !== undefined && cx.lesson.teaches.some((t) => teachesLetter(cx, board, letter, t));
 }
 
