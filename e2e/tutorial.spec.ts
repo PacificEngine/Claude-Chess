@@ -401,6 +401,30 @@ test("solving all of a lesson's puzzles ticks its card, and the tick survives a 
   await expect(card(page, 'promotion')).toHaveAttribute('data-finished', 'true');
 });
 
+test('once the last puzzle is solved, Next becomes Next lesson and opens the next lesson in the list', async ({ page }) => {
+  await openApp(page);
+  await openLesson(page, 'promotion');
+  await step(page, 1).click();
+  const next = page.getByTestId('lesson-next');
+  await expect(next).toHaveText('Next');
+  await solvePromotions(page);
+  await expect(next).toBeEnabled();
+  await expect(next).toHaveText('Next lesson');
+  await next.click();
+  await expect(page.getByTestId('lesson-title')).toHaveText('Draws');
+  await expect(step(page, 0)).toHaveAttribute('aria-current', 'step');
+  await expect(next).toHaveText('Next');
+});
+
+test('on the last puzzle, Next stays off until that puzzle is solved', async ({ page }) => {
+  await openApp(page);
+  await rookPuzzle(page, 4);
+  const next = page.getByTestId('lesson-next');
+  await expect(page.getByTestId('lesson-heading')).toHaveText('Puzzle 4 of 4');
+  await expect(next).toBeDisabled();
+  await expect(next).toHaveText('Next');
+});
+
 test('a half-done lesson resumes at its first unsolved puzzle, after a reload too', async ({ page }) => {
   await openApp(page);
   await rookPuzzle(page, 1);

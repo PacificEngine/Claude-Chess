@@ -18,6 +18,8 @@ export interface LessonViewState {
   canHint: boolean;
   canRestart: boolean;
   canNext: boolean;
+  /** "Next", or "Next lesson" once the lesson's last puzzle is solved. */
+  nextLabel: string;
 }
 
 export interface LessonViewHandlers {
@@ -92,6 +94,7 @@ export function createLessonView(host: HTMLElement, handlers: LessonViewHandlers
       hint.disabled = !s.canHint;
       restart.disabled = !s.canRestart;
       next.disabled = !s.canNext;
+      next.textContent = s.nextLabel;
     },
   };
 }

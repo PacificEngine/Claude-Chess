@@ -59,3 +59,17 @@ export function cardsOf(lessons: readonly Lesson[], pages: readonly VariantPage[
 }
 
 export const cardsByTrack = (track: Track | 'variants'): LessonCard[] => cardsOf(LESSONS, VARIANT_PAGES, track);
+
+/**
+ * The lesson after `id` in the lesson list of its own track, or null after the last. A lesson with several
+ * cards there counts once, at its first card. Cards of another track's lesson (the King lesson's Commoner card
+ * among the fairy pieces) are passed over, so Next never jumps to another track.
+ */
+export function nextLessonOf(lessons: readonly Lesson[], id: string): string | null {
+  const track = lessons.find((l) => l.id === id)?.track;
+  if (track === undefined) return null;
+  const ids = [...new Set(cardsOf(lessons, [], track).map((c) => c.lessonId))].filter(
+    (lessonId) => lessons.find((l) => l.id === lessonId)?.track === track,
+  );
+  return ids[ids.indexOf(id) + 1] ?? null;
+}

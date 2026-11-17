@@ -11,7 +11,7 @@ import { generateVariant } from '../../variants/generator';
 import { reachFrom } from '../../variants/reach';
 import { registerSetup } from '../../variants/registry';
 import type { SetupSpec } from '../../variants/setup';
-import { lessonById, VARIANT_PAGES } from '../content';
+import { LESSONS, lessonById, nextLessonOf, VARIANT_PAGES } from '../content';
 import { boardFen, type Lesson, type LessonBoard } from '../lesson';
 import type { TutorialProgress } from '../progress';
 import { createPuzzleRun, createTryRun, type PuzzleRun, type TryRun } from '../runner';
@@ -267,6 +267,9 @@ export function createTutorial(host: HTMLElement, deps: TutorialDeps): Tutorial 
         canNext = puzzleIndex < step.puzzles.length - 1;
         break;
     }
+    // Once the last puzzle is solved, Next moves on to the next lesson in the list, when there is one.
+    const nextLesson = lessonAfter();
+    if (nextLesson !== null) canNext = true;
     view.render({
       title: l.title,
       track: TRACK_NAMES[l.track],
@@ -278,7 +281,15 @@ export function createTutorial(host: HTMLElement, deps: TutorialDeps): Tutorial 
       canHint: step.kind === 'puzzles' && resolved?.ok === true && !puzzleSolved,
       canRestart: (step.kind === 'try' || step.kind === 'puzzles') && resolved?.ok === true,
       canNext,
+      nextLabel: nextLesson === null ? 'Next' : 'Next lesson',
     });
+  }
+
+  /** The lesson Next opens: set only on the last step's last puzzle, once it is solved. */
+  function lessonAfter(): string | null {
+    const step = currentStep();
+    const last = stepIndex === lesson!.steps.length - 1 && step.kind === 'puzzles' && puzzleIndex === step.puzzles.length - 1;
+    return last && puzzleSolved ? nextLessonOf(LESSONS, lesson!.id) : null;
   }
 
   function showStep(i: number): void {
@@ -296,6 +307,8 @@ export function createTutorial(host: HTMLElement, deps: TutorialDeps): Tutorial 
   }
 
   function next(): void {
+    const nextLesson = lessonAfter();
+    if (nextLesson !== null) return open(nextLesson);
     const step = currentStep();
     if (step.kind === 'read' && page < step.pages.length - 1) {
       leaveBoard();
