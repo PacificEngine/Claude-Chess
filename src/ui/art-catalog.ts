@@ -1,6 +1,7 @@
 // Every piece image a designed piece may use. A static list, not a disk scan: the browser cannot list public/.
 // art-catalog.test.ts walks public/pieces to fail when new two-colour art is shipped but not listed here.
 // Spartan art is left out on purpose: it exists for Black only. Pure data, no DOM, so tests run in Node.
+import { PIECE_SETS } from './piece-sets';
 
 export interface ArtChoice {
   /** `<dir>/<file>`: the file name without its w/b prefix or .svg, e.g. `alfaerie/amazon`, `merida/Q`. */
@@ -45,7 +46,11 @@ const SETS: { dir: string; set: string; pieces: Record<string, string> }[] = [
   },
 ];
 
-export const ART_CHOICES: readonly ArtChoice[] = SETS.flatMap(({ dir, set, pieces }) =>
+// The standard pieces of every piece set Settings offers (Merida's are listed above with its fairy pieces).
+const STANDARD_PIECES = { P: 'Pawn', N: 'Knight', B: 'Bishop', R: 'Rook', Q: 'Queen', K: 'King' };
+const PIECE_SET_ART = PIECE_SETS.filter((s) => s.id !== 'merida').map((s) => ({ dir: s.id, set: s.label, pieces: STANDARD_PIECES }));
+
+export const ART_CHOICES: readonly ArtChoice[] = [...SETS, ...PIECE_SET_ART].flatMap(({ dir, set, pieces }) =>
   Object.entries(pieces).map(([file, name]) => ({
     id: `${dir}/${file}`,
     label: `${name} (${set})`,
