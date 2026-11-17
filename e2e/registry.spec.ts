@@ -162,3 +162,30 @@ test("the engine deletes each variant file once it has read it, and still plays 
   expect(r.files).toEqual([]);
   expect(r.legal).toContain(r.best);
 });
+
+test('the engine accepts every custom board in the tutorial', async ({ page }) => {
+  test.setTimeout(120_000);
+  // The content tests check lessons with ffish alone, which never refuses a variant; the lesson screen
+  // registers custom boards through the engine's check too, so a board ffish accepts can still fail there.
+  const refused = await page.evaluate(async () => {
+    const { createEngine, loadRules, registerSetup, LESSONS } = window.__engineHarness;
+    const rules = await loadRules();
+    const engine = createEngine();
+    await engine.ready;
+    const setups: { lesson: string; spec: unknown }[] = [];
+    const walk = (lesson: string, o: unknown): void => {
+      if (!o || typeof o !== 'object') return;
+      if ('setup' in o) setups.push({ lesson, spec: (o as { setup: unknown }).setup });
+      for (const v of Object.values(o)) walk(lesson, v);
+    };
+    for (const l of LESSONS) walk(l.id, l.steps);
+    const out: string[] = [];
+    for (const { lesson, spec } of setups) {
+      const r = await registerSetup(rules, engine, spec as Parameters<typeof registerSetup>[2]);
+      if (!r.ok) out.push(`${lesson}: ${r.problems.join(' ')}`);
+    }
+    return { count: setups.length, out: [...new Set(out)] };
+  });
+  expect(refused.count).toBeGreaterThan(100);
+  expect(refused.out).toEqual([]);
+});

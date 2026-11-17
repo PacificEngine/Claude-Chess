@@ -73,8 +73,12 @@ export function generateVariant(spec: SetupSpec, baseTypes?: Map<string, string>
 
   const designedLines = designedPieceLines(spec, baseTypes);
   const designed = spec.designed ?? {};
-  // Every letter the engine is told about, built-in or designed, in one sorted list.
-  const allLetters = [...letters, ...Object.keys(designed)].sort();
+  // Every letter the engine is told about, built-in or designed, plus any base letter the FEN uses without
+  // naming it in `pieces` (a hand-written lesson board may lean on the base's rook): the engine's check
+  // reports "Missing piece type" for any letter on the board that pieceToCharTable leaves out, though ffish
+  // accepts it.
+  const fenLetters = (spec.fen.split(' ')[0] ?? '').match(/[a-z]/gi) ?? [];
+  const allLetters = [...new Set([...letters, ...Object.keys(designed), ...fenLetters.map((c) => c.toLowerCase())])].sort();
 
   // The engine keeps a type on one letter only: a later line moves it, and the earlier letter is lost.
   const byType = new Map<string, string[]>();

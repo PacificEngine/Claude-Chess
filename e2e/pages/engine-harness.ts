@@ -5,8 +5,9 @@ import { restorable } from '../../src/session/restore';
 import { CURATED_VARIANTS } from '../../src/variants/catalog';
 import { generateVariant } from '../../src/variants/generator';
 import { registerIni, registerSetup } from '../../src/variants/registry';
+import { LESSONS } from '../../src/tutorial/content';
 
-const harness = { createEngine, loadRules, CURATED_VARIANTS, generateVariant, registerIni, registerSetup, restorable };
+const harness = { createEngine, loadRules, CURATED_VARIANTS, generateVariant, registerIni, registerSetup, restorable, LESSONS };
 export type EngineHarness = typeof harness;
 
 declare global {
