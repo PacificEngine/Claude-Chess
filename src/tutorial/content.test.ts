@@ -8,7 +8,7 @@ import { generateVariant } from '../variants/generator';
 import { BUILTIN_PIECES, INHERITED } from '../variants/piece-types';
 import type { SetupSpec } from '../variants/setup';
 import { checkLesson, checkVariantPage, isPlaceholderProblem } from './check';
-import { cardsByTrack, cardsOf, LESSONS, lessonById, loadContent, VARIANT_PAGES } from './content';
+import { cardsByTrack, cardsOf, LESSONS, lessonById, loadContent, nextLessonOf, VARIANT_PAGES } from './content';
 import type { Lesson, Puzzle, Step, Teaches, VariantPage } from './lesson';
 import { lessonFor, lessonForType } from './links';
 
@@ -355,6 +355,31 @@ describe('cards', () => {
     ];
     expect(cardsOf(lessons, [], 'fairy').map((c) => c.name)).toEqual(['Fers', 'Wazir', 'Commoner', 'Alfil']);
     expect(cardsOf(lessons, [], 'basics')).toEqual([{ name: 'King', lessonId: 'king' }]);
+  });
+
+  it("gives the lesson after a lesson in its own track's order, or null after the last", () => {
+    // A lesson's track is its first card's.
+    const lessons = [
+      lesson('king', 8, { track: 'basics', name: 'King' }, { track: 'fairy', name: 'Commoner', order: 2.5 }),
+      lesson('rook', 6, { track: 'basics', name: 'Rook' }),
+      lesson('archbishop', 3, { track: 'fairy', name: 'Archbishop' }, { track: 'fairy', name: 'Hawk' }),
+      lesson('wazir', 2, { track: 'fairy', name: 'Wazir' }),
+      lesson('alfil', 4, { track: 'fairy', name: 'Alfil' }),
+    ].map((l) => ({ ...l, track: l.cards[0].track }));
+    expect(nextLessonOf(lessons, 'rook')).toBe('king');
+    expect(nextLessonOf(lessons, 'king')).toBeNull();
+    // A lesson with two cards in its track is passed over once, not visited again.
+    expect(nextLessonOf(lessons, 'archbishop')).toBe('alfil');
+    expect(nextLessonOf(lessons, 'wazir')).toBe('archbishop');
+    expect(nextLessonOf(lessons, 'alfil')).toBeNull();
+    expect(nextLessonOf(lessons, 'missing')).toBeNull();
+  });
+
+  it('chains every shipped lesson of a track from its first card to its last', () => {
+    for (const track of ['basics', 'fairy'] as const) {
+      const ids = [...new Set(cardsByTrack(track).map((c) => c.lessonId))].filter((id) => lessonById(id)!.track === track);
+      for (let i = 0; i < ids.length; i++) expect(nextLessonOf(LESSONS, ids[i])).toBe(ids[i + 1] ?? null);
+    }
   });
 
   it('names a variant page by its variant', () => {
