@@ -22,13 +22,21 @@ export interface Settings {
   sound: boolean;
 }
 
-export const SETTINGS_VERSION = 1;
+export const SETTINGS_VERSION = 2;
+
+/**
+ * Version 1 stored `sound: true` from the default while the Sound box was disabled, so nobody chose it. Sound
+ * starts off (owner decision, 2026-11-17), so version 2 turns it off once and keeps the rest.
+ */
+export const SETTINGS_MIGRATIONS: Migrations = {
+  1: (old) => ({ ...(old as Record<string, unknown>), sound: false }),
+};
 
 export const DEFAULT_SETTINGS: Settings = {
   highlightLegal: true,
   boardTheme: 'brown',
   pieceSet: 'default',
-  sound: true,
+  sound: false,
 };
 
 export function isSettings(d: unknown): d is Settings {

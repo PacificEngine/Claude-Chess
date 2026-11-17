@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createStore, DEFAULT_SETTINGS, isSettings, SETTINGS_VERSION, type Store } from './store';
+import { createStore, DEFAULT_SETTINGS, isSettings, SETTINGS_MIGRATIONS, SETTINGS_VERSION, type Store } from './store';
 
 class MemoryStorage implements Storage {
   private map = new Map<string, string>();
@@ -110,10 +110,17 @@ describe('store', () => {
 });
 
 describe('settings', () => {
-  it('has defaults that satisfy the guard', () => {
-    expect(SETTINGS_VERSION).toBe(1);
-    expect(DEFAULT_SETTINGS).toEqual({ highlightLegal: true, boardTheme: 'brown', pieceSet: 'default', sound: true });
+  it('has defaults that satisfy the guard, with sound off', () => {
+    expect(SETTINGS_VERSION).toBe(2);
+    expect(DEFAULT_SETTINGS).toEqual({ highlightLegal: true, boardTheme: 'brown', pieceSet: 'default', sound: false });
     expect(isSettings(DEFAULT_SETTINGS)).toBe(true);
+  });
+  it('turns sound off once for settings saved before sound worked, keeping the rest', () => {
+    const storage = new MemoryStorage();
+    const old = { highlightLegal: false, boardTheme: 'blue', pieceSet: 'cburnett', sound: true };
+    storage.setItem('chess.settings', JSON.stringify({ version: 1, data: old }));
+    const loaded = createStore(storage).load('chess.settings', SETTINGS_VERSION, SETTINGS_MIGRATIONS, isSettings);
+    expect(loaded).toEqual({ data: { ...old, sound: false }, problem: null });
   });
   it('rejects malformed settings', () => {
     expect(isSettings({ ...DEFAULT_SETTINGS, sound: 'yes' })).toBe(false);

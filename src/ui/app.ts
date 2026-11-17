@@ -4,7 +4,7 @@ import { createEngine, type EngineTestHooks } from '../engine/engine';
 import { levelById } from '../engine/levels';
 import { type DesignedPiece, loadPieces } from '../persistence/pieces';
 import { loadSetups, rewritePieceCopies, usesPiece } from '../persistence/setups';
-import { createStore, DEFAULT_SETTINGS, isSettings, SETTINGS_VERSION, type Settings } from '../persistence/store';
+import { createStore, DEFAULT_SETTINGS, isSettings, SETTINGS_MIGRATIONS, SETTINGS_VERSION, type Settings } from '../persistence/store';
 import { loadTutorialProgress } from '../persistence/tutorial';
 import { loadRules, type Rules } from '../rules/rules';
 import type { Color, GameResult } from '../rules/types';
@@ -32,11 +32,15 @@ import { createSetupsController } from './setups-controller';
 import { createSourceLink } from './source-link';
 import { createTopBar } from './top-bar';
 import { setPieceSet } from './piece-sets';
+import { type Cue, endCue, lowTimeCrossed, moveCue } from './sound-cues';
+import { createSoundPlayer } from './sound';
 
 /** What `--mode test` builds expose on window for e2e. */
 export interface ChessTestHooks {
   loadFen(variant: string, fen: string): void;
   engine: EngineTestHooks;
+  /** Every sound cue played so far, oldest first: a test can't listen. */
+  sounds: Cue[];
 }
 
 declare global {
@@ -129,9 +133,11 @@ export async function startApp(root: HTMLElement): Promise<void> {
 
   // ---- Persistence -------------------------------------------------------------------------------
   if (!store.available) warn(MSG_NO_STORAGE);
-  const savedSettings = store.load('chess.settings', SETTINGS_VERSION, {}, isSettings);
+  const savedSettings = store.load('chess.settings', SETTINGS_VERSION, SETTINGS_MIGRATIONS, isSettings);
   if (savedSettings.problem) warn(MSG_CORRUPT_SETTINGS);
   let settings: Settings = savedSettings.data ?? { ...DEFAULT_SETTINGS };
+  const heardSounds: Cue[] = [];
+  const sound = createSoundPlayer(() => settings.sound, import.meta.env.MODE === 'test' ? (cue) => heardSounds.push(cue) : undefined);
   const loadedSetups = loadSetups(store);
   if (loadedSetups.problem) warn(MSG_CORRUPT_SETUPS);
   const loadedPieces = loadPieces(store);
@@ -221,6 +227,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
     progress: loadedTutorial.progress,
     // The dialog opens over the tutorial, so Cancel returns to the variant page; Start closes the tutorial.
     playVariant: (id) => openPlay({ kind: 'curated', id }),
+    sound: (cue) => sound.play(cue),
     close: () => closeTutorial(),
   });
   const setupsCtl = createSetupsController({
@@ -331,6 +338,36 @@ export async function startApp(root: HTMLElement): Promise<void> {
 
   const humanColor = (): Color => (st.opponent.kind === 'ai' ? other(st.opponent.aiColor) : 'white');
 
+  // ---- Sound ------------------------------------------------------------------------------------
+  // Cues come from comparing each new state with the last one heard, so every way a move is made (the
+  // player, the AI, a flag falling) sounds the same, and undo, a new game or a restore are silent.
+  let heardSession = session;
+  let heardPlies = st.moves.length;
+  let heardOver = st.result !== null;
+  /** Each side's clock as last drawn, to hear it cross into low time; cleared for a new game. */
+  let clockHeard: Partial<Record<Color, number>> = {};
+  function hearChange(): void {
+    const plies = st.moves.length;
+    if (session === heardSession) {
+      if (st.result && !heardOver) sound.play(endCue(st.result, st.opponent));
+      else if (!st.result && plies === heardPlies + 1) sound.play(moveCue(sanOf(plies - 1)));
+    } else {
+      heardSession = session;
+      clockHeard = {};
+    }
+    heardPlies = plies;
+    heardOver = st.result !== null;
+  }
+  /** The low-time warning: once, as a human's running clock drops under ten seconds. */
+  function hearClock(now: number): void {
+    const side = st.clock.running;
+    if (st.clockConfig === null || st.result || side === null) return;
+    if (st.opponent.kind === 'ai' && side === st.opponent.aiColor) return;
+    const ms = remaining(st.clock, side, now);
+    if (lowTimeCrossed(clockHeard[side] ?? ms, ms)) sound.play('lowTime');
+    clockHeard[side] = ms;
+  }
+
   function save(): void {
     if (keepSavedGame) return;
     if (!store.save('chess.game', GAME_VERSION, st) && store.available) warn(MSG_SAVE_FAILED);
@@ -389,6 +426,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
   /** Every state change ends here: save, redraw, and let the AI move if it is its turn. */
   function changed(): void {
     st = session.state();
+    hearChange();
     save();
     render();
     // The AI waits while the editor or the tutorial covers the game; closing it calls changed() again.
@@ -798,6 +836,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
   const frame = () => {
     const now = Date.now();
     drawClocks(now);
+    hearClock(now);
     if (!st.result && st.clock.running !== null && session.checkFlag(now)) {
       cancelAi();
       changed();
@@ -829,6 +868,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
     window.__chessTest = {
       loadFen: (variant, fen) => startGame({ variant: variantOf(variant).engineName, fen }, { kind: 'hotseat' }, null),
       engine: engine.test!,
+      sounds: heardSounds,
     };
   }
 
