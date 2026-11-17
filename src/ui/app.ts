@@ -31,6 +31,7 @@ import { createSettingsDialog } from './settings-dialog';
 import { createSetupsController } from './setups-controller';
 import { createSourceLink } from './source-link';
 import { createTopBar } from './top-bar';
+import { setPieceSet } from './piece-sets';
 
 /** What `--mode test` builds expose on window for e2e. */
 export interface ChessTestHooks {
@@ -382,6 +383,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
     });
     drawClocks(Date.now());
     root.dataset.theme = settings.boardTheme;
+    setPieceSet(settings.pieceSet);
   }
 
   /** Every state change ends here: save, redraw, and let the AI move if it is its turn. */

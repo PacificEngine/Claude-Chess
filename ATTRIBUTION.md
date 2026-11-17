@@ -17,6 +17,31 @@ The SVG files are copied unchanged; the Shako elephant and cannon are in `merida
 
 The Merida and Spartan licences allow redistribution under GPL v3 (GPL v2-or-later may be used under v3; AGPL v3 may be combined with GPL v3).
 
+### Piece sets in Settings
+
+Settings offers fourteen more sets for the six standard pieces. They come unchanged from the
+[Lichess](https://github.com/lichess-org/lila) source (`public/piece/<set>/`), whose
+[COPYING.md](https://github.com/lichess-org/lila/blob/master/COPYING.md) lists each set's author and licence.
+`public/pieces/LICENSE-piece-sets.txt` repeats that list and carries the MIT notice.
+
+| Files | Author | Licence |
+|---|---|---|
+| `public/pieces/cburnett/*` | Colin M.L. Burnett | GPL v2 or later |
+| `public/pieces/chessnut/*` | Alexis Luengas | Apache 2.0 |
+| `public/pieces/fantasy/*`, `spatial/*`, `celtic/*` | Maurizio Monge | MIT |
+| `public/pieces/mpchess/*` | Maxime Chupin | GPL v3 or later |
+| `public/pieces/kiwen-suwi/*` | neverRare | CC BY 4.0 |
+| `public/pieces/firi/*` | James Faure | CC BY 4.0 |
+| `public/pieces/totoy/*` | Kosal Sen | CC BY 4.0 |
+| `public/pieces/papercut/*` | Nikolay Anzarov | CC BY 4.0 |
+| `public/pieces/rhosgfx/*` | RhosGFX | CC0 1.0 |
+| `public/pieces/shapes/*` | flugsio | CC BY-SA 4.0 |
+| `public/pieces/pixel/*` | therealqtpi | AGPL v3 or later |
+| `public/pieces/letter/*` | usolando | AGPL v3 or later |
+
+All of these allow redistribution on this GPL v3 site. Shapes (share-alike) and Pixel and Letter (AGPL) would matter if the
+site's source ever stopped being open; the others need only the credit above.
+
 ### Alfaerie
 
 Alfaerie has no formal licence. David Howe's Alfaerie pages say: "You may download and use the Alfaerie graphics if you wish."

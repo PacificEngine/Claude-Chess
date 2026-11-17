@@ -6,6 +6,7 @@ import type { Config } from 'chessgroundx/config';
 import type * as cg from 'chessgroundx/types';
 import type { Color } from '../rules/types';
 import { type ActiveVariant, artTypeOf, designedArt } from '../variants/active';
+import { currentPieceSet, onPieceSetChange } from './piece-sets';
 import { artUrl, parsePieceClass, pocketRoles, tokenClass } from './pieces';
 
 export interface BoardPosition {
@@ -58,7 +59,7 @@ export function observePieces(host: HTMLElement, variant: () => ActiveVariant | 
     if (!parsed) return;
     const v = variant();
     if (!v) return;
-    const url = artUrl(parsed.letter, parsed.color, v.artBase, artTypeOf(v, parsed.letter), designedArt(v, parsed.letter));
+    const url = artUrl(parsed.letter, parsed.color, v.artBase, artTypeOf(v, parsed.letter), designedArt(v, parsed.letter), currentPieceSet());
     piece.style.backgroundImage = url ? `url("${import.meta.env.BASE_URL}${url}")` : '';
     const token = tokenClass(parsed.letter).split(' ');
     // Touch the class only when it must change: a class write is itself a mutation this observer would see.
@@ -69,6 +70,8 @@ export function observePieces(host: HTMLElement, variant: () => ActiveVariant | 
     else piece.dataset.letter = parsed.letter.toUpperCase();
   };
   const all = (): void => host.querySelectorAll<HTMLElement>('piece').forEach(style);
+  // A new piece set in Settings redraws this board's pieces, whether it is on screen or not.
+  onPieceSetChange(all);
   new MutationObserver(records => {
     for (const r of records) {
       if (r.type === 'attributes') style(r.target as HTMLElement);

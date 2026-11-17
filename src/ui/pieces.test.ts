@@ -229,3 +229,31 @@ describe('pocketRoles', () => {
     expect(pocketRoles(customActive(setup('4k3/8/8/8/8/8/8/4K3[] w - - 0 1'), 'cx_b', types))).toBeUndefined();
   });
 });
+
+describe('piece sets', () => {
+  it('draws the six standard pieces from the chosen set', () => {
+    expect(artUrl('n', 'white', 'chess', undefined, undefined, 'cburnett')).toBe('pieces/cburnett/wN.svg');
+    expect(artUrl('k', 'black', 'grand', undefined, undefined, 'pixel')).toBe('pieces/pixel/bK.svg');
+    // A custom variant's letter that moves as a standard type uses the set too.
+    expect(artUrl('x', 'black', 'chess', 'queen', undefined, 'fantasy')).toBe('pieces/fantasy/bQ.svg');
+  });
+
+  it('draws Merida without a set, and for the saved default', () => {
+    expect(artUrl('n', 'white', 'chess')).toBe('pieces/merida/wN.svg');
+    expect(artUrl('n', 'white', 'chess', undefined, undefined, 'merida')).toBe('pieces/merida/wN.svg');
+  });
+
+  it("keeps every other piece's own art whatever the set", () => {
+    expect(artUrl('a', 'white', 'capablanca', undefined, undefined, 'cburnett')).toBe('pieces/merida/wA.svg');
+    expect(artUrl('c', 'black', 'shako', undefined, undefined, 'cburnett')).toBe('pieces/merida/shako/bC.svg');
+    expect(artUrl('a', 'white', 'amazon', undefined, undefined, 'cburnett')).toBe('pieces/alfaerie/wamazon.svg');
+    expect(artUrl('x', 'white', 'chess', 'wazir', undefined, 'cburnett')).toBe('pieces/alfaerie/wwazir.svg');
+    expect(artUrl('k', 'black', 'spartan', undefined, undefined, 'cburnett')).toBe('pieces/spartan/bK.svg');
+    // A designed piece keeps the art the player chose, even standard Merida art.
+    expect(artUrl('z', 'white', 'chess', undefined, 'merida/Q', 'cburnett')).toBe('pieces/merida/wQ.svg');
+  });
+
+  it("gives White's king in Spartan the chosen set", () => {
+    expect(artUrl('k', 'white', 'spartan', undefined, undefined, 'cburnett')).toBe('pieces/cburnett/wK.svg');
+  });
+});

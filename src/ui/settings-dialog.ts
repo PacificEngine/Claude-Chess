@@ -1,6 +1,7 @@
 // The Settings dialog. It edits a copy of Settings and hands the result back; app.ts saves it. It also holds
 // "Edit current game", which closes the dialog (unsaved changes dropped) and opens the editor on the game.
 import type { Settings } from '../persistence/store';
+import { PIECE_SETS, pieceSetOf } from './piece-sets';
 
 export const BOARD_THEMES = ['brown', 'blue', 'green'] as const;
 
@@ -51,6 +52,21 @@ export function createSettingsDialog(host: HTMLElement): SettingsDialog {
   }
   themeLabel.append(themeText, theme);
 
+  const piecesLabel = document.createElement('label');
+  piecesLabel.className = 'field';
+  const piecesText = document.createElement('span');
+  piecesText.textContent = 'Piece set';
+  const pieces = document.createElement('select');
+  pieces.id = 'settings-pieces';
+  pieces.dataset.testid = 'settings-pieces';
+  for (const s of PIECE_SETS) {
+    const o = document.createElement('option');
+    o.value = s.id;
+    o.textContent = s.label;
+    pieces.append(o);
+  }
+  piecesLabel.append(piecesText, pieces);
+
   const editGame = document.createElement('button');
   editGame.type = 'button';
   editGame.className = 'secondary';
@@ -68,7 +84,7 @@ export function createSettingsDialog(host: HTMLElement): SettingsDialog {
   save.textContent = 'Save';
   actions.append(cancel, save);
 
-  form.append(heading, highlight.label, themeLabel, sound.label, editGame, actions);
+  form.append(heading, highlight.label, themeLabel, piecesLabel, sound.label, editGame, actions);
   dialog.append(form);
   host.append(dialog);
 
@@ -85,7 +101,7 @@ export function createSettingsDialog(host: HTMLElement): SettingsDialog {
   dialog.addEventListener('close', () => closeListener());
   form.addEventListener('submit', () => {
     if (!base) return;
-    saveListener({ ...base, highlightLegal: highlight.input.checked, boardTheme: theme.value });
+    saveListener({ ...base, highlightLegal: highlight.input.checked, boardTheme: theme.value, pieceSet: pieces.value });
   });
 
   return {
@@ -94,6 +110,7 @@ export function createSettingsDialog(host: HTMLElement): SettingsDialog {
       highlight.input.checked = current.highlightLegal;
       sound.input.checked = current.sound;
       theme.value = (BOARD_THEMES as readonly string[]).includes(current.boardTheme) ? current.boardTheme : 'brown';
+      pieces.value = pieceSetOf(current.pieceSet);
       dialog.showModal();
     },
     onSave(cb) {

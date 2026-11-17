@@ -11,6 +11,7 @@ import { ART_CHOICES } from '../art-catalog';
 import { artUrl, parsePieceClass, tokenClass } from '../pieces';
 import { canCannon, canSlide, COMBINABLE, type DesignerModel } from './designer-model';
 import { PREVIEW_FEN, type Reach } from './designer-preview';
+import { currentPieceSet } from '../piece-sets';
 
 export interface DesignerViewHandlers {
   name(text: string): void;
@@ -307,7 +308,7 @@ export function createDesignerView(host: HTMLElement, handlers: DesignerViewHand
       const parsed = parsePieceClass(el.className);
       if (!parsed) continue;
       const designed = parsed.letter === 'z';
-      const url = artUrl(parsed.letter, parsed.color, 'chess', undefined, designed ? state.model.art : undefined);
+      const url = artUrl(parsed.letter, parsed.color, 'chess', undefined, designed ? state.model.art : undefined, currentPieceSet());
       el.style.backgroundImage = url ? `url("${import.meta.env.BASE_URL}${url}")` : '';
       el.classList.toggle('token', !url);
       el.classList.toggle(tokenClass(parsed.letter).split(' ')[1]!, !url);

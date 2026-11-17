@@ -41,6 +41,8 @@ A static, browser-only chess site hosted on GitHub Pages. It covers standard che
   - A right panel with the Black clock, the move list, the White clock, the Undo, Edit and Settings buttons, and a line showing the variant and opponent.
   - A top bar with Play, Tutorial (which opens the lesson list), Editor and Settings.
 - **Piece art:** Merida for the standard pieces and the Capablanca, Grand, Seirawan and Shako pieces; Spartan's own set for its black pieces; Alfaerie for every other built-in piece type, matched to the piece by its name; the shogi pieces as their Alfaerie piece on a shogi tile, Black's tile pointing down; Black's Alfaerie pieces recolored from pychess-variants' blue to Merida's near-black body with light inner lines, so every Black piece matches (owner decisions, 2026-11-13). Only a letter with no known type (designed pieces, until Plan 3 decides) is drawn as a lettered token.
+  - **Piece set** (owner decision, 2026-11-17): Settings offers Merida (the default) and fourteen Lichess sets for the six standard pieces only, in every variant, the pockets, the editor palette, the designer preview and the tutorial. Every other piece keeps the art above, and a designed piece keeps the art it chose, so each piece still looks like its name. A saved value the site doesn't ship, including `default` from before the setting worked, is Merida. Changing it redraws every board at once.
+    - *Trap:* the set in use is module state in `src/ui/piece-sets.ts`, so boards and the palette subscribe to its changes instead of being told by app.ts. The six standard pieces of every set are also designed-piece art choices (`art-catalog.ts`), because designed pieces may use any two-colour art the site ships.
   - *Trap:* Alfaerie has no formal licence, only David Howe's "you may download and use" permission; see ATTRIBUTION.md. The owner chose to rely on it.
   - *Trap:* chessgroundx draws pieces as CSS background images, and an SVG used as an image can't load other files, so each shogi tile embeds its piece (`yarn art:pieces` rebuilds them).
 
@@ -51,7 +53,7 @@ A static, browser-only chess site hosted on GitHub Pages. It covers standard che
 - Lose the game in progress on reload.
 
 ### Nice to Have
-- Alternative piece sets, board color themes, and sound.
+- Sound.
 - An on-screen debug panel showing raw engine output.
 - Usable on a phone (not a target, but it shouldn't break).
 

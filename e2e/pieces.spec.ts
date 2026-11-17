@@ -87,3 +87,32 @@ test('a designed piece whose art is no longer in the catalog is a lettered token
   expect(await bg(page, 'piece.z-piece.white')).toBe('none');
   expect(await letter(page, 'piece.z-piece.white')).toBe('"Z"');
 });
+
+test('a piece set chosen in Settings draws the standard pieces everywhere, keeps fairy art, and survives a reload', async ({ page }) => {
+  await openApp(page);
+  await page.getByTestId('top-settings').click();
+  await expect(page.getByTestId('settings-pieces')).toHaveValue('merida');
+  await page.getByTestId('settings-pieces').selectOption('cburnett');
+  await page.getByTestId('settings-dialog').getByRole('button', { name: 'Save' }).click();
+  // The board redraws at once.
+  await expect.poll(() => bg(page, '[data-testid=board] piece.n-piece.white')).toContain('pieces/cburnett/wN.svg');
+  expect(await bg(page, '[data-testid=board] piece.k-piece.black')).toContain('pieces/cburnett/bK.svg');
+  // A fairy piece keeps its own art.
+  await load(page, 'capablanca', 'rnabqkbcnr/pppppppppp/10/10/10/10/PPPPPPPPPP/RNABQKBCNR w KQkq - 0 1');
+  expect(await bg(page, '[data-testid=board] piece.a-piece.white')).toContain('pieces/merida/wA.svg');
+  expect(await bg(page, '[data-testid=board] piece.q-piece.white')).toContain('pieces/cburnett/wQ.svg');
+  // The editor palette and the tutorial board use it too.
+  await page.getByTestId('top-editor').click();
+  expect(await page.getByTestId('palette-white-rook').locator('.palette-icon').evaluate((el) => getComputedStyle(el).backgroundImage)).toContain(
+    'pieces/cburnett/wR.svg',
+  );
+  await page.getByTestId('editor').getByRole('button', { name: 'Close' }).click();
+  await page.getByTestId('top-tutorial').click();
+  await page.locator('[data-testid^="card-rook-"]').click();
+  await expect.poll(() => bg(page, '[data-testid=tutorial-board] piece.r-piece.white')).toContain('pieces/cburnett/wR.svg');
+  // Saved: a reload keeps it.
+  await openApp(page);
+  await expect.poll(() => bg(page, '[data-testid=board] piece.n-piece.white')).toContain('pieces/cburnett/wN.svg');
+  await page.getByTestId('top-settings').click();
+  await expect(page.getByTestId('settings-pieces')).toHaveValue('cburnett');
+});

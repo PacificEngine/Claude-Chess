@@ -23,6 +23,8 @@ const MERIDA: ArtRule = { dir: 'merida', colors: 'both' };
 const ALFAERIE: ArtRule = { dir: 'alfaerie', colors: 'both' };
 const SHOGI_TILE: ArtRule = { dir: 'shogi-tile', colors: 'both' };
 const STANDARD = 'pnbrqk';
+/** The built-in types drawn from the chosen piece set (the six standard pieces), by file letter. */
+const STANDARD_TYPES: Record<string, string> = { pawn: 'P', knight: 'N', bishop: 'B', rook: 'R', queen: 'Q', king: 'K' };
 
 // Art per variant and piece letter. A letter that is missing is drawn as a lettered token.
 const ART: Record<string, Record<string, ArtRule>> = {
@@ -45,12 +47,6 @@ const ART: Record<string, Record<string, ArtRule>> = {
 // Art by built-in piece type, for a custom variant's letters. Each entry is
 // the art a curated variant gives a letter of that type (pieces.test.ts checks this against the rules).
 const TYPE_ART: Record<string, { rule: ArtRule; file: string }> = {
-  pawn: { rule: MERIDA, file: 'P' },
-  knight: { rule: MERIDA, file: 'N' },
-  bishop: { rule: MERIDA, file: 'B' },
-  rook: { rule: MERIDA, file: 'R' },
-  queen: { rule: MERIDA, file: 'Q' },
-  king: { rule: MERIDA, file: 'K' },
   archbishop: { rule: MERIDA, file: 'A' }, // Capablanca's
   chancellor: { rule: MERIDA, file: 'C' }, // Capablanca's
   cannon: { rule: { dir: 'merida/shako', colors: 'both' }, file: 'C' }, // Shako's
@@ -108,6 +104,9 @@ export function hasArt(letter: string, variant: string): boolean {
  *
  * `designedArt` is given (even as null) for a designed letter (`designedArt` in active.ts): it draws the art
  * the player chose, or a token for none or an id no longer in the catalog, never the base's or a type's art.
+ *
+ * `pieceSet` (a folder from piece-sets.ts) draws the six standard pieces; every other piece keeps its own art,
+ * and so does a designed piece, even one that chose Merida's standard art.
  */
 export function artUrl(
   letter: string,
@@ -115,15 +114,20 @@ export function artUrl(
   artBase: VariantId,
   type?: string,
   designedArt?: string | null,
+  pieceSet = 'merida',
 ): string | null {
   if (designedArt !== undefined) return artChoice(designedArt)?.[color] ?? null;
   const side = color === 'white' ? 'w' : 'b';
+  const standard = type === undefined ? undefined : STANDARD_TYPES[type];
+  if (standard) return `pieces/${pieceSet}/${side}${standard}.svg`;
   const byType = type === undefined ? undefined : TYPE_ART[type];
   if (byType) return `pieces/${byType.rule.dir}/${side}${byType.file}.svg`;
   if (type !== undefined && type !== INHERITED) return null;
   let r = rule(letter, artBase);
   if (r && r.colors !== 'both' && r.colors !== color) r = letter === 'k' ? MERIDA : null;
   if (!r) return null;
+  // A standard piece drawn as standard (not Spartan's king) comes from the chosen set.
+  if (r === MERIDA && STANDARD.includes(letter)) return `pieces/${pieceSet}/${side}${letter.toUpperCase()}.svg`;
   const file = r.files?.[letter] ?? letter.toUpperCase();
   return `pieces/${r.dir}/${side}${file}.svg`;
 }

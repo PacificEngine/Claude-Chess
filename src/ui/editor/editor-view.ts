@@ -14,6 +14,7 @@ import { BUILTIN_PIECES, INHERITED } from '../../variants/piece-types';
 import { fromKey, observePieces } from '../board-view';
 import { artUrl, tokenClass } from '../pieces';
 import { type EditorModel, TOO_MANY_TYPES } from './editor-model';
+import { currentPieceSet, onPieceSetChange } from '../piece-sets';
 
 /** A palette entry: a built-in type, a base variant's own piece (by its letter), or a library piece. */
 type Tool =
@@ -151,7 +152,7 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
           tool: { kind: 'piece', color, type: INHERITED, letter } as Tool,
           name: `${m.base.label} piece ${letter.toUpperCase()}`,
           letter,
-          url: artUrl(letter, color, m.base.id),
+          url: artUrl(letter, color, m.base.id, undefined, undefined, currentPieceSet()),
           lesson: lessonForLetter(m.base.id, letter),
         })),
         ...BUILTIN_PIECES.map((p) => {
@@ -161,7 +162,9 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
             name: p.name,
             letter: baseLetter ?? p.letter,
             // A base letter keeps the base's art (as on the board); any other type looks like what it moves as.
-            url: baseLetter ? artUrl(baseLetter, color, m.base.id) : artUrl(p.letter, color, m.base.id, p.type),
+            url: baseLetter
+              ? artUrl(baseLetter, color, m.base.id, undefined, undefined, currentPieceSet())
+              : artUrl(p.letter, color, m.base.id, p.type, undefined, currentPieceSet()),
             lesson: lessonForType(p.type),
           };
         }),
@@ -258,7 +261,7 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
     return section;
   }
 
-  return {
+  const view: EditorView = {
     render(m) {
       model = m;
       const spec = m.toSpec();
@@ -281,6 +284,12 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
       paletteFor = ''; // rebuilt on the next render
     },
   };
+  // A new piece set in Settings redraws the palette in it.
+  onPieceSetChange(() => {
+    paletteFor = '';
+    if (model) view.render(model);
+  });
+  return view;
 }
 
 /** The board part of the FEN, which is all the editor board shows (pieces in hand are set in the controls). */
