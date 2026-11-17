@@ -605,3 +605,22 @@ test('the footer links to the source, falling back to the placeholder when VITE_
   await expect(link).toHaveText('Source');
   await expect(link).toHaveAttribute('href', 'https://github.com/OWNER/claude-chess');
 });
+
+for (const width of [375, 320]) {
+  test.describe(`on a ${width} px wide phone`, () => {
+    test.use({ viewport: { width, height: 740 }, hasTouch: true, isMobile: true });
+
+    test('every top bar button fits on the screen, and the page does not scroll sideways', async ({ page }) => {
+      await openApp(page);
+      for (const id of ['play', 'tutorial', 'editor', 'settings']) {
+        const box = (await page.getByTestId(`top-${id}`).boundingBox())!;
+        expect(box.x, id).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width, id).toBeLessThanOrEqual(width);
+      }
+      const scroll = await page.evaluate(() => document.documentElement.scrollWidth);
+      expect(scroll).toBeLessThanOrEqual(width);
+      await page.getByTestId('top-settings').tap();
+      await expect(page.locator('dialog[open]')).toBeVisible();
+    });
+  });
+}
