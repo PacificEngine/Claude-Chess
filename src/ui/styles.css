@@ -491,6 +491,25 @@ dialog h2 {
   color: var(--text);
   box-shadow: 0 0 0 1px var(--bg);
 }
+/* A finger needs a bigger target than a mouse. On touch screens the palette spreads out and the ? grows into
+   the gap, so it never covers a neighbouring piece and each piece keeps a clear centre to tap. */
+@media (pointer: coarse) {
+  .palette {
+    width: min(100%, 21rem);
+  }
+  .palette-group {
+    gap: 0.75rem;
+  }
+  .palette-learn {
+    top: -0.7rem;
+    right: -0.7rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.9rem;
+    line-height: 1.5rem;
+    z-index: 1;
+  }
+}
 .editor.editing-game .palette-learn {
   display: none;
 }

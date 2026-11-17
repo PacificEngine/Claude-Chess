@@ -550,6 +550,35 @@ async function leaveTutorial(page: Page): Promise<void> {
   await expect(page.getByTestId('game')).toBeVisible();
 }
 
+test.describe('on a touch screen', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 820, height: 1180 } });
+
+  test("the palette's ? is big enough to tap, and tapping the piece beside it still arms the piece", async ({ page }) => {
+    await openApp(page);
+    await page.getByTestId('top-editor').click();
+    const learn = page.getByTestId('learn-rook');
+    const box = (await learn.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(24);
+    expect(box.height).toBeGreaterThanOrEqual(24);
+    // It stays clear of the next piece in the row.
+    const neighbour = (await page.getByTestId('palette-white-queen').boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(neighbour.x);
+    // The piece's own button keeps a clear centre to tap.
+    const piece = page.getByTestId('palette-white-rook');
+    await piece.tap();
+    await expect(piece).toHaveAttribute('aria-pressed', 'true');
+    await learn.tap();
+    await expectRookLesson(page);
+  });
+});
+
+test('on a desktop the ? stays small', async ({ page }) => {
+  await openApp(page);
+  await page.getByTestId('top-editor').click();
+  const box = (await page.getByTestId('learn-rook').boundingBox())!;
+  expect(box.width).toBeLessThanOrEqual(20);
+});
+
 test("the rook's ? in the editor palette opens the rook lesson, and every built-in piece has one", async ({ page }) => {
   await openApp(page);
   await page.getByTestId('top-editor').click();
