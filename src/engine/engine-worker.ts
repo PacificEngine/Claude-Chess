@@ -9,7 +9,7 @@
 interface StockfishInstance {
   postMessage(command: string): void;
   addMessageListener(listener: (line: string) => void): void;
-  FS: { writeFile(path: string, data: string): void };
+  FS: { writeFile(path: string, data: string): void; unlink(path: string): void; readdir(path: string): string[] };
 }
 
 declare const Stockfish: (options: {
@@ -27,6 +27,15 @@ const post = (msg: FromEngine) => ctx.postMessage(msg);
 
 const absolute = (url: string) => new URL(url, ctx.location.href).href;
 
+/** A file already gone (or never written) needs no removing; that must not crash the worker. */
+function removeFile(engine: StockfishInstance, path: string): void {
+  try {
+    engine.FS.unlink(path);
+  } catch {
+    // Nothing to remove.
+  }
+}
+
 async function start(urls: EngineUrls): Promise<void> {
   try {
     ctx.importScripts(absolute(urls.js));
@@ -40,6 +49,8 @@ async function start(urls: EngineUrls): Promise<void> {
       const msg = e.data;
       if (msg.type === 'cmd') engine.postMessage(msg.line);
       else if (msg.type === 'writeFile') engine.FS.writeFile(msg.path, msg.text);
+      else if (msg.type === 'removeFile') removeFile(engine, msg.path);
+      else if (msg.type === 'listFiles') post({ type: 'files', paths: engine.FS.readdir('/').filter((f) => f.endsWith('.ini')) });
     };
     post({ type: 'ready' });
   } catch (err) {
