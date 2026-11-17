@@ -141,6 +141,17 @@ describe('variant generator', () => {
     expect(ini).toContain('pieceToCharTable = AKQRakqr');
   });
 
+  it("also lists a base piece the FEN uses without naming it in pieces, so the engine check doesn't refuse it", () => {
+    // A lesson board may lean on the base's own rook and bishop without listing them. ffish accepts that;
+    // the engine's check reports "pieceToCharTable - Missing piece type: r" unless the table names them.
+    const { ini } = generateVariant({
+      ...noPromotion(),
+      pieces: { k: 'king', w: 'wazir' },
+      fen: '4k3/8/8/8/3W4/8/8/R3K2B w - - 0 1',
+    });
+    expect(ini).toContain('pieceToCharTable = BKRWbkrw');
+  });
+
   it('writes the body lines in a fixed order so the same setup always hashes the same', () => {
     const a = generateVariant({ ...spec(), pieces: { k: 'king', q: 'queen', r: 'rook' } });
     const b = generateVariant({ ...spec(), pieces: { r: 'rook', q: 'queen', k: 'king' } });

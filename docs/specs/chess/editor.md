@@ -71,6 +71,7 @@ Facts from the engine spike (`./engine.md`, 2026-11-10) that shape the generator
 - **Trap: `new ffish.Board('<unknown variant>')` crashes the wasm module.** A generated variant must be loaded, and confirmed in `ffish.variants()`, before any board is created for it.
 - **Slots and modifiers:** designed pieces use `customPiece1` through `customPiece25`. The Betza modifiers `m`, `c`, `p`, `g` and `n` work. **`j` is silently ignored**, so the UI never offers it.
 - **`pieceToCharTable`:** the generator sets it whenever it adds piece letters, so that `check` reports nothing ("Missing piece type") for a valid setup.
+  - *Trap:* the table must also name every base letter the FEN uses, even one `pieces` leaves out. ffish accepts such a setup, but the engine's `check` refuses it with "Missing piece type: <letter>". The editor always lists every letter, but hand-written tutorial boards did not, so 19 fairy lessons failed on the lesson screen (fixed 2026-11-17; `e2e/registry.spec.ts` now runs every lesson board through the engine).
 - **Saved data holds the setup, not ini text.** Saved setups and saved custom games store the setup (base variant, board size, piece letters to piece types, designed-piece copies, promotion settings, FEN). The definition is regenerated and re-validated on load. Plan 1's restore rejects any stored `ini`, so raw definition text never comes back from storage.
 
 ## Security
