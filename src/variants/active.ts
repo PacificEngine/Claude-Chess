@@ -37,9 +37,10 @@ export function variantTypes(rules: Rules, engineName: string): Map<string, stri
   return types;
 }
 
+/** Lettered pieces only: Duck Chess's duck ('*') belongs to neither side and has no type or lesson. */
 function lettersOf(fen: string): string[] {
   const { squares, pocket } = parseFen(fen);
-  return [...new Set([...squares.values(), ...pocket].map((c) => c.toLowerCase()))];
+  return [...new Set([...squares.values(), ...pocket].map((c) => c.toLowerCase()).filter((c) => /^[a-z]$/.test(c)))];
 }
 
 const hasPocket = (fen: string): boolean => /\[/.test(fen.split(' ')[0] ?? '');

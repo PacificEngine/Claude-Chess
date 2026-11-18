@@ -9,9 +9,10 @@ import { type DesignedCopy, MAX_FILES, MAX_RANKS, MIN_FILES, MIN_RANKS, type Set
 /**
  * Bases a setup only ever changes the position of: Fairy-Stockfish ties Shogi's promotion zone and Xiangqi's
  * palaces and river to fixed squares, and this generator writes chess-style promotion, so a generated variant
- * of either would quietly break the game. Their setups always play as the curated game from the setup's FEN.
+ * of either would quietly break the game. Duck Chess joins them (editor spec, 2026-11-17): its setups change
+ * only where the pieces and the duck stand. Their setups always play as the curated game from the setup's FEN.
  */
-export const POSITION_ONLY_BASES: ReadonlySet<VariantId> = new Set<VariantId>(['shogi', 'xiangqi']);
+export const POSITION_ONLY_BASES: ReadonlySet<VariantId> = new Set<VariantId>(['shogi', 'xiangqi', 'duck']);
 
 /** What needsCustomVariant needs to know about the variant the setup started from. */
 export interface ActiveVariantShape {

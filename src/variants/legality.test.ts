@@ -150,3 +150,31 @@ describe('positionProblems: Xiangqi and Shogi placement', () => {
     expect(positionProblems(rules, 'chess', '4k3/8/8/8/8/8/8/P3K3 w - - 0 1')).not.toContain('White has a pawn or lance on its last rank, where it could never move.');
   });
 });
+
+describe('positionProblems: Duck Chess', () => {
+  // ffish accepts every FEN below (validateFen): these rules are ours.
+  const duck = (fen: string) => {
+    expect(rules.validateFen('duck', fen), fen).toBe(true);
+    return positionProblems(rules, 'duck', fen);
+  };
+
+  it('plays a position with one duck, or none yet (it comes on with the next move)', () => {
+    expect(duck('rnbqkbnr/pppppppp/8/8/4*3/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')).toEqual([]);
+    expect(duck('rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2')).toEqual([]);
+  });
+
+  it('refuses a second duck: ffish would play two, but its Duck Chess has one', () => {
+    expect(duck('rnbqkbnr/pppppppp/8/8/4*3/3*4/PPPPPPPP/RNBQKBNR w KQkq - 0 1')).toEqual(['There can be only one duck.']);
+  });
+
+  it('needs exactly one king a side: ffish would start the game already won, or need both kings taken', () => {
+    expect(duck('rnbqkbnr/pppppppp/8/8/4*3/8/PPPPPPPP/RNBQ1BNR w kq - 0 1')).toEqual(['White needs a king.']);
+    expect(duck('rnbq1bnr/pppppppp/8/8/4*3/8/PPPPPPPP/RNBQKBNR w KQ - 0 1')).toEqual(['Black needs a king.']);
+    expect(duck('4k3/8/8/8/8/8/8/*2K1K2 w - - 0 1')).toEqual(['White can have only one king.']);
+  });
+
+  it('has no check: a king the other side can capture at once is still a position to play', () => {
+    expect(duck('4k3/8/8/8/8/8/4R3/*3K3 b - - 0 1')).toEqual([]);
+    expect(duck('4k3/8/8/8/8/8/4R3/*3K3 w - - 0 1')).toEqual([]);
+  });
+});

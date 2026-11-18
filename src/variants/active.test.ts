@@ -70,6 +70,12 @@ describe('customActive', () => {
     expect(v.types.get('a')).toBe('archbishop');
   });
 
+  // The duck is no lettered piece: it has no type to look up, and no lesson to open.
+  it("leaves Duck Chess's duck ('*') out of the letters", () => {
+    const s = spec({ base: 'duck', fen: '4k3/pppppppp/8/3*4/8/8/PPPPPPPP/A3K3 w - - 0 1' });
+    expect([...customActive(s, 'cx_duck', new Map()).letters].sort()).toEqual(['a', 'k', 'p']);
+  });
+
   it('has pockets when the setup puts pieces in hand', () => {
     const s = spec({ base: 'seirawan', fen: '4k3/pppppppp/8/8/8/8/PPPPPPPP/4K3[Aa] w - - 0 1' });
     const v = customActive(s, 'cx_test', curatedActive('seirawan', rules).types);

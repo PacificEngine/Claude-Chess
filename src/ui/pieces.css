@@ -42,3 +42,22 @@
   box-shadow: 0 0 0 1.5px #fff;
   pointer-events: none;
 }
+
+/* Duck Chess: a duck the player may move now glows and gently pulses, on the board and beside it. */
+.board-host piece.duck-lit {
+  animation: duck-glow 1.1s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 4px #ffd21f) drop-shadow(0 0 2px #fff);
+}
+@keyframes duck-glow {
+  from {
+    filter: drop-shadow(0 0 2px #ffd21f) drop-shadow(0 0 1px #fff);
+  }
+  to {
+    filter: drop-shadow(0 0 9px #ffb300) drop-shadow(0 0 3px #fff);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-host piece.duck-lit {
+    animation: none;
+  }
+}

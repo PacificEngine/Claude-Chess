@@ -5,7 +5,7 @@ import type { Color } from '../../rules/types';
 import { CURATED_VARIANTS, type VariantId } from '../../variants/catalog';
 import { MAX_FILES, MAX_RANKS, MIN_FILES, MIN_RANKS } from '../../variants/setup';
 import { pieceName } from '../choice-dialog';
-import { type EditorModel, FIXED_SIZE } from './editor-model';
+import { type EditorModel, fixedSize } from './editor-model';
 
 export interface EditorControlsHandlers {
   base(id: VariantId): void;
@@ -87,8 +87,8 @@ export function createEditorControls(host: HTMLElement, handlers: EditorControls
   ranks.addEventListener('change', resize);
   const size = el('div', { className: 'editor-size' });
   size.append(field('Files', files), field('Ranks', ranks));
-  // Why the size can't change, on a position-only base (Shogi, Xiangqi).
-  const sizeReason = el('p', { className: 'editor-size-reason', textContent: FIXED_SIZE });
+  // Why the size can't change, on a position-only base (Shogi, Xiangqi, Duck Chess).
+  const sizeReason = el('p', { className: 'editor-size-reason' });
   sizeReason.dataset.testid = 'editor-size-reason';
 
   const turn = el('select', { id: 'editor-turn' });
@@ -221,11 +221,13 @@ export function createEditorControls(host: HTMLElement, handlers: EditorControls
       base.value = m.base.id;
       files.value = String(m.files);
       ranks.value = String(m.ranks);
-      // A position-only base keeps its own size, and neither of its games castles.
+      // A position-only base keeps its own size. Shogi and Xiangqi never castle, so they have no castling box;
+      // Duck Chess keeps chess's castling.
       files.disabled = m.positionOnly;
       ranks.disabled = m.positionOnly;
       sizeReason.hidden = !m.positionOnly;
-      castlingLabel.hidden = m.positionOnly;
+      sizeReason.textContent = fixedSize(m.base.label);
+      castlingLabel.hidden = m.positionOnly && !m.base.castling;
       turn.value = m.turn;
       castling.checked = m.castling;
       // Seirawan keeps its gating rights in the same FEN field, so turning castling off ends gating too.

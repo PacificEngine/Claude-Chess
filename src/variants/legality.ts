@@ -120,10 +120,12 @@ const XIANGQI_ELEPHANT = points('a3 e3 i3 c1 g1 c5 g5');
  * Where the game's rules forbid a piece to stand, though Fairy-Stockfish accepts the FEN: Xiangqi's general and
  * advisors leave the palace in no game, its elephants never cross the river nor leave their points, and its
  * soldiers never step back; a Shogi pawn, lance or knight can't stand where it could never move again, nor two
- * unpromoted pawns of a side on one file. Nor may the Xiangqi generals face each other on an open file. Other
- * variants have none. Each problem is named once per side.
+ * unpromoted pawns of a side on one file. Nor may the Xiangqi generals face each other on an open file. Duck
+ * Chess needs one king a side and at most one duck (duckProblems). Other variants have none. Each problem is
+ * named once per side.
  */
 export function placementProblems(variant: string, fen: string): string[] {
+  if (variant === 'duck') return duckProblems(placed(fen));
   if (variant !== 'xiangqi' && variant !== 'shogi') return [];
   const pieces = placed(fen);
   const problems: string[] = [];
@@ -150,6 +152,22 @@ export function placementProblems(variant: string, fen: string): string[] {
     }
   }
   if (variant === 'xiangqi' && generalsFace(pieces)) problems.push('The generals face each other on an open file.');
+  return problems;
+}
+
+/**
+ * Duck Chess: one king a side and at most one duck. Fairy-Stockfish counts its kings as pieces to wipe out, not
+ * as royal, so it accepts a side with no king (the game starts already won) or two (both must be taken), and
+ * it plays any number of ducks, though its Duck Chess has one. No duck yet is fine: it comes on with the next move.
+ */
+function duckProblems(pieces: Placed[]): string[] {
+  const problems: string[] = [];
+  for (const side of SIDES) {
+    const kings = pieces.filter((p) => p.letter === 'k' && p.white === side.upper).length;
+    if (kings === 0) problems.push(`${side.name} needs a king.`);
+    if (kings > 1) problems.push(`${side.name} can have only one king.`);
+  }
+  if (pieces.filter((p) => p.letter === '*').length > 1) problems.push('There can be only one duck.');
   return problems;
 }
 

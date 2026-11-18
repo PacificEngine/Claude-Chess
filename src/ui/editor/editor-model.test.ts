@@ -358,7 +358,7 @@ describe('EditorModel on a position-only base (Shogi, Xiangqi)', () => {
     for (const id of ['shogi', 'xiangqi'] as const) {
       const m = EditorModel.fromBase(id, bases);
       expect(m.positionOnly, id).toBe(true);
-      expect(() => m.resize(8, 8), id).toThrow('Shogi and Xiangqi keep their own board size.');
+      expect(() => m.resize(8, 8), id).toThrow(`${bases(id).label} keeps its own board size.`);
       expect([m.files, m.ranks], id).toEqual([bases(id).files, bases(id).ranks]);
     }
     expect(EditorModel.fromBase('chess', bases).positionOnly).toBe(false);
@@ -447,5 +447,45 @@ describe('EditorModel on a position-only base (Shogi, Xiangqi)', () => {
       expect(needsCustomVariant({ ...spec, files: 8, castling: true, promotion: { rank: 'last', pieceTypes: ['q'] } }, bases(id)), id).toBe(false);
       expect(positionProblems(rules, bases(id).engineName, spec.fen), id).toEqual([]);
     }
+  });
+});
+
+describe('EditorModel on Duck Chess (position-only)', () => {
+  // A Duck Chess game after 1. e4 (duck to e5) Nc6 (duck to d4): the duck is the FEN's `*`.
+  const DUCK_MIDGAME = 'r1bqkbnr/pppppppp/2n5/8/3*P3/8/PPPP1PPP/RNBQKBNR w KQkq - 2 2';
+
+  it('keeps the 8x8 board and the castling rights, and offers the duck', () => {
+    const m = EditorModel.fromBase('duck', bases);
+    expect(m.positionOnly).toBe(true);
+    expect(() => m.resize(10, 8)).toThrow('Duck Chess keeps its own board size.');
+    expect(m.castling).toBe(true);
+    expect(m.rights().map((r) => [r.right, r.on])).toEqual([['K', true], ['Q', true], ['k', true], ['q', true]]);
+    expect(m.base.duck).toBe(true);
+    expect(EditorModel.fromBase('chess', bases).base.duck).toBe(false);
+  });
+
+  it('places the duck as the colourless `*`, which only Duck Chess has', () => {
+    const m = EditorModel.fromBase('duck', bases);
+    m.place('e4', '*', 'white');
+    expect(m.pieceAt('e4')).toEqual({ letter: '*', color: 'black' });
+    const spec = m.toSpec();
+    expect(spec.fen).toBe('rnbqkbnr/pppppppp/8/8/4*3/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    expect(spec.pieces).toEqual(Object.fromEntries(bases('duck').types));
+    expect(needsCustomVariant(spec, bases('duck'))).toBe(false);
+    expect(positionProblems(rules, 'duck', spec.fen)).toEqual([]);
+    m.place('d3', '*', 'black');
+    expect(positionProblems(rules, 'duck', m.toSpec().fen)).toEqual(['There can be only one duck.']);
+    expect(() => EditorModel.fromBase('chess', bases).place('e4', '*', 'black')).toThrow();
+  });
+
+  it('keeps the duck where it is when editing a game, and takes it back from the board after a drag', () => {
+    expect(positionProblems(rules, 'duck', DUCK_MIDGAME)).toEqual([]);
+    const m = EditorModel.fromGame(curated('duck'), DUCK_MIDGAME, bases);
+    expect(m.pieceAt('d4')).toEqual({ letter: '*', color: 'black' });
+    expect(m.toSpec().fen).toBe(DUCK_MIDGAME.replace(' 2 2', ' 0 1'));
+    m.replaceBoard([['e1', { letter: 'k', color: 'white' }], ['e8', { letter: 'k', color: 'black' }], ['h5', { letter: '*', color: 'white' }]]);
+    expect(m.pieceAt('h5')).toEqual({ letter: '*', color: 'black' });
+    expect(m.toSpec().fen).toBe('4k3/8/8/7*/8/8/8/4K3 w - - 0 1');
+    expect(needsCustomVariant(m.toSpec(), bases('duck'))).toBe(false);
   });
 });

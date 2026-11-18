@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { roleOf } from 'chessgroundx/util';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadTestRules } from '../rules/test-rules';
 import type { Rules } from '../rules/types';
@@ -7,6 +8,7 @@ import { CURATED_VARIANTS } from '../variants/catalog';
 import { artTypeOf, curatedActive, customActive, designedArt } from '../variants/active';
 import { BUILTIN_PIECES, typesOfVariant } from '../variants/piece-types';
 import type { SetupSpec } from '../variants/setup';
+import { PIECE_SETS } from './piece-sets';
 import { artUrl, facingUrl, hasArt, parsePieceClass, pieceClass, pieceLettersOf, pocketRoles, promotedArtUrl, promotedMark, tokenClass } from './pieces';
 
 let rules: Rules;
@@ -67,6 +69,7 @@ describe('piece art and lettered tokens', () => {
       'antichess k white', 'antichess k black', // moves as a commoner, still the king
       'spartan k white', // a commoner there too; Black's king has Spartan art
       'xiangqi k white', 'xiangqi k black', // the general, drawn as the king in the chosen set (spec, 2026-11-17)
+      'duck k white', 'duck k black', // no check in Duck Chess, so it moves as a commoner; still the king
     ];
     for (const v of CURATED_VARIANTS) {
       const types = typesOfVariant(rules, v.engineName);
@@ -290,6 +293,31 @@ describe('piece art and lettered tokens', () => {
       expect(drawn(v, 'z')).toBe('pieces/merida/shako/wC.svg');
       expect(drawn(v, 'k')).toBe('pieces/merida/wK.svg');
     });
+  });
+});
+
+// The Duck Chess duck is '*' in the FEN, which chessgroundx reads as role `_-piece`, always Black's.
+describe('the duck', () => {
+  it('reads the duck from the class chessgroundx gives it', () => {
+    expect(roleOf('*')).toBe('_-piece');
+    expect(parsePieceClass(`black enemy ${roleOf('*')}`)).toEqual({ letter: '*', color: 'black', promoted: false });
+  });
+
+  it('draws the duck with its own art for either colour, in every variant and every piece set, from a real file', () => {
+    const url = 'pieces/duck/duck.svg';
+    expect(existsSync(resolve('public', url))).toBe(true);
+    for (const v of CURATED_VARIANTS)
+      for (const color of ['white', 'black'] as const) {
+        expect(artUrl('*', color, v.id), `${v.id} ${color}`).toBe(url);
+        for (const { id } of PIECE_SETS) expect(artUrl('*', color, v.id, undefined, undefined, id), `${v.id} ${color} ${id}`).toBe(url);
+      }
+    expect(hasArt('*', 'duck')).toBe(true);
+  });
+
+  it('draws the duck as a readable SVG with a dark outline', () => {
+    const svg = readFileSync(resolve('public/pieces/duck/duck.svg'), 'utf8');
+    expect(svg).toMatch(/^<svg[^>]*viewBox="0 0 45 45"/);
+    expect(svg).toMatch(/stroke="#[0-3][0-9a-f]{5}"/i);
   });
 });
 
