@@ -378,7 +378,7 @@ test("the top bar's Tutorial opens the lesson list grouped by track", async ({ p
   for (const name of [...fairyNames, 'General (Spartan)', 'Dragon King (Shogi)']) expect(fairyAt(name), name).toBeGreaterThan(-1);
   // A commoner is a fers and a wazir together, so its card follows the Wazir's; the Spartan pieces come last.
   for (const [a, b] of fairyNames.slice(1).map((name, i) => [fairyNames[i], name])) expect(fairyAt(a), `${a} before ${b}`).toBeLessThan(fairyAt(b));
-  await expect(cards('variants')).toHaveText([/^Chess/, /Capablanca/, /Grand Chess/, /Seirawan/, /Amazon/, /Shako/, /Spartan/, /Antichess/, /Shogi/, /Xiangqi/]);
+  await expect(cards('variants')).toHaveText([/^Chess/, /Capablanca/, /Grand Chess/, /Seirawan/, /Amazon/, /Shako/, /Spartan/, /Antichess/, /Shogi/, /Xiangqi/, /Duck Chess/]);
   for (const c of await list(page).locator('[data-testid^=card-]').all()) await expect(c).toHaveAttribute('data-finished', 'false');
   // Back to game closes the tutorial.
   await page.getByTestId('lesson-list-back').click();
@@ -466,6 +466,23 @@ test('a variant page is ticked once opened', async ({ page }) => {
   await page.getByTestId('variant-all').click();
   await expect(card(page, 'variant-shako')).toHaveAttribute('data-finished', 'true');
   await expect(card(page, 'variant-grand')).toHaveAttribute('data-finished', 'false');
+});
+
+test('the Duck Chess page explains the duck, winning by capturing the king, and no check', async ({ page }) => {
+  await openApp(page);
+  await openList(page);
+  await card(page, 'variant-duck').click();
+  const vp = page.getByTestId('variant-page');
+  await expect(vp.getByTestId('variant-title')).toHaveText('Duck Chess');
+  const differences = vp.getByTestId('variant-differences').locator('li');
+  await expect(differences).toHaveCount(4);
+  await expect(differences.nth(0)).toContainText('belongs to neither side');
+  await expect(differences.nth(1)).toHaveText('You win by capturing the king.');
+  await expect(differences.nth(2)).toContainText('There is no check');
+  // The game starts without the duck: White places it with the first move.
+  await expect(vp.getByTestId('variant-board')).toHaveAttribute('data-fen', /^rnbqkbnr\/pppppppp\/8\/8\/8\/8\//);
+  await page.getByTestId('variant-play').click();
+  await expect(page.getByTestId('play-dialog').locator('#play-variant')).toHaveValue('duck');
 });
 
 test('Play this variant opens the Play dialog with the variant chosen, and nothing changes until Start', async ({ page }) => {

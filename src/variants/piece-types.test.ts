@@ -110,6 +110,18 @@ describe('typesOfVariant', () => {
     });
   });
 
+  // Duck Chess has no check: the king may walk into attack and is captured to win, so it moves as a commoner.
+  it("maps Duck Chess's letters as in chess, with its king a commoner, and ignores the duck, which is not a letter", () => {
+    const chessTypes = { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'commoner' };
+    expect(Object.fromEntries(typesOfVariant(rules, 'duck'))).toEqual(chessTypes);
+    // ffish's duck variant starts with no duck, so a start with one shows the '*' is skipped.
+    rules.loadConfig('[duck_start_test:duck]\nstartFen = rnbqkbnr/pppppppp/8/3*4/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\n');
+    const start = rules.newGame('duck_start_test');
+    expect(start.fen()).toContain('*');
+    start.dispose();
+    expect(Object.fromEntries(typesOfVariant(rules, 'duck_start_test'))).toEqual(chessTypes);
+  });
+
   it('tells a non-royal king-mover from the king', () =>
     expect(typesOfVariant(rules, 'antichess').get('k')).toBe('commoner'));
 

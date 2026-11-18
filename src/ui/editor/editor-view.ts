@@ -3,8 +3,9 @@
 // piece (or Escape) disarms it. The eraser removes, and so does dragging a piece off the board. "Your pieces"
 // lists the piece library, each wearing the art the player chose, with New piece… and Edit… for the designer.
 // A built-in piece (or the base's own piece) with a lesson has a ? on its White entry, which opens that lesson.
-// A position-only base (Shogi, Xiangqi) offers only its own pieces, and Shogi's promoted forms, which place `+P`:
-// any other piece would need a generated variant, which these games never get.
+// A position-only base (Shogi, Xiangqi, Duck Chess) offers only its own pieces, Shogi's promoted forms, which
+// place `+P`, and Duck Chess's one duck, which places `*`: any other piece would need a generated variant, which
+// these games never get.
 import { Chessground } from 'chessgroundx';
 import type { Api } from 'chessgroundx/api';
 import type * as cg from 'chessgroundx/types';
@@ -16,7 +17,7 @@ import { BUILTIN_PIECES, INHERITED } from '../../variants/piece-types';
 import { pieceName } from '../choice-dialog';
 import { fromKey, observePieces } from '../board-view';
 import { artUrl, promotedArtUrl, promotedMark, promotedMarkClass, tokenClass } from '../pieces';
-import { type EditorModel, TOO_MANY_TYPES } from './editor-model';
+import { DUCK, type EditorModel, TOO_MANY_TYPES } from './editor-model';
 import { currentPieceSet, onPieceSetChange } from '../piece-sets';
 
 /** A palette entry: a built-in type, a base variant's own piece (by its letter, `+p` promoted), or a library piece. */
@@ -120,6 +121,11 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
     const pieces: [string, { letter: string; color: Color }][] = [];
     for (const [key, piece] of api.state.boardState.pieces) {
       const role = piece.role.split('-')[0]!;
+      // chessgroundx reads the FEN's `*` as the role '_-piece': the duck.
+      if (role === '_') {
+        pieces.push([fromKey(key), { letter: DUCK, color: piece.color }]);
+        continue;
+      }
       // chessgroundx gives a '+P' from the FEN the role 'pp-piece'. Only a base with promoted forms (Shogi) has
       // them, so only there is a two-letter role a promoted piece: '+p' to the model.
       const promoted = role.length === 2 && role[0] === 'p' && m.base.promotable.includes(role[1]!);
@@ -175,6 +181,8 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
       }
       paletteHost.append(group);
     }
+    // The duck belongs to neither side, so it has one entry, not one per colour.
+    if (m.base.duck) paletteHost.append(duckGroup(m));
     // A designed piece would need a generated variant, so a position-only base has no "Your pieces".
     if (!m.positionOnly) paletteHost.append(yourPieces(m));
     paletteFor = m.base.id;
@@ -208,6 +216,19 @@ export function createEditorView(boardHost: HTMLElement, paletteHost: HTMLElemen
         };
       }),
     ];
+  }
+
+  /** Duck Chess's one duck entry, in a group of its own. The model holds the duck as Black's, as the FEN reads. */
+  function duckGroup(m: EditorModel): HTMLElement {
+    const group = document.createElement('div');
+    group.className = 'palette-group';
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', 'Duck');
+    const tool: Tool & { kind: 'piece' } = { kind: 'piece', color: 'black', type: 'duck', letter: DUCK };
+    const button = paletteButton(tool, 'palette-duck', 'Duck', artUrl(DUCK, 'black', m.base.id), DUCK);
+    button.classList.replace('black', 'duck');
+    group.append(button);
+    return group;
   }
 
   /** A position-only base's own pieces, each in the base's art, then its promoted forms (Shogi's `+P`). */

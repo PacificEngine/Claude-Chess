@@ -174,6 +174,16 @@ export class GameSession {
     return this.s.result ? [] : this.game.legalMoves().filter((m) => m.startsWith(prefix));
   }
 
+  /** The position a legal move would reach, without playing it. Throws on an illegal move. */
+  fenAfter(uci: string): string {
+    this.game.push(uci); // throws on an illegal move before anything changes
+    try {
+      return this.game.fen();
+    } finally {
+      this.game.pop();
+    }
+  }
+
   isHumanTurn(): boolean {
     return this.isHuman(this.game.turn());
   }

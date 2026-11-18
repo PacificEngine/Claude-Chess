@@ -23,6 +23,7 @@ const register = (spec: SetupSpec): string => {
   return name;
 };
 
+
 describe('the content check', () => {
   for (const lesson of LESSONS) it(`${lesson.id} is sound`, () => expect(checkLesson(rules, lesson, register)).toEqual([]));
 
@@ -48,6 +49,11 @@ describe('the content check', () => {
   it('explains Shogi drops and promotion, what each piece becomes, and that Black traditionally moves first', () => {
     const text = pageText('shogi');
     for (const word of [/dropped/, /three ranks nearest your opponent/, /gold/, /dragon horse/, /dragon king/, /Black/]) expect(text).toMatch(word);
+  });
+
+  it('explains the duck that must move, winning by capturing the king, no check, and that a player with no move wins', () => {
+    const text = pageText('duck');
+    for (const word of [/duck/, /neither side/, /empty square/, /capturing the king/, /no check/, /no legal move/]) expect(text).toMatch(word);
   });
 
   it("explains Xiangqi's river, palaces and flying general, and that Red traditionally moves first", () => {
@@ -104,6 +110,8 @@ describe('coverage', () => {
       const v = curatedActive(id, rules);
       const types = variantTypes(rules, v.engineName);
       expect(v.letters.length, id).toBeGreaterThan(0);
+      // Only lettered pieces have lessons: Duck Chess's duck ('*') is not one, and has none by spec.
+      expect(v.letters.filter((l) => !/^[a-z]$/.test(l)), id).toEqual([]);
       for (const letter of v.letters) {
         const type = types.get(letter);
         const teaches: Teaches = type === INHERITED ? { variant: id, letter } : { type: type! };

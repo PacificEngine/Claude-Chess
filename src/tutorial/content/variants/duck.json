@@ -1,0 +1,11 @@
+{
+  "id": "variant-duck",
+  "variant": "duck",
+  "order": 11,
+  "differences": [
+    "The duck is a blocker that belongs to neither side and can't be captured. After every move you must also move the duck to an empty square: White places it with the first move.",
+    "You win by capturing the king.",
+    "There is no check and no checkmate, so you may move into an attack or leave your king attacked. Castling works as in chess.",
+    "If you have no legal move on your turn, you win."
+  ]
+}

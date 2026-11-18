@@ -23,6 +23,9 @@ const MERIDA: ArtRule = { dir: 'merida', colors: 'both' };
 const ALFAERIE: ArtRule = { dir: 'alfaerie', colors: 'both' };
 const SHOGI_TILE: ArtRule = { dir: 'shogi-tile', colors: 'both' };
 const STANDARD = 'pnbrqk';
+/** Duck Chess's duck: '*' in the FEN, a piece neither side owns. One image for both colours, in every set. */
+const DUCK = '*';
+const DUCK_URL = 'pieces/duck/duck.svg';
 /** The built-in types drawn from the chosen piece set (the six standard pieces), by file letter. */
 const STANDARD_TYPES: Record<string, string> = { pawn: 'P', knight: 'N', bishop: 'B', rook: 'R', queen: 'Q', king: 'K' };
 
@@ -122,7 +125,7 @@ function rule(letter: string, variant: string): ArtRule | null {
 
 /** Whether `letter` has art in `variant` (for at least one side). */
 export function hasArt(letter: string, variant: string): boolean {
-  return rule(letter, variant) !== null;
+  return letter === DUCK || rule(letter, variant) !== null;
 }
 
 /**
@@ -139,6 +142,8 @@ export function hasArt(letter: string, variant: string): boolean {
  *
  * `pieceSet` (a folder from piece-sets.ts) draws the six standard pieces; every other piece keeps its own art,
  * and so does a designed piece, even one that chose Merida's standard art.
+ *
+ * The Duck Chess duck ('*') is the same image for both colours, in every variant and set.
  */
 export function artUrl(
   letter: string,
@@ -148,6 +153,7 @@ export function artUrl(
   designedArt?: string | null,
   pieceSet = 'merida',
 ): string | null {
+  if (letter === DUCK) return DUCK_URL;
   if (designedArt !== undefined) return artChoice(designedArt)?.[color] ?? null;
   const side = color === 'white' ? 'w' : 'b';
   const standard = type === undefined ? undefined : STANDARD_TYPES[type];
@@ -212,12 +218,13 @@ export function tokenClass(letter: string): string {
 /**
  * Parses a piece class like `a-piece white` (a pocket piece may also carry other classes). chessgroundx draws
  * a `+P` from a FEN as role `pp-piece`, so a role of `p` and a letter is that letter promoted. (A `~` piece,
- * as in Crazyhouse, keeps its own role and is not promoted here: it looks like the piece it became.)
+ * as in Crazyhouse, keeps its own role and is not promoted here: it looks like the piece it became.) The Duck
+ * Chess duck ('*' in the FEN) is role `_-piece`, which chessgroundx always colours black: its letter is '*'.
  */
 export function parsePieceClass(className: string): { letter: string; color: Color; promoted: boolean } | null {
-  const m = /(?:^|\s)(p)?([a-z])-piece(?:\s|$)/.exec(className);
+  const m = /(?:^|\s)(p)?([a-z_])-piece(?:\s|$)/.exec(className);
   const color = /(?:^|\s)(white|black)(?:\s|$)/.exec(className)?.[1] as Color | undefined;
-  return m && color ? { letter: m[2]!, color, promoted: m[1] !== undefined } : null;
+  return m && color ? { letter: m[2] === '_' ? '*' : m[2]!, color, promoted: m[1] !== undefined } : null;
 }
 
 /** Distinct lowercase piece letters in a FEN: the board, and the pockets of a drop variant like Seirawan. */

@@ -105,7 +105,10 @@ export function typesOfVariant(rules: Rules, engineName: string): Map<string, st
   const geometry = probeGeometry(files, ranks);
   const builtins = builtinSignatures(rules, files, ranks, geometry);
 
-  const letters = [...new Set([...position.squares.values(), ...position.pocket].map((c) => c.toLowerCase()))];
+  // Only lettered pieces have a type: Duck Chess's duck ('*') belongs to neither side and is no piece type.
+  const letters = [
+    ...new Set([...position.squares.values(), ...position.pocket].map((c) => c.toLowerCase()).filter((c) => /^[a-z]$/.test(c))),
+  ];
   const royal = rules.validateFen(engineName, buildFen(position)) ? royalLetters(rules, engineName, false) : [];
   // Corner pieces only stand in for the kings; any letter works where there's no royal piece (antichess).
   const cornerLetter = royal[0] ?? (letters.includes('k') ? 'k' : undefined);

@@ -1,5 +1,12 @@
 import { expect, type Page, test } from '@playwright/test';
+import type { ChessTestHooks } from '../src/ui/app';
 import { expectRiverAndPalaces } from './board-colours';
+
+declare global {
+  interface Window {
+    __chessTest?: ChessTestHooks;
+  }
+}
 
 // The registry's own message (src/variants/registry.ts); Playwright's loader can't import modules that load ffish.
 const ENGINE_NEEDED_MESSAGE = 'The AI engine is needed to check custom setups and is not available.';
@@ -343,7 +350,7 @@ test('a Shogi base keeps its size and its own pieces, promoted forms included, a
   // Position-only: the size is fixed (and says why), and there is no castling, no other piece and no designed piece.
   await expect(page.locator('#editor-files')).toBeDisabled();
   await expect(page.locator('#editor-ranks')).toBeDisabled();
-  await expect(page.getByTestId('editor-size-reason')).toHaveText('Shogi and Xiangqi keep their own board size.');
+  await expect(page.getByTestId('editor-size-reason')).toHaveText('Shogi keeps its own board size.');
   await expect(page.locator('#editor-castling')).toBeHidden();
   const palette = page.locator('.palette');
   await expect(palette.getByTestId('palette-white-queen')).toHaveCount(0);
@@ -460,7 +467,7 @@ test('a Xiangqi base keeps its size and its own pieces, with no promoted forms o
   // The editor's board wears the game's river and palaces, as the game's board does.
   await expectRiverAndPalaces(page, true, 'editor-board');
   await expect(page.locator('#editor-files')).toBeDisabled();
-  await expect(page.getByTestId('editor-size-reason')).toHaveText('Shogi and Xiangqi keep their own board size.');
+  await expect(page.getByTestId('editor-size-reason')).toHaveText('Xiangqi keeps its own board size.');
   await expect(page.locator('#editor-castling')).toBeHidden();
   await expect(page.locator('.editor-pockets')).toBeHidden();
   const palette = page.locator('.palette');
@@ -553,4 +560,76 @@ test('a saved Shogi setup starts from the Play dialog as Shogi, with its hand an
   await expect(page.locator('[data-testid=board] cg-board piece.ps-piece.black')).toHaveCount(1);
   await expect(pocketPiece(page, 'bottom', 'r')).toHaveAttribute('data-nb', '1');
   expect((await savedGame(page)).variant).toBe('shogi');
+});
+
+test('a Duck Chess base keeps 8x8 and castling, offers the chess pieces and one duck, and Play starts Duck Chess with it', async ({ page }) => {
+  await openApp(page);
+  await openEditor(page);
+  await page.locator('#editor-base').selectOption('duck');
+  await expect(page.locator('#editor-files')).toBeDisabled();
+  await expect(page.locator('#editor-ranks')).toBeDisabled();
+  await expect(page.getByTestId('editor-size-reason')).toHaveText('Duck Chess keeps its own board size.');
+  // Duck Chess keeps chess's castling.
+  await expect(page.locator('#editor-castling')).toBeVisible();
+  await expect(page.locator('#editor-castling')).toBeChecked();
+  await expect(page.locator('#editor-right-w-k')).toBeChecked();
+  const palette = page.locator('.palette');
+  await expect(palette.locator('[data-testid^=palette-white-own-]')).toHaveCount(6);
+  await expect(palette.locator('[data-testid^=palette-black-own-]')).toHaveCount(6);
+  await expect(palette.getByTestId('palette-white-archbishop')).toHaveCount(0);
+  await expect(palette.getByTestId('palette-new-piece')).toHaveCount(0);
+  // One duck, since it belongs to neither side, wearing the duck's art.
+  await expect(palette.locator('[data-testid*=duck]')).toHaveCount(1);
+  await expect(palette.getByTestId('palette-duck')).toHaveAttribute('aria-label', 'Duck');
+  expect(await palette.getByTestId('palette-duck').locator('.palette-icon').evaluate((el) => getComputedStyle(el).backgroundImage)).toContain(
+    'pieces/duck/duck.svg',
+  );
+
+  await placeOn(page, 'duck', 'e4');
+  const fen = 'rnbqkbnr/pppppppp/8/8/4*3/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  await expect(editorBoard(page)).toHaveAttribute('data-fen', fen);
+  await expect(page.locator('[data-testid=editor-board] cg-board piece._-piece')).toHaveCount(1);
+  // A second duck is refused, with the reason, until it goes.
+  await clickSquare(page, 'editor-board', 'd5');
+  await expect(problems(page)).toHaveText(['There can be only one duck.']);
+  await expect(page.getByTestId('editor-play')).toBeDisabled();
+  await placeOn(page, 'eraser', 'd5');
+  await expect(editorBoard(page)).toHaveAttribute('data-fen', fen);
+  await expect(problems(page)).toHaveCount(0);
+
+  await startHotseatFromEditor(page);
+  await expect(page.getByTestId('game-line')).toHaveText('Duck Chess · Hot-seat');
+  await expect(page.getByTestId('board')).toHaveAttribute('data-variant', 'duck');
+  await expect(page.getByTestId('board')).toHaveAttribute('data-fen', fen);
+  expect((await savedGame(page)).variant).toBe('duck');
+  // It plays as Duck Chess: after the piece move, the duck must move.
+  await move(page, 'g1', 'f3');
+  await expect(page.getByTestId('board')).toHaveAttribute('data-duck-step', 'true');
+});
+
+test('editing a Duck Chess game keeps the duck where it is, and Resume plays Duck Chess from the edited FEN', async ({ page }) => {
+  await openApp(page);
+  // After 1. e4 (duck to e5) Nc6 (duck to d4).
+  const midgame = 'r1bqkbnr/pppppppp/2n5/8/3*P3/8/PPPP1PPP/RNBQKBNR w KQkq - 2 2';
+  await page.evaluate((f) => window.__chessTest!.loadFen('duck', f), midgame);
+  await expect(page.getByTestId('board')).toHaveAttribute('data-fen', midgame);
+
+  await page.getByTestId('edit').click();
+  await expect(page.getByTestId('editor')).toBeVisible();
+  await expect(editorBoard(page)).toHaveAttribute('data-fen', 'r1bqkbnr/pppppppp/2n5/8/3*P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1');
+  await expect(page.locator('[data-testid=editor-board] cg-board piece._-piece')).toHaveCount(1);
+  // The duck drags like any piece.
+  await drag(page, await squareCentre(page, 'editor-board', 'd4'), await squareCentre(page, 'editor-board', 'h5'));
+  const edited = 'r1bqkbnr/pppppppp/2n5/7*/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1';
+  await expect(editorBoard(page)).toHaveAttribute('data-fen', edited);
+  await expect(page.getByTestId('editor-status')).toHaveText('Ready to play.', { timeout: 20000 });
+  await page.getByTestId('editor-resume').click();
+  await expect(page.getByTestId('game')).toBeVisible();
+
+  await expect(page.getByTestId('game-line')).toHaveText(/^Duck Chess · Hot-seat/);
+  await expect(page.getByTestId('board')).toHaveAttribute('data-variant', 'duck');
+  await expect(page.getByTestId('board')).toHaveAttribute('data-fen', edited);
+  expect((await savedGame(page)).variant).toBe('duck');
+  await move(page, 'g1', 'f3');
+  await expect(page.getByTestId('board')).toHaveAttribute('data-duck-step', 'true');
 });

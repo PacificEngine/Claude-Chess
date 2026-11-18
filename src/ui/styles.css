@@ -255,6 +255,37 @@ cg-board square.check {
   padding: 0 3px;
 }
 
+/* Duck Chess's duck before it first comes on: one square under the board. The row stays for the whole game
+   (board-view counts it in --pocket-rows), so the board is sized for it and nothing moves when it empties. */
+.duck-tray {
+  display: flex;
+  height: calc(var(--board-w) / var(--files));
+  margin: 4px 0;
+}
+.duck-tray[hidden] {
+  display: none;
+}
+.duck-tray[data-waiting='false'] {
+  visibility: hidden;
+}
+.duck-tray square {
+  position: relative;
+  display: block;
+  width: calc(var(--board-w) / var(--files));
+  height: 100%;
+  background: var(--surface);
+  border-radius: 4px;
+}
+.duck-tray square.selected-square {
+  background: rgba(20, 85, 30, 0.5);
+}
+.duck-tray piece {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  cursor: grab;
+}
+
 /* ---- Panel ---- */
 .panel {
   display: flex;

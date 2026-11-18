@@ -17,7 +17,7 @@ function loadTestFfish() {
 describe('variant catalog', () => {
   it('lists every owner-approved variant in menu order', () =>
     expect(CURATED_VARIANTS.map((v) => v.id)).toEqual([
-      'chess', 'capablanca', 'grand', 'seirawan', 'amazon', 'shako', 'spartan', 'antichess', 'shogi', 'xiangqi',
+      'chess', 'capablanca', 'grand', 'seirawan', 'amazon', 'shako', 'spartan', 'antichess', 'shogi', 'xiangqi', 'duck',
     ]));
 
   it('knows board sizes so the UI can lay out large boards', () => {
@@ -36,6 +36,16 @@ describe('variant catalog', () => {
       board.delete();
       expect({ files, ranks }, id).toEqual({ files: variantById(id).files, ranks: variantById(id).ranks });
     }
+  });
+
+  it("lists Duck Chess on ffish's 8x8 duck variant, whose start has no duck", async () => {
+    expect(variantById('duck')).toMatchObject({ label: 'Duck Chess', engineName: 'duck', files: 8, ranks: 8 });
+    const ffish = await loadTestFfish();
+    const board = new ffish.Board('duck');
+    const fen = board.fen();
+    board.delete();
+    expect(fen.split(' ')[0]).not.toContain('*');
+    expect(parseFen(fen)).toMatchObject({ files: 8, ranks: 8 });
   });
 
   it('uses only variant names the rules library knows, so no game can crash the wasm module', async () => {

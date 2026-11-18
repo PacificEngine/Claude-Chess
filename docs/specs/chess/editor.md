@@ -22,6 +22,9 @@ The board editor builds custom setups and edits games in progress. The piece des
     - *Reason (owner decision, 2026-11-12):* one box for every right could not express a game in which only one side, or one wing, may still castle.
   - set both clock times, when editing a timed game (see `./chess.md`, Edit current game)
   - set pieces in hand, for variants that have them
+- **Duck Chess bases are position-only too** (2026-11-17), for the same reason: the board is 8×8, the palette offers the chess pieces and the duck, and a setup plays as the curated `duck` game from its FEN.
+  - The palette has one duck entry, since the duck belongs to neither side. Castling stays, as in chess. A setup may have no duck yet (it comes on with the next move), but not two, and needs exactly one king a side.
+  - *Reason (probe, 2026-11-17, ffish 0.7.10):* ffish's `duck` counts the kings as pieces to wipe out, not as royal, so it accepts a side with no king (the game starts already won) or with two (taking one doesn't win), and it plays any number of ducks.
 - **Shogi and Xiangqi bases are position-only** (2026-11-17, from the Shogi and Xiangqi builder check): the board size is fixed, the palette offers only the game's own pieces (Shogi's promoted forms included), pieces in hand are set with the pocket controls, and there are no promotion controls. A setup or an edited game is always played as the curated game from its FEN, never as a generated variant.
   - *Reason:* Fairy-Stockfish ties Xiangqi's palace and river and Shogi's promotion zone to fixed squares, and the generator writes chess-style promotion, so any generated variant would quietly break the game (a probe showed Shogi's three-rank zone shrinking to one). This keeps the rule that editing keeps a variant's rules.
 - **Base rules:**

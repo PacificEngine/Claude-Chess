@@ -353,6 +353,9 @@ export function createTutorial(host: HTMLElement, deps: TutorialDeps): Tutorial 
   /** The move the player means between two squares: asks when several share them (promotion or gating). */
   async function pick(legal: string[], to: string): Promise<string | null> {
     const candidates = legal.filter((uci) => parseUci(uci)?.to === to);
+    // A Duck Chess move comes once per duck square, and the lesson board has no duck step: refuse it rather than
+    // ask the player to choose between identical moves. No lesson plays Duck Chess.
+    if (candidates.some((uci) => parseUci(uci)?.duck)) return null;
     if (candidates.length <= 1) return candidates[0] ?? null;
     const artBase = resolved?.ok ? resolved.variant.artBase : 'chess';
     const choices = candidates.map((uci) => ({ uci, suffix: parseUci(uci)!.suffix }));

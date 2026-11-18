@@ -15,6 +15,7 @@ import { lessonFor } from '../tutorial/links';
 import { createTutorial } from '../tutorial/ui/tutorial';
 import { type ActiveVariant, artTypeOf, curatedActive, customActive, variantTypes } from '../variants/active';
 import { CURATED_VARIANTS, type VariantInfo, variantById } from '../variants/catalog';
+import { duckSquaresOf, duckStepFen, duckSteps } from '../variants/duck';
 import { positionProblems } from '../variants/legality';
 import { pieceTypeByName } from '../variants/piece-types';
 import { registerSetup } from '../variants/registry';
@@ -314,6 +315,18 @@ export async function startApp(root: HTMLElement): Promise<void> {
     };
   };
   if (saved) rememberChoice();
+  /**
+   * Duck Chess's half-made turn: the piece has moved on the board only, and the duck's move completes it. Display
+   * state: the session has not changed, and `squares` pairs each duck square the rules allow with its full move.
+   */
+  let duckTurn: { session: GameSession; ply: number; first: string; squares: Map<string, string>; fen: string } | null = null;
+  /** The duck step still on offer, or null: a move, undo, new game or the end of the game leaves it behind. */
+  const duckStep = (): typeof duckTurn => {
+    if (duckTurn && (duckTurn.session !== session || duckTurn.ply !== st.moves.length || st.result || restoring || !session.isHumanTurn())) {
+      duckTurn = null;
+    }
+    return duckTurn;
+  };
   /** The background restore of a saved custom game, while it runs; the board stays disabled meanwhile. */
   let restoring: PendingRestore | null = null;
   /** The saved custom game that `restoring` is restoring: not on the board yet, but the game in progress. */
@@ -382,6 +395,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
       if (aiFailed) return "The AI couldn't move.";
       return engine.status() === 'loading' ? 'AI is thinking… (engine loading)' : 'AI is thinking…';
     }
+    if (duckStep()) return `${capital(turn)}: move the duck`;
     const paused = st.clockConfig !== null && st.clock.running === null ? ' · clocks paused until the next move' : '';
     return `${capital(turn)} to move${paused}`;
   }
@@ -389,11 +403,12 @@ export async function startApp(root: HTMLElement): Promise<void> {
   function render(): void {
     const variant = activeVariant();
     const sans = st.moves.map((_, i) => sanOf(i));
-    const last = st.moves.length ? parseUci(st.moves[st.moves.length - 1]) : null;
-    const lastSan = sans[sans.length - 1] ?? '';
+    const duck = duckStep();
+    const last = duck ? parseUci(duck.first) : st.moves.length ? parseUci(st.moves[st.moves.length - 1]) : null;
+    const lastSan = duck ? '' : (sans[sans.length - 1] ?? '');
     board.show({
       variant,
-      fen: session.fen(),
+      fen: duck?.fen ?? session.fen(),
       turn: session.turn(),
       orientation: humanColor(),
       movable: !restoring && !st.result && session.isHumanTurn() ? session.turn() : null,
@@ -402,6 +417,9 @@ export async function startApp(root: HTMLElement): Promise<void> {
       lastMove: last ? moveSquares(last) : null,
       check: /[+#]/.test(lastSan),
       showDests: settings.highlightLegal,
+      duckStep: duck && { squares: [...duck.squares.keys()], fromHand: duckSquaresOf(duck.fen).length === 0 },
+      // A Duck Chess game that starts with no duck brings it on from beside the board: keep that room all game.
+      duckTray: variant.artBase === 'duck' && duckSquaresOf(st.startFen).length === 0,
     });
     const opponent = st.opponent.kind === 'ai' ? `AI: ${levelById(st.opponent.level).label}` : 'Hot-seat';
     // A saved custom game still restoring isn't on the board yet, so there is nothing to edit.
@@ -412,7 +430,7 @@ export async function startApp(root: HTMLElement): Promise<void> {
       opponent,
       sans,
       clocksVisible: st.clockConfig !== null,
-      canUndo: session.canUndo(),
+      canUndo: session.canUndo() || duck !== null,
       canEdit,
       status: statusText(),
       retry: aiFailed && !st.result && !session.isHumanTurn() && engine.status() !== 'unavailable',
@@ -496,17 +514,22 @@ export async function startApp(root: HTMLElement): Promise<void> {
   async function onBoardMove(from: string, to: string): Promise<void> {
     const s = session;
     if (restoring || st.result || !s.isHumanTurn()) return render();
+    const duck = duckStep();
+    if (duck) return duckSquaresOf(duck.fen).includes(from) ? playDuck(duck, to) : render();
     const candidates = s.legalMovesFrom(from).filter((u) => {
       const m = parseUci(u);
       return m !== null && m.to === to;
     });
     if (candidates.length === 0) return render();
-    let uci = candidates[0];
-    if (candidates.length > 1) {
+    // In Duck Chess each piece move comes once per duck square: the piece's move is chosen now, the duck's next.
+    const steps = duckSteps(candidates);
+    const options = steps.size ? [...steps.keys()] : candidates;
+    let uci = options[0];
+    if (options.length > 1) {
       // Several legal moves share these squares (promotion or gating): the player must choose.
       const variant = activeVariant();
       // Shogi's choice is promote or not: the promotion comes first, as it is the usual pick.
-      const choices = candidates
+      const choices = options
         .map((u) => ({ uci: u, suffix: parseUci(u)!.suffix }))
         .sort((a, b) => Number(b.suffix === '+') - Number(a.suffix === '+'));
       // The "Promote?" title keys on a `+` suffix, which only Shogi writes (other promotions name a piece).
@@ -519,18 +542,56 @@ export async function startApp(root: HTMLElement): Promise<void> {
         resumeAfterDialog();
         return render(); // put the dragged piece back even when no clock was paused
       }
+      uci = picked;
+      if (steps.size) {
+        // The duck's step is still the player's time, so the clock runs again for it.
+        startDuckStep(s, uci, steps.get(uci)!);
+        return resumeAfterDialog();
+      }
       // The move below restarts the clock itself (resumeClock), so only the dialog's pause is cleared here.
       pausedForDialog = false;
-      uci = picked;
     }
+    if (steps.size) return startDuckStep(s, uci, steps.get(uci)!);
     playHumanMove(s, uci);
   }
   board.onMove((from, to) => void onBoardMove(from, to));
+
+  /** Shows the piece moved and lights up the ducks; the session does not change until the duck moves. */
+  function startDuckStep(s: GameSession, first: string, squares: Map<string, string>): void {
+    const fen = duckStepFen(s.fen(), s.fenAfter(squares.values().next().value!));
+    duckTurn = { session: s, ply: st.moves.length, first, squares, fen };
+    render();
+  }
+
+  /** A duck moved to `square`: plays the turn the rules pair with it, or puts the duck back. */
+  function playDuck(duck: NonNullable<typeof duckTurn>, square: string): void {
+    const uci = duck.squares.get(square);
+    if (!uci) return render();
+    duckTurn = null;
+    playHumanMove(duck.session, uci);
+  }
+
+  /** Puts the moved piece back: the turn starts again. */
+  function cancelDuckStep(): void {
+    if (!duckStep()) return;
+    duckTurn = null;
+    render();
+  }
+  board.onSelect((square) => {
+    // A click on the piece that just moved takes the move back, before the duck moves.
+    const duck = duckStep();
+    if (duck && parseUci(duck.first)?.to === square) cancelDuckStep();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && duckStep() && !covered()) cancelDuckStep();
+  });
 
   /** A piece dragged from hand: the board offered only the rules' drops, but the session still checks it. */
   function onBoardDrop(letter: string, to: string): void {
     const s = session;
     if (restoring || st.result || !s.isHumanTurn()) return render();
+    const duck = duckStep();
+    if (duck) return letter === '*' ? playDuck(duck, to) : render();
     const uci = `${letter}@${to}`;
     if (!s.legalDrops(letter).includes(uci)) return render();
     playHumanMove(s, uci);
@@ -552,6 +613,8 @@ export async function startApp(root: HTMLElement): Promise<void> {
   }
 
   function undo(): void {
+    // Before the duck moves, the turn is not made yet: Undo puts the piece back, as Escape does.
+    if (duckStep()) return cancelDuckStep();
     if (!session.canUndo()) return;
     cancelAi();
     session.undo(Date.now());
@@ -691,6 +754,8 @@ export async function startApp(root: HTMLElement): Promise<void> {
     if (editor.isOpen() || restoring) return;
     tutorial.hide(); // as in openEditor: the editor takes over the tutorial's screen
     cancelAi();
+    // The editor edits the game, not a half-made Duck Chess turn: Cancel comes back to the turn's start.
+    duckTurn = null;
     main.hidden = true;
     const now = Date.now();
     // A timed game's clocks are editable, from the times they show now.

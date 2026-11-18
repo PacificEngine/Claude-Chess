@@ -10,8 +10,15 @@ import { INHERITED, pieceTypeByName } from '../../variants/piece-types';
 import { type DesignedCopy, MAX_FILES, MAX_RANKS, MIN_FILES, MIN_RANKS, type SetupSpec } from '../../variants/setup';
 
 export const TOO_MANY_TYPES = 'Too many different piece types for one setup.';
-/** Why a position-only base's size controls are disabled. */
-export const FIXED_SIZE = 'Shogi and Xiangqi keep their own board size.';
+/** Why a position-only base's size controls are disabled ("Shogi keeps its own board size."). */
+export const fixedSize = (label: string) => `${label} keeps its own board size.`;
+/**
+ * The duck's letter, as in the FEN. Colourless, but held as Black's, as parseFen and chessgroundx read it
+ * (`*` is its own lowercase); either colour writes the same `*`.
+ */
+export const DUCK = '*';
+/** Bases whose palette offers the duck. */
+const DUCK_BASES: ReadonlySet<VariantId> = new Set<VariantId>(['duck']);
 
 /**
  * A position-only base's pieces in hand (every Shogi piece but the king, in the pockets' order) and the letters
@@ -32,12 +39,14 @@ export interface EditorBase extends ActiveVariantShape {
   /** Lowercase letters the base holds in hand at the start (Shogi: every piece but the king): the pocket editor's rows. */
   pocketLetters: string[];
   /**
-   * Only the position can change (Shogi, Xiangqi): the board size is fixed, the palette offers the base's own
+   * Only the position can change (Shogi, Xiangqi, Duck Chess): the board size is fixed, the palette offers the base's own
    * pieces only, and the setup always plays as the curated game (POSITION_ONLY_BASES).
    */
   positionOnly: boolean;
   /** Lowercase letters with a promoted form the editor places (`+p`, written `+P` in the FEN); Shogi's only. */
   promotable: string[];
+  /** Whether the palette offers the duck (Duck Chess), placed as DUCK. */
+  duck: boolean;
 }
 
 export type BaseLookup = (id: VariantId) => EditorBase;
@@ -66,6 +75,7 @@ export function editorBases(rules: Rules): BaseLookup {
         pocketLetters: POSITION_ONLY_PIECES[id]?.hand ?? [...new Set(parseFen(startFen).pocket.map((c) => c.toLowerCase()))],
         positionOnly: POSITION_ONLY_BASES.has(id),
         promotable: POSITION_ONLY_PIECES[id]?.promotable ?? [],
+        duck: DUCK_BASES.has(id),
       };
       cache.set(id, base);
     }
@@ -186,6 +196,7 @@ export class EditorModel {
 
   /** Whether the setup has a piece for this letter: built-in, the base's own, designed, or a base's promoted form. */
   private knows(letter: string): boolean {
+    if (letter === DUCK) return this.base.duck;
     if (letter.startsWith('+')) return this.base.promotable.includes(letter.slice(1));
     return this.typeOf(letter) !== undefined || this.designed.has(letter);
   }
@@ -255,7 +266,7 @@ export class EditorModel {
   place(square: string, letter: string, color: Color): void {
     if (!this.knows(letter)) throw new Error(`No piece type for the letter ${letter}`);
     this.checkSquare(square);
-    this.board.set(square, { letter, color });
+    this.board.set(square, { letter, color: letter === DUCK ? 'black' : color });
   }
 
   remove(square: string): void {
@@ -277,7 +288,7 @@ export class EditorModel {
     for (const [square, piece] of pieces) {
       if (!this.knows(piece.letter)) throw new Error(`No piece type for the letter ${piece.letter}`);
       this.checkSquare(square);
-      next.set(square, { ...piece });
+      next.set(square, { letter: piece.letter, color: piece.letter === DUCK ? 'black' : piece.color });
     }
     this.board = next;
   }
@@ -289,7 +300,7 @@ export class EditorModel {
 
   /** Keeps the pieces from a1 up and to the right; the rest fall off. A size other than the base's turns castling off. */
   resize(files: number, ranks: number): { removed: number } {
-    if (this.positionOnly) throw new Error(FIXED_SIZE);
+    if (this.positionOnly) throw new Error(fixedSize(this.base.label));
     if (!Number.isInteger(files) || files < MIN_FILES || files > MAX_FILES) throw new Error(`Files must be ${MIN_FILES} to ${MAX_FILES}`);
     if (!Number.isInteger(ranks) || ranks < MIN_RANKS || ranks > MAX_RANKS) throw new Error(`Ranks must be ${MIN_RANKS} to ${MAX_RANKS}`);
     let removed = 0;

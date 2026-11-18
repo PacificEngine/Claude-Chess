@@ -9,7 +9,8 @@ export type VariantId =
   | 'spartan'
   | 'antichess'
   | 'shogi'
-  | 'xiangqi';
+  | 'xiangqi'
+  | 'duck';
 
 export interface VariantInfo {
   id: VariantId;
@@ -94,6 +95,14 @@ export const CURATED_VARIANTS: readonly VariantInfo[] = [
     files: 9,
     ranks: 10,
     blurb: 'Chinese chess on a 9x10 board, with cannons that capture by jumping, a river and generals kept in their palaces.',
+  },
+  {
+    id: 'duck',
+    label: 'Duck Chess',
+    engineName: 'duck',
+    files: 8,
+    ranks: 8,
+    blurb: 'Chess plus a duck that neither side owns: after each move you must move the duck, and you win by capturing the king.',
   },
 ];
 

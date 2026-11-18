@@ -15,13 +15,13 @@ export function parseFen(fen: string): Position {
   const [placement] = fen.split(' ');
   const pocketMatch = /\[([^\]]*)\]/.exec(placement);
   // Bottom row first. Digits are runs of empty squares; '~' (promoted) and '+' markers aren't pieces, though a
-  // '+' piece is noted in `promoted`.
+  // '+' piece is noted in `promoted`. Duck Chess's duck is '*', a piece neither side owns.
   const rows: string[][] = placement
     .replace(/\[[^\]]*\]/, '')
     .split('/')
     .reverse()
     .map((row) =>
-      (row.match(/\d+|\+?[A-Za-z]/g) ?? []).flatMap((t) => (/\d/.test(t) ? new Array<string>(Number(t)).fill('') : [t])),
+      (row.match(/\d+|\+?[A-Za-z]|\*/g) ?? []).flatMap((t) => (/\d/.test(t) ? new Array<string>(Number(t)).fill('') : [t])),
     );
   const files = rows[0].length;
   const squares = new Map<number, string>();
@@ -50,7 +50,11 @@ export function pieceOn(fen: string, square: string): string | undefined {
   return squares.get(squareIndex(square, files));
 }
 
-/** A UCI move split up. A drop (`B@a2`) has no from-square and names the dropped piece. */
+/**
+ * A UCI move split up. A drop (`B@a2`) has no from-square and names the dropped piece. A Duck Chess move is
+ * the piece's move, a comma, then the duck's part (`e7e5,e5a3`): from, to and suffix describe the piece's
+ * move, and `duck` is the square the duck goes to.
+ */
 export interface UciMove {
   from: string | null;
   to: string;
@@ -58,17 +62,24 @@ export interface UciMove {
   suffix: string;
   /** The dropped piece's letter, or null for a move on the board. */
   drop: string | null;
+  /** The duck's destination square in Duck Chess, or null for a move with no duck part. */
+  duck: string | null;
 }
 
 /** Splits a UCI move, or returns null when the text is not one. */
 export function parseUci(uci: string): UciMove | null {
-  const drop = /^([A-Za-z])@([a-z]\d+)$/.exec(uci);
-  if (drop) return { from: null, to: drop[2], suffix: '', drop: drop[1] };
-  const m = /^([a-z]\d+)([a-z]\d+)(.*)$/.exec(uci);
-  return m ? { from: m[1], to: m[2], suffix: m[3], drop: null } : null;
+  const [piece, duckPart, ...rest] = uci.split(',');
+  // The duck part's own "from" is where the piece landed, not where the duck stood, so only its to-square counts.
+  const duckSquares = duckPart === undefined ? null : /^[a-z]\d+([a-z]\d+)$/.exec(duckPart);
+  if (rest.length || (duckPart !== undefined && !duckSquares)) return null;
+  const duck = duckSquares?.[1] ?? null;
+  const drop = /^([A-Za-z])@([a-z]\d+)$/.exec(piece);
+  if (drop) return { from: null, to: drop[2], suffix: '', drop: drop[1], duck };
+  const m = /^([a-z]\d+)([a-z]\d+)(.*)$/.exec(piece);
+  return m ? { from: m[1], to: m[2], suffix: m[3], drop: null, duck } : null;
 }
 
-/** A UCI move's from- and to-squares (from is null for a drop); a suffix after them is dropped. */
+/** A UCI move's from- and to-squares (from is null for a drop); a suffix or duck part after them is dropped. */
 export function uciSquares(uci: string): { from: string | null; to: string } {
   const m = parseUci(uci);
   return { from: m?.from ?? null, to: m?.to ?? '' };

@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { loadTestRules } from './test-rules';
+import { parseUci, pieceOn } from '../variants/fen';
 import type { Rules } from './types';
 
 // Hand-built positions. Each one is checked with validateFen below so a typo can't make a test pass vacuously.
@@ -31,6 +32,8 @@ const FEN_XIANGQI_GENERALS = '3k5/9/9/9/9/9/9/9/9/4K4 w - - 0 1';
 // square a4 screens it (a soldier can never stand behind its start rank).
 const FEN_XIANGQI_CANNON_NO_SCREEN = '5k3/9/9/9/9/r8/9/9/9/C2K5 w - - 0 1';
 const FEN_XIANGQI_CANNON_SCREENED = '5k3/9/9/9/9/r8/P8/9/9/C2K5 w - - 0 1';
+// Duck Chess: White's rook on e2 looks up an open e-file at Black's king on e8; the duck stands on a1.
+const FEN_DUCK_ROOK_TAKES_KING = '4k3/8/8/8/8/8/4R3/*3K3 w - - 0 1';
 
 const FENS: [string, string][] = [
   ['antichess', FEN_ANTI_FORCED_CAPTURE],
@@ -50,6 +53,7 @@ const FENS: [string, string][] = [
   ['xiangqi', FEN_XIANGQI_GENERALS],
   ['xiangqi', FEN_XIANGQI_CANNON_NO_SCREEN],
   ['xiangqi', FEN_XIANGQI_CANNON_SCREENED],
+  ['duck', FEN_DUCK_ROOK_TAKES_KING],
 ];
 
 let rules: Rules;
@@ -201,6 +205,46 @@ describe('xiangqi', () => {
     const screened = rules.newGame('xiangqi', FEN_XIANGQI_CANNON_SCREENED);
     expect(screened.legalMovesFrom('a1')).toContain('a1a5');
     screened.dispose();
+  });
+});
+
+describe('duck', () => {
+  it('starts with no duck, and pairs every first move with a duck square', () => {
+    const g = rules.newGame('duck');
+    expect(g.fen().split(' ')[0]).not.toContain('*');
+    const moves = g.legalMoves();
+    expect(moves.length).toBeGreaterThan(0);
+    for (const uci of moves) expect(parseUci(uci)?.duck, uci).toMatch(/^[a-h][1-8]$/);
+    g.dispose();
+  });
+
+  it('puts the duck on its square after the move, and writes the SAN as the move then the duck', () => {
+    const g = rules.newGame('duck');
+    expect(g.san('g1f3,f3e5')).toBe('Nf3,e5');
+    g.push('g1f3,f3e5');
+    expect(pieceOn(g.fen(), 'e5')).toBe('*');
+    expect(pieceOn(g.fen(), 'f3')).toBe('N');
+    // The duck must move: no reply leaves it where it is.
+    expect(g.legalMoves().some((uci) => parseUci(uci)?.duck === 'e5')).toBe(false);
+    g.dispose();
+  });
+
+  it('ends the game when a king is captured, as a variant win', () => {
+    const g = rules.newGame('duck', FEN_DUCK_ROOK_TAKES_KING);
+    expect(g.result()).toBeNull();
+    const capture = g.legalMovesFrom('e2').find((uci) => parseUci(uci)?.to === 'e8');
+    expect(capture).toBeDefined();
+    g.push(capture!);
+    expect(g.result()).toEqual({ winner: 'white', reason: 'variant' });
+    g.dispose();
+  });
+
+  it('gives the win to a side with no legal move, so stalemate wins rather than draws', () => {
+    // Black's king on a8 is walled in by the ducks on b8, a7 and b7.
+    const g = rules.newGame('duck', 'k*6/**6/8/8/8/8/8/7K b - - 0 1');
+    expect(g.legalMoves()).toEqual([]);
+    expect(g.result()).toEqual({ winner: 'black', reason: 'variant' });
+    g.dispose();
   });
 });
 

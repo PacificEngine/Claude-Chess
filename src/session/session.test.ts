@@ -235,3 +235,18 @@ describe('custom games', () => {
     expect(isSessionState({ ...saved, setup: null })).toBe(false);
   });
 });
+
+describe('fenAfter', () => {
+  it('gives the position a legal move would reach, without playing it', () => {
+    const s = GameSession.create(rules, { variant: 'duck', opponent: { kind: 'hotseat' }, clockConfig: null }, 0);
+    const before = s.state();
+    expect(s.fenAfter('e2e4,e4d5').split(' ')[0]).toBe('rnbqkbnr/pppppppp/8/3*4/4P3/8/PPPP1PPP/RNBQKBNR');
+    expect(s.state()).toEqual(before);
+    expect(s.fen()).toBe(before.startFen);
+  });
+  it('throws on an illegal move and leaves the game as it was', () => {
+    const s = hotseat();
+    expect(() => s.fenAfter('e2e5')).toThrow();
+    expect(s.fen()).toBe(s.state().startFen);
+  });
+});
